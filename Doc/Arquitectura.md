@@ -1,4 +1,6 @@
 # Arquitectura del Sistema (Clean Architecture en FastAPI)
+![Request Invalido](https://github.com/user-attachments/assets/2222a2c4-d772-49bd-bcf2-9f84e5e440d4)
+![Request Valido](https://github.com/user-attachments/assets/7e1d2f9d-048a-48c3-b378-4a604db36852)
 
 Este documento detalla la arquitectura del sistema SaaS de Asistencia Vehicular, explicando cómo se comunican las diferentes capas, el propósito de cada herramienta y la estructura de carpetas.
 
