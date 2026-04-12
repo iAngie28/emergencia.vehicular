@@ -1,0 +1,19 @@
+.nav-link.active {
+  background-color: #007bff; /* Azul primario */
+  color: white !important;
+  font-weight: bold;
+  border-left: 4px solid #fff;
+}
+
+.nav-label {
+  margin-top: 25px;
+  margin-left: 10px;
+  font-size: 0.75rem;
+  color: #6c757d;
+  font-weight: bold;
+}
+
+.sidebar-footer {
+  margin-top: auto; /* Empuja el botón al fondo */
+  padding-top: 20px;
+}

@@ -1,0 +1,28 @@
+<div class="login-container">
+  <h2>Ingreso al Sistema</h2>
+  
+  <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+    
+    <div>
+      <label>Correo Electrónico:</label>
+      <input type="email" formControlName="username" placeholder="admin@taller.com">
+      <div *ngIf="loginForm.get('username')?.touched && loginForm.get('username')?.invalid" style="color: red; font-size: 12px;">
+        Correo inválido.
+      </div>
+    </div>
+
+    <div style="margin-top: 10px;">
+      <label>Contraseña:</label>
+      <input type="password" formControlName="password" placeholder="***">
+    </div>
+
+    <div *ngIf="errorMessage" style="color: red; margin-top: 10px;">
+      {{ errorMessage }}
+    </div>
+
+    <button type="submit" [disabled]="loginForm.invalid || isLoading" style="margin-top: 20px;">
+      {{ isLoading ? 'Cargando...' : 'Entrar' }}
+    </button>
+    
+  </form>
+</div>

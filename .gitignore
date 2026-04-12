@@ -22,3 +22,7 @@ build/
 # Archivos del sistema operativo
 .DS_Store
 Thumbs.db
+
+# .\backend\venv\Scripts\Activate.ps1
+# ng serve
+# python -m uvicorn app.main:app --reload
