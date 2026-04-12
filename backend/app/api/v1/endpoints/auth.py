@@ -29,8 +29,30 @@ def login_access_token(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Correo o contraseña incorrectos",
         )
-    
-    # 2. Generar el Token JWT
+
+    # ==========================================
+    # 2. VALIDACIÓN DE PLATAFORMA (CANDADO CRUZADO)
+    # ==========================================
+    # Extraemos el client_id (Angular enviará "web", Flutter enviará "movil")
+    plataforma = form_data.client_id 
+
+    # Regla A: El Cliente (rol_id = 2) intenta entrar por la Web
+    if plataforma == "web" and usuario.rol_id == 2:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Acceso denegado: Los clientes solo pueden ingresar desde la aplicación móvil."
+        )
+        
+    # Regla B: El Administrador (rol_id = 1) intenta entrar por la App Móvil
+    if plataforma == "movil" and usuario.rol_id == 1:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Acceso denegado: Los administradores deben ingresar desde el panel web."
+        )
+
+    # ==========================================
+    # 3. Generar el Token JWT
+    # ==========================================
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     return {
         "access_token": security.crear_token_acceso(

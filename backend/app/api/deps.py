@@ -55,3 +55,26 @@ def get_current_user(
         raise HTTPException(status_code=404, detail="Usuario no encontrado en la base de datos")
     
     return user
+
+
+def get_current_admin_taller(
+    current_user: Usuario = Depends(get_current_user),
+) -> Usuario:
+    """Candado: Solo permite el paso a Administradores de Taller (Web)"""
+    if current_user.rol_id != 1:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Acceso denegado: Se requieren permisos de Administrador de Taller.",
+        )
+    return current_user
+
+def get_current_cliente(
+    current_user: Usuario = Depends(get_current_user),
+) -> Usuario:
+    """Candado: Solo permite el paso a Clientes (Móvil)"""
+    if current_user.rol_id != 2:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Acceso denegado: Endpoint exclusivo para la aplicación móvil.",
+        )
+    return current_user

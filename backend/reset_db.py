@@ -1,7 +1,8 @@
 import os
 import subprocess
 from sqlalchemy import create_engine, text
-
+from app.db.session import SessionLocal 
+from app.db.seeder import seed_db
 # --- CONFIGURACIÓN ---
 # Reemplaza con tus datos reales
 DB_USER = "postgres"
@@ -70,5 +71,19 @@ def reset_database():
     print("\n✨ ¡PROCESO COMPLETADO CON ÉXITO! ✨")
     print("Ya puedes iniciar uvicorn y probar tu Swagger.")
 
+    print("🌱 Ejecutando el Seeder para poblar la base de datos...")
+    db_session = SessionLocal()
+    try:
+        seed_db(db_session)
+        print("✅ Base de datos poblada exitosamente.")
+    except Exception as e:
+        print(f"❌ Error al ejecutar el seeder: {e}")
+    finally:
+        db_session.close()
+
+    print("\n✨ ¡PROCESO COMPLETADO CON ÉXITO! ✨")
+    print("La base de datos está reseteada, migrada y con datos semilla.")
+    print("Ya puedes iniciar uvicorn y probar tu Swagger.")
+    
 if __name__ == "__main__":
     reset_database()

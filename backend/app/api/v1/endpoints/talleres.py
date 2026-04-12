@@ -14,12 +14,13 @@ def registrar_taller(
     *,
     db: Session = Depends(deps.get_db),
     obj_in: TallerCreate,
-    usuario_id: int = 0 # ID del admin que registra el taller
+    current_user = Depends(deps.get_current_admin_taller) # 👈 CANDADO APLICADO: Extrae datos del token
 ):
     """
     Registra un taller en la plataforma con sus coordenadas y porcentaje de comisión.
     """
-    return taller_crud.create(db, obj_in=obj_in, usuario_id=usuario_id)
+    # Usamos el ID del administrador que está haciendo la petición
+    return taller_crud.create(db, obj_in=obj_in, usuario_id=current_user.id)
 
 # 2. Listar talleres activos (Para el mapa de la App)
 @router.get("/activos", response_model=List[Taller])
@@ -30,6 +31,7 @@ def leer_talleres_activos(
 ):
     """
     Retorna solo los talleres que están marcados como activos para ser mostrados en el mapa.
+    Abierto para que la app móvil pueda listar.
     """
     return taller_crud.obtener_activos(db, skip=skip, limit=limit)
 
@@ -51,9 +53,11 @@ def actualizar_taller(
     db: Session = Depends(deps.get_db),
     id: int,
     obj_in: TallerUpdate,
-    usuario_id: int
+    current_user = Depends(deps.get_current_admin_taller) # 👈 CANDADO APLICADO
 ):
     taller_db = taller_crud.get(db, id=id)
     if not taller_db:
         raise HTTPException(status_code=404, detail="Taller no encontrado")
-    return taller_crud.update(db, db_obj=taller_db, obj_in=obj_in, usuario_id=usuario_id)
+    
+    # Pasamos el usuario_id del token a la bitácora automáticamente
+    return taller_crud.update(db, db_obj=taller_db, obj_in=obj_in, usuario_id=current_user.id)
