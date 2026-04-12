@@ -1,8 +1,8 @@
 """'Initial_Reset'
 
-Revision ID: 123143b2e652
+Revision ID: 1fea5a46a4fc
 Revises: 
-Create Date: 2026-04-05 23:02:50.051630
+Create Date: 2026-04-12 15:01:26.660133
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '123143b2e652'
+revision: str = '1fea5a46a4fc'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -81,12 +81,14 @@ def upgrade() -> None:
     op.create_table('bitacora',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('usuario_id', sa.Integer(), nullable=True),
+    sa.Column('taller_id', sa.Integer(), nullable=True),
     sa.Column('tabla', sa.String(length=50), nullable=True),
     sa.Column('tabla_id', sa.Integer(), nullable=True),
     sa.Column('accion', sa.String(length=20), nullable=True),
     sa.Column('valor_anterior', sa.JSON(), nullable=True),
     sa.Column('valor_nuevo', sa.JSON(), nullable=True),
     sa.Column('fecha_hora', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
+    sa.ForeignKeyConstraint(['taller_id'], ['taller.id'], ),
     sa.ForeignKeyConstraint(['usuario_id'], ['usuario.id'], ),
     sa.PrimaryKeyConstraint('id')
     )

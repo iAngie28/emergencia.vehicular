@@ -17,3 +17,4 @@ class Taller(Base):
     especialidades = relationship("TallerEspecialidad", back_populates="taller")
     horarios = relationship("HorarioTaller", back_populates="taller")
     pagos = relationship("Pago", back_populates="taller")
+    bitacoras = relationship("Bitacora", back_populates="taller")
