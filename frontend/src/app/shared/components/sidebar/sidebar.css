@@ -17,3 +17,7 @@
   margin-top: auto; /* Empuja el botón al fondo */
   padding-top: 20px;
 }
+.nav-link span {
+  margin-right: 10px;
+  font-size: 1.1rem;
+}

@@ -1,0 +1,49 @@
+.landing-wrapper {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  font-family: 'Segoe UI', sans-serif;
+  text-align: center;
+}
+
+.brand { color: #007bff; font-weight: bold; }
+
+.hero-section h1 { font-size: 3rem; margin-bottom: 10px; }
+
+.options-container {
+  display: flex;
+  gap: 30px;
+  margin-top: 50px;
+}
+
+.option-card {
+  background: white;
+  padding: 40px;
+  border-radius: 20px;
+  width: 300px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.option-card:hover { transform: translateY(-10px); }
+
+.featured { border: 2px solid #007bff; }
+
+.icon { font-size: 3rem; margin-bottom: 20px; }
+
+button {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  border: none;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 20px;
+}
+
+.btn-primary { background: #007bff; color: white; }
+.btn-secondary { background: #6c757d; color: white; }

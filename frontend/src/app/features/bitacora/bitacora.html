@@ -1,0 +1,44 @@
+<div class="container-fluid py-4">
+  <div class="header mb-4">
+    <h2 class="fw-bold">📜 Auditoría del Sistema (Bitácora)</h2>
+    <p class="text-muted">Registros exclusivos de este taller</p>
+  </div>
+
+  <div class="table-container shadow-sm bg-white rounded">
+    <table class="table table-hover mb-0">
+      <thead class="table-dark">
+        <tr>
+          <th>Fecha</th>
+          <th>Tabla</th>
+          <th>Acción</th>
+          <th>Cambios Realizados</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let log of logs">
+          <td>{{ log.fecha_hora | date:'short' }}</td>
+          <td><span class="badge bg-secondary">{{ log.tabla }}</span></td>
+          <td>
+            <span [ngClass]="{
+              'text-success': log.accion === 'crear',
+              'text-primary': log.accion === 'actualizar',
+              'text-danger': log.accion === 'eliminar'
+            }" class="fw-bold text-uppercase">
+              {{ log.accion }}
+            </span>
+          </td>
+          <td style="font-size: 0.85rem;">
+            <div *ngIf="log.valor_anterior" class="mb-1">
+              <span class="text-muted small">Anterior:</span>
+              <pre class="bg-light p-1 rounded">{{ log.valor_anterior | json }}</pre>
+            </div>
+            <div>
+              <span class="text-primary small">Nuevo:</span>
+              <pre class="bg-light p-1 rounded">{{ log.valor_nuevo | json }}</pre>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

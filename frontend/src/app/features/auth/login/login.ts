@@ -36,9 +36,11 @@ export class LoginComponent {
     };
 
     this.authService.login(credentials).subscribe({
-      next: (res) => {
+      next: (res: any) => { // Usamos 'any' por si tu interfaz no tiene access_token definido
         this.isLoading = false;
-        console.log('Login exitoso, redirigiendo...');
+        console.log('Login exitoso, guardando token y redirigiendo...');
+        localStorage.setItem('token', res.access_token); 
+        
         this.router.navigate(['/dashboard']); 
       },
       error: (err) => {

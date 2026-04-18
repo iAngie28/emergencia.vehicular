@@ -1,0 +1,25 @@
+<div style="max-width: 500px; margin: 50px auto; padding: 20px; border: 1px solid #ccc; border-radius: 8px;">
+  <h2 style="text-align: center;">Registrar Mi Taller</h2>
+  
+  <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+    
+    <div style="margin-bottom: 20px; padding: 10px; background: #f9f9f9;">
+      <h4 style="margin-top: 0;">Datos del Administrador</h4>
+      <input type="text" formControlName="nombre" placeholder="Tu Nombre" style="width: 100%; margin-bottom: 10px;">
+      <input type="email" formControlName="correo" placeholder="Tu Correo" style="width: 100%; margin-bottom: 10px;">
+      <input type="password" formControlName="password" placeholder="Contraseña" style="width: 100%;">
+    </div>
+
+    <div formGroupName="taller" style="margin-bottom: 20px; padding: 10px; border: 1px dashed #aaa;">
+      <h4 style="margin-top: 0;">Datos del Taller</h4>
+      <input type="text" formControlName="nombre" placeholder="Nombre del Taller" style="width: 100%; margin-bottom: 10px;">
+      <input type="text" formControlName="direccion" placeholder="Dirección del Taller" style="width: 100%;">
+      <p style="font-size: 10px; color: gray;">Ubicación: Santa Cruz (Predeterminada)</p>
+    </div>
+
+    <button type="submit" [disabled]="registerForm.invalid" 
+            style="width: 100%; padding: 10px; background-color: #28a745; color: white; border: none; cursor: pointer;">
+      Registrar y Entrar 🚀
+    </button>
+  </form>
+</div>

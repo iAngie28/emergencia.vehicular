@@ -1,0 +1,80 @@
+/* Contenedor principal */
+.container-fluid {
+  animation: fadeIn 0.5s ease-in;
+}
+
+/* Encabezado */
+.header h2 {
+  color: #2c3e50;
+  letter-spacing: -0.5px;
+}
+
+/* Contenedor de la tabla */
+.table-container {
+  border: 1px solid #e0e6ed;
+  overflow: hidden; /* Para que los bordes redondeados funcionen */
+}
+
+/* Estilos de la tabla */
+table {
+  background: white;
+}
+
+thead th {
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 1px;
+  border: none !important;
+  padding: 15px !important;
+}
+
+tbody td {
+  vertical-align: middle;
+  padding: 15px !important;
+  border-bottom: 1px solid #f1f3f5;
+}
+
+/* Formato para el JSON (los cambios) */
+pre {
+  margin: 0;
+  max-height: 100px;
+  overflow-y: auto;
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 0.8rem;
+  color: #47525d;
+  border: 1px solid #ebf0f5;
+  scrollbar-width: thin; /* Para Firefox */
+}
+
+/* Scrollbar personalizada para el JSON */
+pre::-webkit-scrollbar {
+  width: 4px;
+}
+pre::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 10px;
+}
+
+/* Badges y Colores de Acciones */
+.fw-bold.text-success { color: #27ae60 !important; }
+.fw-bold.text-primary { color: #2980b9 !important; }
+.fw-bold.text-danger  { color: #e74c3c !important; }
+
+.badge {
+  font-weight: 600;
+  padding: 5px 10px;
+}
+
+/* Animación de entrada */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsividad para móviles */
+@media (max-width: 768px) {
+  pre {
+    max-width: 200px;
+  }
+}

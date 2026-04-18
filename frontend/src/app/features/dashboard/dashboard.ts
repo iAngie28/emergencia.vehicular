@@ -1,35 +1,40 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { SidebarComponent } from '../../shared/components/sidebar/sidebar';
-
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule], // <--- Deja solo el CommonModule
-  templateUrl: './dashboard.html',
-  styleUrls: ['./dashboard.css']
+  imports: [CommonModule],
+  templateUrl: './dashboard.html'
 })
 export class DashboardComponent implements OnInit {
-  nombreTaller: string = "Taller Central Santa Cruz"; // Esto luego vendrá del API
-  usuario: string = "Administrador";
-  
-  // Datos genéricos para mostrar algo en la web
-  resumen = {
-    incidentesHoy: 5,
-    vehiculosEnReparacion: 3,
-    completados: 12
-  };
+  private http = inject(HttpClient);
+  public tallerNombre: string = 'Cargando...';
+  public usuarioNombre: string = 'Usuario';
 
-  incidentesRecientes = [
-    { id: 1, vehiculo: 'Toyota Hilux - 123-ABC', estado: 'En Diagnóstico', prioridad: 'Alta' },
-    { id: 2, vehiculo: 'Suzuki Vitara - 456-DEF', estado: 'Esperando Repuestos', prioridad: 'Media' },
-    { id: 3, vehiculo: 'Nissan Frontier - 789-GHI', estado: 'Reparado', prioridad: 'Baja' }
-  ];
+  ngOnInit() {
+    this.obtenerDatosPerfil();
+  }
 
-  constructor() {}
+  obtenerDatosPerfil() {
+    const token = localStorage.getItem('token');
+    const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
 
-  ngOnInit(): void {
-    // Aquí podrías llamar a un servicio para traer los datos reales del taller
+    // Llamamos al endpoint que devuelve el usuario logueado
+    this.http.get<any>('http://localhost:8000/api/v1/usuarios/me', { headers }).subscribe({
+      next: (user) => {
+        this.usuarioNombre = user.nombre;
+        // Si tu backend devuelve el objeto taller dentro del usuario:
+        if (user.taller) {
+          this.tallerNombre = user.taller.nombre;
+        } else {
+          this.tallerNombre = "Mi Taller Pro";
+        }
+      },
+      error: () => {
+        this.tallerNombre = "Taller Pro";
+      }
+    });
   }
 }
