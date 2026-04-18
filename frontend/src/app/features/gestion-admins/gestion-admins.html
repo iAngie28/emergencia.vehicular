@@ -1,0 +1,34 @@
+<div style="padding: 20px;">
+  <h2>👥 Gestión de Administradores</h2>
+
+  <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 30px; border: 1px solid #eee;">
+    <h4>Agregar Nuevo Colega</h4>
+    <div style="display: flex; gap: 10px;">
+      <input [(ngModel)]="nuevoAdmin.nombre" placeholder="Nombre completo" type="text">
+      <input [(ngModel)]="nuevoAdmin.correo" placeholder="Correo" type="email">
+      <input [(ngModel)]="nuevoAdmin.clave" placeholder="Contraseña" type="clave">
+      <button (click)="registrar()" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+        + Invitar
+      </button>
+    </div>
+  </div>
+
+  <table style="width: 100%; border-collapse: collapse; background: white;">
+    <thead>
+      <tr style="background: #f8f9fa; text-align: left;">
+        <th style="padding: 12px; border-bottom: 2px solid #dee2e6;">Nombre</th>
+        <th style="padding: 12px; border-bottom: 2px solid #dee2e6;">Correo</th>
+        <th style="padding: 12px; border-bottom: 2px solid #dee2e6;">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let admin of admins">
+        <td style="padding: 12px; border-bottom: 1px solid #eee;">{{ admin.nombre }}</td>
+        <td style="padding: 12px; border-bottom: 1px solid #eee;">{{ admin.correo }}</td>
+        <td style="padding: 12px; border-bottom: 1px solid #eee;">
+          <button (click)="borrar(admin.id)" style="color: red; border: none; background: none; cursor: pointer;">🗑️ Eliminar</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>

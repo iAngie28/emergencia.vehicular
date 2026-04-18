@@ -5,6 +5,7 @@ import { MainLayoutComponent } from './shared/layouts/main-layout/main-layout';
 import { BitacoraComponent } from './features/bitacora/bitacora';
 import { RegistroTallerComponent } from './components/registro-taller/registro-taller';
 import { LandingComponent } from './components/landing/landing';
+import { GestionAdminsComponent } from './features/gestion-admins/gestion-admins';
 export const routes: Routes = [
   { path: '', component: LandingComponent },
 
@@ -19,6 +20,7 @@ export const routes: Routes = [
     children: [
       { path: 'dashboard', component: DashboardComponent },
       { path: 'bitacora', component: BitacoraComponent },
+      { path: 'administradores', component: GestionAdminsComponent },
       // Aquí agregarás los CRUDs: { path: 'vehiculos', component: VehiculosComponent }
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
     ]
