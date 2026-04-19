@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
+from pydantic import BaseModel
 
 from app.models.incidente import Incidente
 from app.models.pago import Pago as PagoModel
@@ -135,3 +136,56 @@ def cancelar_pago(
         nuevo={"estado": "cancelado"}
     )
     return {"status": "success", "mensaje": "Pago cancelado"}
+
+class PagoEdit(BaseModel):
+    monto: float
+    metodo_pago: str
+    estado: str
+
+@router.put("/{pago_id}")
+def editar_pago(
+    pago_id: int,
+    datos: PagoEdit,
+    db: Session = Depends(deps.get_db),
+    current_user = Depends(deps.get_current_admin_taller)
+):
+    # 1. Buscamos el pago
+    pago = db.query(PagoModel).filter(PagoModel.id == pago_id, PagoModel.taller_id == current_user.taller_id).first()
+    if not pago:
+        raise HTTPException(status_code=404, detail="Pago no encontrado")
+    
+    # 2. Seguridad: Solo editamos si estaba pendiente
+    if pago.estado != "pendiente":
+        raise HTTPException(status_code=400, detail="Solo se pueden editar cobros pendientes")
+
+    # Guardamos los datos anteriores para la bitácora
+    anterior_data = {"monto": pago.monto, "metodo": pago.metodo_pago, "estado": pago.estado}
+
+    # 3. Actualizamos los valores del pago
+    pago.monto = datos.monto
+    pago.metodo_pago = datos.metodo_pago
+    pago.estado = datos.estado
+    db.add(pago)
+
+    # 4. Sincronizamos el Incidente si el estado cambió desde el selector
+    if datos.estado == "completado":
+        incidente = db.query(Incidente).filter(Incidente.id == pago.incidente_id).first()
+        if incidente:
+            incidente.pago_estado = "pagado"
+            db.add(incidente)
+    elif datos.estado == "cancelado":
+        incidente = db.query(Incidente).filter(Incidente.id == pago.incidente_id).first()
+        if incidente:
+            incidente.pago_estado = "pendiente" # Vuelve a poder cobrarse
+            db.add(incidente)
+
+    # 5. Guardamos en BD y registramos en la Bitácora
+    db.commit()
+    bitacora_crud.registrar(
+        db, usuario_id=current_user.id, taller_id=current_user.taller_id,
+        tabla="pago", tabla_id=pago.id, accion="EDITAR_PAGO",
+        anterior=anterior_data,
+        nuevo={"monto": datos.monto, "metodo": datos.metodo_pago, "estado": datos.estado}
+    )
+
+    return {"status": "success", "mensaje": "Pago actualizado correctamente"}
