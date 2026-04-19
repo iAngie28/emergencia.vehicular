@@ -6,11 +6,16 @@ import { BitacoraComponent } from './features/bitacora/bitacora';
 import { RegistroTallerComponent } from './components/registro-taller/registro-taller';
 import { LandingComponent } from './components/landing/landing';
 import { GestionAdminsComponent } from './features/gestion-admins/gestion-admins';
+import { ForgotPasswordComponent } from './features/auth/forgot-password/forgot-password';
+import { ResetPasswordComponent } from './features/auth/reset-password/reset-password';
+
 export const routes: Routes = [
   { path: '', component: LandingComponent },
 
 
   { path: 'login', component: LoginComponent },
+  { path: 'forgot-password', component: ForgotPasswordComponent },
+  { path: 'reset-password', component: ResetPasswordComponent },
   { path: 'registro-taller', component: RegistroTallerComponent },
   
   // Agrupamos las rutas que llevan el Sidebar

@@ -2,7 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 
-// --- INTERFACES DIRECTAS (Para evitar errores de "no definido") ---
+// --- INTERFACES DIRECTAS ---
 export interface LoginRequest {
   username: string; 
   password: string;
@@ -40,7 +40,6 @@ export class AuthService {
    * REGISTRO SAAS: Crea Taller y Usuario Administrador al mismo tiempo
    */
   registerTaller(data: RegistroSaaS): Observable<LoginResponse> {
-    // Este se envía como JSON normal (por defecto en HttpClient)
     return this.http.post<LoginResponse>(`${this.baseUrl}/register-taller`, data).pipe(
       tap((response) => {
         localStorage.setItem('token', response.access_token);
@@ -56,7 +55,7 @@ export class AuthService {
     const body = new URLSearchParams();
     body.set('username', credentials.username);
     body.set('password', credentials.password);
-    body.set('client_id', 'web'); // 👈 El candado para que sepa que es la web
+    body.set('client_id', 'web');
 
     return this.http.post<LoginResponse>(`${this.baseUrl}/login`, body.toString(), {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
@@ -67,7 +66,7 @@ export class AuthService {
       })
     );
   }
-
+  
   /**
    * LOGOUT: Limpia el token y el estado
    */
@@ -85,5 +84,22 @@ export class AuthService {
       return !!localStorage.getItem('token');
     }
     return false;
+  }
+
+  // ==========================================
+  // --- MÉTODOS DE RECUPERACIÓN DE CLAVE ---
+  // ==========================================
+
+  solicitarRecuperacion(correo: string) {
+    // Apunta directamente a http://localhost:8000/api/v1/auth/forgot-password
+    return this.http.post(`${this.baseUrl}/forgot-password`, { correo });
+  }
+
+  restablecerClave(token: string, nueva_clave: string) {
+    // Apunta directamente a http://localhost:8000/api/v1/auth/reset-password
+    return this.http.post(`${this.baseUrl}/reset-password`, { 
+      token: token, 
+      nueva_clave: nueva_clave 
+    });
   }
 }
