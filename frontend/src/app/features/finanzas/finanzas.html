@@ -1,0 +1,116 @@
+<div class="finanzas-page" [class.panel-open]="pagoSeleccionado">
+  <div class="header">
+    <h1>💰 Finanzas y Cobros</h1>
+    <p class="subtitle">Gestiona los ingresos, audita el historial y corrige detalles de facturación.</p>
+  </div>
+
+  <div class="content-wrapper">
+    <div *ngIf="cargando" class="empty-state">Cargando historial financiero...</div>
+    <div *ngIf="!cargando && pagosHistorial.length === 0" class="empty-state">📭 Aún no tienes registros financieros.</div>
+
+    <table *ngIf="!cargando && pagosHistorial.length > 0" class="modern-table">
+      <thead>
+        <tr>
+          <th>ID Cobro</th>
+          <th>Incidente</th>
+          <th>Monto</th>
+          <th>Método</th>
+          <th>Estado</th>
+          <th>Acciones Rápidas</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let pago of pagosHistorial" (click)="verDetalle(pago)" class="clickable-row">
+          <td><strong>#{{ pago.id }}</strong></td>
+          <td class="incidente-text">Incidente #{{ pago.incidente_id }}</td>
+          <td class="monto-text">{{ pago.monto }} Bs.</td>
+          <td class="metodo-text">{{ pago.metodo_pago }}</td>
+          <td>
+            <span class="badge" [ngClass]="{
+              'badge-media': pago.estado === 'pendiente',
+              'badge-baja': pago.estado === 'completado',
+              'badge-alta': pago.estado === 'cancelado'
+            }">{{ pago.estado | uppercase }}</span>
+          </td>
+          <td class="action-cell">
+            <button *ngIf="pago.estado === 'pendiente'" class="btn-success" (click)="confirmarPago(pago.id); $event.stopPropagation()">✅ Confirmar</button>
+            <button *ngIf="pago.estado === 'completado'" class="btn-outline-danger" (click)="cancelarPago(pago.id); $event.stopPropagation()">❌ Anular</button>
+            <span *ngIf="pago.estado === 'cancelado'" class="text-muted"> Anulado ✖️</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <aside class="side-panel" [class.open]="pagoSeleccionado">
+    <div class="panel-header" *ngIf="pagoSeleccionado">
+      <h2>Cobro #{{ pagoSeleccionado.id }}</h2>
+      <button class="close-btn" (click)="cerrarDetalle()">✕</button>
+    </div>
+    
+    <div class="panel-body" *ngIf="pagoSeleccionado">
+      
+      <div class="info-card">
+        <label>Origen del Cobro:</label>
+        <p class="origin-text">Asociado al Incidente #{{ pagoSeleccionado.incidente_id }}</p>
+      </div>
+
+      <div class="edit-form" *ngIf="pagoSeleccionado.estado === 'pendiente'">
+        <div class="alert-info">✏️ Este cobro está pendiente. Puedes editar el monto o el método antes de procesarlo.</div>
+        
+        <label>Monto Total (Bs.):</label>
+        <input type="number" class="modern-input" [(ngModel)]="pagoEditado.monto">
+
+        <label>Método de Pago:</label>
+        <select class="modern-input" [(ngModel)]="pagoEditado.metodo_pago">
+          <option value="por_definir">Por Definir</option>
+          <option value="efectivo">Efectivo</option>
+          <option value="qr">Transferencia QR</option>
+          <option value="tarjeta">Tarjeta</option>
+        </select>
+      </div>
+
+      <div class="readonly-view" *ngIf="pagoSeleccionado.estado !== 'pendiente'">
+        
+        <div class="data-group">
+          <label>Monto Facturado:</label>
+          <p class="data-value">{{ pagoSeleccionado.monto }} Bs.</p>
+        </div>
+        
+        <div class="data-group">
+          <label>Método Registrado:</label>
+          <p class="data-value" style="text-transform: capitalize;">
+            {{ pagoSeleccionado.metodo_pago === 'por_definir' ? 'No especificado' : pagoSeleccionado.metodo_pago }}
+          </p>
+        </div>
+        
+        <div class="data-group">
+          <label>Estado Final:</label>
+          <p>
+            <span class="badge" [ngClass]="{
+              'badge-baja': pagoSeleccionado.estado === 'completado',
+              'badge-alta': pagoSeleccionado.estado === 'cancelado'
+            }">{{ pagoSeleccionado.estado | uppercase }}</span>
+          </p>
+        </div>
+
+      </div>
+
+      <div class="panel-footer">
+        
+        <button *ngIf="pagoSeleccionado.estado === 'pendiente'" class="btn-primary full-width" (click)="guardarCambios()">
+          💾 Guardar Cambios
+        </button>
+
+        <button *ngIf="pagoSeleccionado.estado === 'completado'" class="btn-outline-danger full-width" style="border-width: 2px;" (click)="cancelarPago(pagoSeleccionado.id)">
+          ❌ Anular y Revertir Cobro
+        </button>
+
+        <div *ngIf="pagoSeleccionado.estado === 'cancelado'" class="alert-danger">
+          🚫 Este cobro fue anulado permanentemente y ya no es válido en el sistema.
+        </div>
+
+      </div>
+    </div>
+  </aside>
+</div>

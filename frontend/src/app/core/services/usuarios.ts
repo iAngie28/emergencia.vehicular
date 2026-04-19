@@ -22,4 +22,13 @@ export class UsuariosService {
   eliminarAdmin(id: number): Observable<any> {
     return this.http.delete(`${this.apiUrl}/${id}`, { headers: this.getHeaders() });
   }
+
+  // src/app/core/services/usuarios.ts
+
+  actualizarAdmin(id: number, datos: any) {
+  // 🚩 USAR getHeaders() es vital para evitar el 401
+    return this.http.put(`${this.apiUrl}/${id}`, datos, { 
+      headers: this.getHeaders() 
+    });
+  }
 }

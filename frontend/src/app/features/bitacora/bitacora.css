@@ -1,80 +1,82 @@
-/* Contenedor principal */
-.container-fluid {
-  animation: fadeIn 0.5s ease-in;
+.bitacora-page {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
 }
 
-/* Encabezado */
-.header h2 {
-  color: #2c3e50;
-  letter-spacing: -0.5px;
+.header { margin-bottom: 25px; }
+.header h1 { margin: 0; color: #1e293b; font-size: 1.8rem; }
+.subtitle { color: #64748b; margin-top: 5px; }
+
+/* TABLA MODERNA */
+.modern-table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
+.modern-table th { background: #f8fafc; padding: 15px; text-align: left; color: #475569; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; }
+.modern-table td { padding: 15px; border-bottom: 1px solid #f1f5f9; vertical-align: top; color: #334155; }
+.hover-row:hover { background-color: #f8fafc; }
+
+/* TIPOGRAFÍA DE CELDAS */
+.date-cell { font-weight: 500; color: #475569; font-size: 0.9rem; white-space: nowrap; }
+.user-badge { background: #f1f5f9; padding: 4px 8px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; color: #475569; border: 1px solid #e2e8f0; }
+.table-name { font-weight: 700; color: #0f172a; font-size: 0.85rem; }
+
+/* ETIQUETAS DE ACCIÓN */
+.badge { padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; display: inline-block; letter-spacing: 0.5px; }
+.badge-success { background: #dcfce7; color: #10b981; border: 1px solid #bbf7d0; }
+.badge-info { background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; }
+.badge-danger { background: #fee2e2; color: #ef4444; border: 1px solid #fecaca; }
+.badge-default { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+
+/* VISUALIZADOR DE CÓDIGO (DIFF) */
+.json-cell { min-width: 250px; max-width: 400px; }
+.json-container { display: flex; flex-direction: column; gap: 10px; }
+.json-block { border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0; background: #fafafa; }
+
+.json-label { padding: 6px 10px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
+.old-val { border-left: 4px solid #ef4444; }
+.old-val .json-label { background: #fef2f2; color: #991b1b; border-bottom: 1px solid #fee2e2; }
+.new-val { border-left: 4px solid #10b981; }
+.new-val .json-label { background: #ecfdf5; color: #065f46; border-bottom: 1px solid #d1fae5; }
+
+pre { 
+  margin: 0; 
+  padding: 10px; 
+  font-family: 'Consolas', 'Monaco', monospace; 
+  font-size: 0.8rem; 
+  color: #334155; 
+  max-height: 120px; 
+  overflow-y: auto; 
+  white-space: pre-wrap; /* Evita que el JSON se salga a los lados */
+  word-break: break-all;
 }
 
-/* Contenedor de la tabla */
-.table-container {
-  border: 1px solid #e0e6ed;
-  overflow: hidden; /* Para que los bordes redondeados funcionen */
+/* SCROLLBARS */
+pre::-webkit-scrollbar { width: 6px; }
+pre::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+pre::-webkit-scrollbar-track { background: transparent; }
+
+.text-muted { color: #94a3b8; font-style: italic; font-size: 0.85rem; }
+.empty-state { text-align: center; padding: 40px; color: #64748b; font-size: 1.1rem; background: white; border-radius: 10px; border: 1px dashed #cbd5e1; }
+
+/* ANIMACIONES */
+.fade-in { animation: fadeIn 0.4s ease-in-out; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Badge para cuando la acción la hace un Humano */
+.user-badge { 
+  background: #f1f5f9; 
+  padding: 6px 10px; 
+  border-radius: 6px; 
+  font-weight: 600; 
+  font-size: 0.85rem; 
+  color: #334155; 
+  border: 1px solid #e2e8f0; 
+  display: inline-block;
 }
 
-/* Estilos de la tabla */
-table {
-  background: white;
-}
-
-thead th {
-  font-weight: 600;
-  text-transform: uppercase;
-  font-size: 0.75rem;
-  letter-spacing: 1px;
-  border: none !important;
-  padding: 15px !important;
-}
-
-tbody td {
-  vertical-align: middle;
-  padding: 15px !important;
-  border-bottom: 1px solid #f1f3f5;
-}
-
-/* Formato para el JSON (los cambios) */
-pre {
-  margin: 0;
-  max-height: 100px;
-  overflow-y: auto;
-  font-family: 'Consolas', 'Monaco', monospace;
-  font-size: 0.8rem;
-  color: #47525d;
-  border: 1px solid #ebf0f5;
-  scrollbar-width: thin; /* Para Firefox */
-}
-
-/* Scrollbar personalizada para el JSON */
-pre::-webkit-scrollbar {
-  width: 4px;
-}
-pre::-webkit-scrollbar-thumb {
-  background: #cbd5e0;
-  border-radius: 10px;
-}
-
-/* Badges y Colores de Acciones */
-.fw-bold.text-success { color: #27ae60 !important; }
-.fw-bold.text-primary { color: #2980b9 !important; }
-.fw-bold.text-danger  { color: #e74c3c !important; }
-
-.badge {
-  font-weight: 600;
-  padding: 5px 10px;
-}
-
-/* Animación de entrada */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* Responsividad para móviles */
-@media (max-width: 768px) {
-  pre {
-    max-width: 200px;
-  }
+/* Badge para cuando la acción la hace el Sistema automáticamente */
+.sistema-badge {
+  background: #fdf4ff;
+  color: #a21caf;
+  border-color: #fae8ff;
 }

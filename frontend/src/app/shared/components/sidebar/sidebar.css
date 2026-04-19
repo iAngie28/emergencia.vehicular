@@ -1,23 +1,135 @@
-.nav-link.active {
-  background-color: #007bff; /* Azul primario */
-  color: white !important;
+/* Contenedor Principal */
+.sidebar {
+  width: 260px;
+  height: 100vh;
+  background: #1e293b; /* Slate 800 - Muy Pro */
+  color: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem 1rem;
+  box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1);
+  position: fixed;
+}
+
+.sidebar-header {
+  padding: 0.5rem 1rem 2rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.brand {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #3b82f6; /* Azul brillante */
+  letter-spacing: -1px;
+}
+
+/* Perfil de Usuario */
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 1.5rem 1rem;
+  margin-bottom: 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  background: #3b82f6;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-weight: bold;
-  border-left: 4px solid #fff;
+  font-size: 1.2rem;
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
+}
+
+.user-info .user-name {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.user-role {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+/* Navegación */
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex-grow: 1;
 }
 
 .nav-label {
-  margin-top: 25px;
-  margin-left: 10px;
-  font-size: 0.75rem;
-  color: #6c757d;
-  font-weight: bold;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #64748b;
+  margin: 1.5rem 0 0.5rem 0.8rem;
 }
 
+.nav-link {
+  display: flex;
+  align-items: center;
+  padding: 0.8rem 1rem;
+  color: #94a3b8;
+  text-decoration: none;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  font-size: 0.95rem;
+}
+
+.nav-link span {
+  margin-right: 12px;
+  font-size: 1.2rem;
+}
+
+/* Efecto Hover */
+.nav-link:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #f8fafc;
+  transform: translateX(5px);
+}
+
+/* Estado Activo - Estilo Píldora */
+.nav-link.active {
+  background: #3b82f6 !important;
+  color: white !important;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+/* Footer y Botón Salir */
 .sidebar-footer {
-  margin-top: auto; /* Empuja el botón al fondo */
+  margin-top: auto;
   padding-top: 20px;
 }
-.nav-link span {
-  margin-right: 10px;
-  font-size: 1.1rem;
+
+.logout-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 0.8rem;
+  background: rgba(239, 68, 68, 0.1); /* Rojo muy suave */
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.logout-btn:hover {
+  background: #ef4444;
+  color: white;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
 }

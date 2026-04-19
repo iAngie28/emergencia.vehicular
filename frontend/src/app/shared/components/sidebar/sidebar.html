@@ -4,41 +4,40 @@
   </div>
 
   <div class="user-profile">
-    <div class="avatar">{{ usuario[0] }}</div>
+    <div class="avatar">{{ usuario[0] | uppercase }}</div>
     <div class="user-info">
       <p class="user-name">{{ usuario }}</p>
-      <span class="user-role text-muted">Administrador</span>
+      <span class="user-role">Administrador del Sistema</span>
     </div>
   </div>
 
   <nav class="sidebar-nav">
-    <p class="nav-label">OPERACIONES</p>
-    <a routerLink="/dashboard" routerLinkActive="active" class="nav-link">
-      <span>📊</span> Dashboard
-    </a>
-    
-    <a routerLink="/vehiculos" routerLinkActive="active" class="nav-link">
-      <span>🚗</span> Gestión de Vehículos
-    </a>
-    
-    <a routerLink="/incidentes" routerLinkActive="active" class="nav-link">
-      <span>🚨</span> Auxilios y Emergencias
-    </a>
+    <div class="nav-group">
+      <p class="nav-label">OPERACIONES</p>
+      <a routerLink="/dashboard" routerLinkActive="active" class="nav-link">
+        <span>📊</span> Dashboard
+      </a>
+      <a routerLink="/incidentes" routerLinkActive="active" class="nav-link">
+        <span>🚨</span> Auxilios y Emergencias
+      </a>
+      <a routerLink="/finanzas" routerLinkActive="active" class="nav-link">
+        <span>💰</span> Finanzas y Cobros
+      </a>
 
-    <p class="nav-label">CONFIGURACIÓN</p>
-    <a routerLink="/perfil-taller" routerLinkActive="active" class="nav-link">
-      <span>🏢</span> Mi Taller
-    </a>
-    <a routerLink="/administradores" routerLinkActive="active" class="nav-link">
-      <span>👥</span> Gestión de Admins
-    </a>
+      <p class="nav-label">CONFIGURACIÓN</p>
+      <a routerLink="/perfil-taller" routerLinkActive="active" class="nav-link">
+        <span>🏢</span> Mi Taller
+      </a>
+      <a routerLink="/administradores" routerLinkActive="active" class="nav-link">
+        <span>👥</span> Gestión de Admins
+      </a>
 
-    <p class="nav-label">CONTROL Y QA</p>
-  <a routerLink="/bitacora" routerLinkActive="active" class="nav-link">
-    <span>📜</span> Bitácora de Auditoría
-  </a>
+      <p class="nav-label">CONTROL Y QA</p>
+      <a routerLink="/bitacora" routerLinkActive="active" class="nav-link">
+        <span>📜</span> Bitácora de Auditoría
+      </a>
+    </div>
 
-  
     <div class="sidebar-footer">
       <button class="logout-btn" (click)="onLogout()">
         🚪 Cerrar Sesión

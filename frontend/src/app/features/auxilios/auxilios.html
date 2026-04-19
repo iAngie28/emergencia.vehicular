@@ -1,0 +1,109 @@
+<div class="auxilios-page" [class.panel-open]="incidenteSeleccionado">
+  <div class="header">
+    <h1>🚨 Gestión de Auxilios y Emergencias</h1>
+    <p class="subtitle">Visualiza y atiende las solicitudes de asistencia vehicular en tiempo real.</p>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn" [class.active]="tabActiva === 'pendientes'" (click)="cambiarTab('pendientes')">
+      Disponibles <span>({{ incidentesPendientes.length }})</span>
+    </button>
+    <button class="tab-btn" [class.active]="tabActiva === 'mis-atenciones'" (click)="cambiarTab('mis-atenciones')">
+      Mis Atenciones <span>({{ misAtenciones.length }})</span>
+    </button>
+  </div>
+
+  <div class="content-wrapper">
+    <div *ngIf="tabActiva === 'pendientes'">
+      <div *ngIf="incidentesPendientes.length === 0" class="empty-state">📭 No hay solicitudes pendientes.</div>
+      <table *ngIf="incidentesPendientes.length > 0" class="modern-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Prioridad</th>
+            <th>Detalle del Incidente</th>
+            <th>Acción</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let inc of incidentesPendientes" (click)="verDetalle(inc)" class="clickable-row">
+            <td><strong>#{{ inc.id }}</strong></td>
+            <td><span class="badge" [ngClass]="'badge-' + inc.prioridad">{{ inc.prioridad | uppercase }}</span></td>
+            <td><p class="diagnostico">{{ inc.resumen_ia }}</p></td>
+            <td><button class="btn-primary" (click)="aceptarAuxilio(inc.id); $event.stopPropagation()">Aceptar Auxilio</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="tabActiva === 'mis-atenciones'">
+      <div *ngIf="misAtenciones.length === 0" class="empty-state">🚧 No tienes auxilios activos.</div>
+      <table *ngIf="misAtenciones.length > 0" class="modern-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Estado Operativo</th>
+            <th>Detalle del Incidente</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let inc of misAtenciones" (click)="verDetalle(inc)" class="clickable-row">
+            <td><strong>#{{ inc.id }}</strong></td>
+            <td><span class="status-dot" [ngClass]="inc.estado"></span> <span class="status-text">{{ inc.estado }}</span></td>
+            <td><p class="diagnostico">{{ inc.resumen_ia }}</p></td>
+            <td class="action-cell">
+              <button *ngIf="inc.estado !== 'atendido'" class="btn-success" (click)="finalizarAuxilio(inc.id); $event.stopPropagation()">✅ Finalizar Servicio</button>
+              
+              <button *ngIf="inc.estado === 'atendido' && inc.pago_estado === 'pendiente'" class="btn-pay" (click)="abrirModalCobro(inc); $event.stopPropagation()">💵 Emitir Cobro</button>
+              
+              <span *ngIf="inc.pago_estado === 'por_cobrar'" style="color: #d97706; font-weight: bold;">⏳ Cobro Emitido</span>
+              <span *ngIf="inc.pago_estado === 'pagado'" style="color: #10b981; font-weight: bold; background: #dcfce7; padding: 4px 8px; border-radius: 6px;">Pagado ✅</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <aside class="side-panel" [class.open]="incidenteSeleccionado">
+    <div class="panel-header" *ngIf="incidenteSeleccionado">
+      <h2>Incidente #{{ incidenteSeleccionado.id }}</h2>
+      <button class="close-btn" (click)="cerrarDetalle()">✕</button>
+    </div>
+    <div class="panel-body" *ngIf="incidenteSeleccionado">
+      <div class="info-card">
+        <label style="font-weight: bold; color: #475569;">🎙️ Audio Original:</label>
+        <p class="voice-text">"{{ incidenteSeleccionado.transcripcion_audio }}"</p>
+      </div>
+      <div class="info-grid">
+        <label style="font-weight: bold; color: #475569; margin-top: 15px; display: block;">👤 Cliente:</label>
+        <p>{{ incidenteSeleccionado.cliente_nombre || 'Usuario' }}</p>
+        
+        <label style="font-weight: bold; color: #475569; margin-top: 15px; display: block;">📞 Teléfono:</label>
+        <p>{{ incidenteSeleccionado.telefono_cliente || 'No disponible' }}</p>
+      </div>
+      <div class="panel-footer" style="margin-top: 30px;">
+        <a [href]="'tel:' + incidenteSeleccionado.telefono_cliente" class="btn-call">📞 Llamar al Cliente</a>
+      </div>
+    </div>
+  </aside>
+
+  <div class="modal-overlay" *ngIf="mostrarModalCobro">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>💵 Emitir Cobro #{{ incidenteACobrar?.id }}</h3>
+      </div>
+      
+      <div class="modal-body">
+        <label style="display: block; text-align: left; margin-bottom: 10px; font-weight: 600; color: #334155;">Monto Total del Servicio (Bs.):</label>
+        <input type="number" class="modern-input" [(ngModel)]="montoCobro" placeholder="Ej: 150.00">
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-outline" (click)="cerrarModalCobro()">Cancelar</button>
+        <button class="btn-primary" (click)="generarCobro()">Emitir Cobro</button>
+      </div>
+    </div>
+  </div>
+</div>

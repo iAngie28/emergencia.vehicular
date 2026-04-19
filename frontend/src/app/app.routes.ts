@@ -9,7 +9,8 @@ import { GestionAdminsComponent } from './features/gestion-admins/gestion-admins
 import { ForgotPasswordComponent } from './features/auth/forgot-password/forgot-password';
 import { ResetPasswordComponent } from './features/auth/reset-password/reset-password';
 import { PerfilTallerComponent } from './features/perfil-taller/perfil-taller';
-
+import { AuxiliosComponent } from './features/auxilios/auxilios';
+import { FinanzasComponent } from './features/finanzas/finanzas';
 export const routes: Routes = [
   // 1. AGREGA ESTO: pathMatch: 'full' es obligatorio para la ruta raíz
   { path: '', component: LandingComponent, pathMatch: 'full' }, 
@@ -25,6 +26,8 @@ export const routes: Routes = [
     children: [
       { path: 'dashboard', component: DashboardComponent },
       { path: 'bitacora', component: BitacoraComponent },
+      { path: 'finanzas', component: FinanzasComponent },
+      { path: 'incidentes', component: AuxiliosComponent },
       { path: 'perfil-taller', component: PerfilTallerComponent }, // 👈 Revisa que el nombre sea IDÉNTICO al routerLink
       { path: 'administradores', component: GestionAdminsComponent },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }

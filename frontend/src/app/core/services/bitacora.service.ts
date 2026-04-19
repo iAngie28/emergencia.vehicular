@@ -11,6 +11,8 @@ export interface BitacoraEntry {
   fecha_hora: string;
   usuario_id: number;
   taller_id: number;
+  usuario_nombre?: string;
+  tabla_id?: number;
 }
 
 @Injectable({ providedIn: 'root' })

@@ -1,34 +1,72 @@
-<div style="padding: 20px;">
-  <h2>👥 Gestión de Administradores</h2>
+<div class="admin-container">
+  <div class="header-section">
+    <h2>👥 Gestión de Administradores</h2>
+    <p class="subtitle">Administra los accesos de tu equipo técnico y administrativo.</p>
+  </div>
 
-  <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 30px; border: 1px solid #eee;">
-    <h4>Agregar Nuevo Colega</h4>
-    <div style="display: flex; gap: 10px;">
-      <input [(ngModel)]="nuevoAdmin.nombre" placeholder="Nombre completo" type="text">
-      <input [(ngModel)]="nuevoAdmin.correo" placeholder="Correo" type="email">
-      <input [(ngModel)]="nuevoAdmin.clave" placeholder="Contraseña" type="clave">
-      <button (click)="registrar()" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
-        + Invitar
+  <div class="form-card">
+    <div class="card-header">
+      <h4>{{ editandoId ? '✏️ Editando Administrador' : '➕ Agregar Nuevo Administrador' }}</h4>
+    </div>
+    
+    <div class="form-grid">
+      <div class="input-group">
+        <label>Nombre Completo</label>
+        <input [(ngModel)]="nuevoAdmin.nombre" placeholder="Ej. Juan Perez" type="text">
+      </div>
+      <div class="input-group">
+        <label>Correo Electrónico</label>
+        <input [(ngModel)]="nuevoAdmin.correo" placeholder="correo@taller.com" type="email">
+      </div>
+      <div class="input-group">
+        <label>Teléfono</label>
+        <input [(ngModel)]="nuevoAdmin.telefono" placeholder="70012345" type="text">
+      </div>
+      <div class="input-group">
+        <label>{{ editandoId ? 'Nueva Clave (opcional)' : 'Contraseña' }}</label>
+        <input [(ngModel)]="nuevoAdmin.clave" type="password" placeholder="********">
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button (click)="guardar()" [ngClass]="editandoId ? 'btn-update' : 'btn-save'">
+        {{ editandoId ? 'Actualizar Datos' : 'Registrar Administrador' }}
+      </button>
+      <button *ngIf="editandoId" (click)="cancelarEdicion()" class="btn-cancel">
+        Cancelar
       </button>
     </div>
   </div>
 
-  <table style="width: 100%; border-collapse: collapse; background: white;">
-    <thead>
-      <tr style="background: #f8f9fa; text-align: left;">
-        <th style="padding: 12px; border-bottom: 2px solid #dee2e6;">Nombre</th>
-        <th style="padding: 12px; border-bottom: 2px solid #dee2e6;">Correo</th>
-        <th style="padding: 12px; border-bottom: 2px solid #dee2e6;">Acciones</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let admin of admins">
-        <td style="padding: 12px; border-bottom: 1px solid #eee;">{{ admin.nombre }}</td>
-        <td style="padding: 12px; border-bottom: 1px solid #eee;">{{ admin.correo }}</td>
-        <td style="padding: 12px; border-bottom: 1px solid #eee;">
-          <button (click)="borrar(admin.id)" style="color: red; border: none; background: none; cursor: pointer;">🗑️ Eliminar</button>
-        </td>
-      </tr>
-    </tbody>
-  </table>
+  <div class="table-responsive">
+    <table class="modern-table">
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Contacto</th>
+          <th>Estado</th>
+          <th class="text-center">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let admin of admins">
+          <td class="user-cell">
+            <div class="avatar">{{ admin.nombre[0] }}</div>
+            <span>{{ admin.nombre }}</span>
+          </td>
+          <td>
+            <div class="contact-info">
+              <span class="email">{{ admin.correo }}</span>
+              <span class="phone">{{ admin.telefono || 'Sin teléfono' }}</span>
+            </div>
+          </td>
+          <td><span class="status-badge">Activo</span></td>
+          <td class="actions-cell">
+            <button (click)="prepararEdicion(admin)" class="action-btn edit">✏️</button>
+            <button (click)="borrar(admin.id)" class="action-btn delete">🗑️</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 </div>

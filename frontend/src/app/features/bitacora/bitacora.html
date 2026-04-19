@@ -1,42 +1,64 @@
-<div class="container-fluid py-4">
-  <div class="header mb-4">
-    <h2 class="fw-bold">📜 Auditoría del Sistema (Bitácora)</h2>
-    <p class="text-muted">Registros exclusivos de este taller</p>
+<div class="bitacora-page">
+  <div class="header">
+    <h1>📜 Auditoría del Sistema</h1>
+    <p class="subtitle">Rastreo inmutable de operaciones, accesos y cambios de estado en tu taller.</p>
   </div>
 
-  <div class="table-container shadow-sm bg-white rounded">
-    <table class="table table-hover mb-0">
-      <thead class="table-dark">
+  <div class="content-wrapper">
+    <div *ngIf="logs.length === 0" class="empty-state">
+      📭 La bitácora está vacía. Aún no hay eventos registrados.
+    </div>
+
+    <table *ngIf="logs.length > 0" class="modern-table fade-in">
+      <thead>
         <tr>
-          <th>Fecha</th>
-          <th>Tabla</th>
-          <th>Acción</th>
-          <th>Cambios Realizados</th>
+          <th>Fecha y Hora</th>
+          <th>Responsable</th>
+          <th>Módulo / Registro</th>
+          <th>Operación</th>
+          <th>Detalle de Cambios (Diff)</th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let log of logs">
-          <td>{{ log.fecha_hora | date:'short' }}</td>
-          <td><span class="badge bg-secondary">{{ log.tabla }}</span></td>
+        <tr *ngFor="let log of logs" class="hover-row">
+          
+          <td class="date-cell">
+            <span class="icon">🕒</span> {{ log.fecha_hora | date:'dd/MM/yyyy, HH:mm' }}
+          </td>
+          
           <td>
-            <span [ngClass]="{
-              'text-success': log.accion === 'crear',
-              'text-primary': log.accion === 'actualizar',
-              'text-danger': log.accion === 'eliminar'
-            }" class="fw-bold text-uppercase">
-              {{ log.accion }}
+  <span class="user-badge" [ngClass]="{'sistema-badge': log.usuario_nombre === 'Sistema'}">
+    {{ log.usuario_nombre === 'Sistema' ? '⚙️' : '👤' }} {{ log.usuario_nombre }}
+  </span>
+</td>
+          
+          <td class="table-name">
+            🗂️ {{ log.tabla | uppercase }} <span *ngIf="log.tabla_id">#{{ log.tabla_id }}</span>
+          </td>
+          
+          <td>
+            <span class="badge" [ngClass]="getBadgeColor(log.accion)">
+              {{ log.accion | uppercase }}
             </span>
           </td>
-          <td style="font-size: 0.85rem;">
-            <div *ngIf="log.valor_anterior" class="mb-1">
-              <span class="text-muted small">Anterior:</span>
-              <pre class="bg-light p-1 rounded">{{ log.valor_anterior | json }}</pre>
+          
+          <td class="json-cell">
+            <div class="json-container" *ngIf="log.valor_anterior || log.valor_nuevo">
+              
+              <div class="json-block old-val" *ngIf="log.valor_anterior">
+                <div class="json-label">➖ Valor Anterior</div>
+                <pre>{{ log.valor_anterior | json }}</pre>
+              </div>
+
+              <div class="json-block new-val" *ngIf="log.valor_nuevo">
+                <div class="json-label">➕ Valor Nuevo</div>
+                <pre>{{ log.valor_nuevo | json }}</pre>
+              </div>
+
             </div>
-            <div>
-              <span class="text-primary small">Nuevo:</span>
-              <pre class="bg-light p-1 rounded">{{ log.valor_nuevo | json }}</pre>
-            </div>
+            <span *ngIf="!log.valor_anterior && !log.valor_nuevo" class="text-muted">No se registraron datos en esta acción.</span>
           </td>
+
         </tr>
       </tbody>
     </table>
