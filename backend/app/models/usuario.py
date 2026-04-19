@@ -10,7 +10,8 @@ class Usuario(Base):
     nombre = Column(String, nullable=False)
     correo = Column(String, unique=True, index=True, nullable=False)
     clave_hash = Column(String, nullable=False)
-    
+    telefono = Column(String(20), nullable=True)
+
     # --- LLAVES FORÁNEAS (Físicas en la DB) ---
     rol_id = Column(
         Integer, 

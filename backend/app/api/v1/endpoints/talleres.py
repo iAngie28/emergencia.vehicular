@@ -60,13 +60,20 @@ def actualizar_mi_taller(
     current_user = Depends(deps.get_current_active_user)
 ):
     taller_db = taller_crud.get(db, id=current_user.taller_id)
-    
-    # 💾 USAMOS jsonable_encoder AQUÍ PARA EVITAR EL ERROR DE DECIMAL
-    nuevo_contenido = jsonable_encoder(obj_in)
-    anterior_contenido = jsonable_encoder(taller_db)
+    if not taller_db:
+        raise HTTPException(status_code=404, detail="Taller no encontrado")
 
+    # 💾 Preparamos los datos para la Bitácora (limpios de Decimals)
+    # jsonable_encoder asegura que latitud/longitud sean serializables
+    anterior_contenido = jsonable_encoder(taller_db)
+    
+    # Realizamos la actualización en la DB
     taller_actualizado = taller_crud.update(db, db_obj=taller_db, obj_in=obj_in)
     
+    # Obtenemos el contenido nuevo ya procesado
+    nuevo_contenido = jsonable_encoder(taller_actualizado)
+
+    # 📝 REGISTRO COMPLETO EN BITÁCORA
     bitacora_crud.registrar(
         db,
         usuario_id=current_user.id,
@@ -74,8 +81,10 @@ def actualizar_mi_taller(
         tabla="talleres",
         tabla_id=taller_db.id,
         accion="UPDATE_PERFIL_TALLER",
-        nuevo=nuevo_contenido # 👈 Ahora sí es serializable
+        anterior=anterior_contenido, # 👈 ¡Faltaba pasar este!
+        nuevo=nuevo_contenido
     )
+    
     return taller_actualizado
 
 # 4. Leer un taller por su ID (Genérico)

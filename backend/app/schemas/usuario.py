@@ -8,6 +8,7 @@ class UsuarioBase(BaseModel):
     nombre: str = Field(..., min_length=3, max_length=100)
     correo: EmailStr
     rol_id: Optional[int] = None
+    telefono: Optional[str] = None
     taller_id: Optional[int] = None
     taller: Optional[Taller] = None
 
@@ -22,6 +23,7 @@ class UsuarioUpdate(BaseModel):
     rol_id: Optional[int] = None
     taller_id: Optional[int] = None
     clave: Optional[str] = Field(None, min_length=8)
+    telefono: Optional[str] = None
 
 # Respuesta: Lo que enviamos al Frontend (Angular/Flutter)
 class Usuario(UsuarioBase):

@@ -9,7 +9,8 @@ class TallerBase(BaseModel):
     latitud: Optional[Decimal] = Field(None, ge=-90, le=90)
     longitud: Optional[Decimal] = Field(None, ge=-180, le=180)
     estado: bool = True
-    comision_porcentaje: float = 10.0
+    telefono: Optional[str] = None 
+    comision_porcentaje: Optional[float] = None
 
 class TallerCreate(TallerBase):
     pass
@@ -21,7 +22,7 @@ class TallerUpdate(BaseModel):
     longitud: Optional[Decimal] = None
     estado: Optional[bool] = None
     comision_porcentaje: Optional[float] = None
-
+    telefono: Optional[str] = None
 class Taller(TallerBase):
     id: int
 

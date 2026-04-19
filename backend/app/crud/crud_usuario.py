@@ -17,6 +17,7 @@ class CRUDUsuario(CRUDBase[Usuario, UsuarioCreate, UsuarioUpdate]):
         db_obj = Usuario(
             nombre=obj_in.nombre,
             correo=obj_in.correo,
+            telefono=obj_in.telefono,
             clave_hash=obtener_hash_clave(obj_in.clave),
             rol_id=obj_in.rol_id,
             taller_id=obj_in.taller_id

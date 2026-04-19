@@ -1,8 +1,8 @@
 """'Initial_Reset'
 
-Revision ID: 63e1dd55dd7b
+Revision ID: 5da2ecd33be6
 Revises: 
-Create Date: 2026-04-18 22:46:11.512530
+Create Date: 2026-04-18 23:33:45.241932
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '63e1dd55dd7b'
+revision: str = '5da2ecd33be6'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -42,6 +42,7 @@ def upgrade() -> None:
     sa.Column('direccion', sa.String(length=200), nullable=True),
     sa.Column('latitud', sa.Numeric(precision=10, scale=8), nullable=True),
     sa.Column('longitud', sa.Numeric(precision=11, scale=8), nullable=True),
+    sa.Column('telefono', sa.String(length=20), nullable=True),
     sa.Column('estado', sa.Boolean(), nullable=True),
     sa.Column('comision_porcentaje', sa.Float(), nullable=True),
     sa.PrimaryKeyConstraint('id')
@@ -70,6 +71,7 @@ def upgrade() -> None:
     sa.Column('nombre', sa.String(), nullable=False),
     sa.Column('correo', sa.String(), nullable=False),
     sa.Column('clave_hash', sa.String(), nullable=False),
+    sa.Column('telefono', sa.String(length=20), nullable=True),
     sa.Column('rol_id', sa.Integer(), nullable=False),
     sa.Column('taller_id', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['rol_id'], ['rol.id'], ondelete='RESTRICT'),

@@ -8,6 +8,7 @@ class Taller(Base):
     direccion = Column(String(200))
     latitud = Column(Numeric(10, 8))
     longitud = Column(Numeric(11, 8))
+    telefono = Column(String(20))
     estado = Column(Boolean, default=True) # Activo o Inactivo
     comision_porcentaje = Column(Float, default=10.0) # Tu ganancia [Audio]
 

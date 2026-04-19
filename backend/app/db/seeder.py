@@ -5,9 +5,8 @@ from app.db.base import Base
 from app.models.rol import Rol
 from app.models.taller import Taller
 from app.models.usuario import Usuario
-from app.models.vehiculo import Vehiculo   # 👈 Agregado
-from app.models.incidente import Incidente # 👈 Agregado
-# Asegúrate de importar tu función para encriptar contraseñas. 
+from app.models.vehiculo import Vehiculo   
+from app.models.incidente import Incidente 
 from app.core.security import obtener_hash_clave as get_password_hash
 
 logging.basicConfig(level=logging.INFO)
@@ -15,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 def seed_db(db: Session) -> None:
     # ==========================================
-    # 1. CREAR ROLES (Si no existen)
+    # 1. CREAR ROLES
     # ==========================================
     roles_base = [
         {"id": 1, "nombre": "Administrador de Taller"},
@@ -31,13 +30,14 @@ def seed_db(db: Session) -> None:
     logger.info("✅ Roles verificados/creados.")
 
     # ==========================================
-    # 2. CREAR TALLERES BASE
+    # 2. CREAR TALLERES BASE (Con Teléfono)
     # ==========================================
     talleres_base = [
         {
             "id": 1, 
             "nombre": "Mecánica Central 2do Anillo", 
             "direccion": "Av. Cristóbal de Mendoza", 
+            "telefono": "+591 33445566", # 🚩 Agregado
             "latitud": -17.7761, 
             "longitud": -63.1782, 
             "comision_porcentaje": 10.0
@@ -46,6 +46,7 @@ def seed_db(db: Session) -> None:
             "id": 2, 
             "nombre": "AutoServicio Equipetrol", 
             "direccion": "Av. San Martín", 
+            "telefono": "+591 33778899", # 🚩 Agregado
             "latitud": -17.7654, 
             "longitud": -63.1956, 
             "comision_porcentaje": 12.5
@@ -61,22 +62,22 @@ def seed_db(db: Session) -> None:
     logger.info("✅ Talleres verificados/creados.")
 
     # ==========================================
-    # 3. CREAR USUARIOS (Admins y Clientes)
+    # 3. CREAR USUARIOS (Con Teléfono)
     # ==========================================
-    clave_generica = get_password_hash("pas12345") # Contraseña estándar para pruebas
+    clave_generica = get_password_hash("pas12345") 
 
     usuarios_base = [
-        # Administradores del Taller 1 (Tienen rol_id=1 y taller_id=1)
-        {"nombre": "Admin Taller 1A", "correo": "adm1a@taller.com", "clave_hash": clave_generica, "rol_id": 1, "taller_id": 1},
-        {"nombre": "Admin Taller 1B", "correo": "adm1b@taller.com", "clave_hash": clave_generica, "rol_id": 1, "taller_id": 1},
+        # Administradores Taller 1
+        {"nombre": "Admin Taller 1A", "correo": "adm1a@taller.com", "telefono": "70011111", "clave_hash": clave_generica, "rol_id": 1, "taller_id": 1},
+        {"nombre": "Admin Taller 1B", "correo": "adm1b@taller.com", "telefono": "70011112", "clave_hash": clave_generica, "rol_id": 1, "taller_id": 1},
         
-        # Administradores del Taller 2 (Tienen rol_id=1 y taller_id=2)
-        {"nombre": "Admin Taller 2A", "correo": "adm2a@taller.com", "clave_hash": clave_generica, "rol_id": 1, "taller_id": 2},
-        {"nombre": "Admin Taller 2B", "correo": "adm2b@taller.com", "clave_hash": clave_generica, "rol_id": 1, "taller_id": 2},
+        # Administradores Taller 2
+        {"nombre": "Admin Taller 2A", "correo": "adm2a@taller.com", "telefono": "70022221", "clave_hash": clave_generica, "rol_id": 1, "taller_id": 2},
+        {"nombre": "Admin Taller 2B", "correo": "adm2b@taller.com", "telefono": "70022222", "clave_hash": clave_generica, "rol_id": 1, "taller_id": 2},
         
-        # Clientes de la App (Tienen rol_id=2 y taller_id=None)
-        {"nombre": "Carlos Cliente", "correo": "carlos@cliente.com", "clave_hash": clave_generica, "rol_id": 2, "taller_id": None},
-        {"nombre": "Maria Cliente", "correo": "maria@cliente.com", "clave_hash": clave_generica, "rol_id": 2, "taller_id": None},
+        # Clientes
+        {"nombre": "Carlos Cliente", "correo": "carlos@cliente.com", "telefono": "71111111", "clave_hash": clave_generica, "rol_id": 2, "taller_id": None},
+        {"nombre": "Maria Cliente", "correo": "maria@cliente.com", "telefono": "72222222", "clave_hash": clave_generica, "rol_id": 2, "taller_id": None},
     ]
 
     for u in usuarios_base:
@@ -88,7 +89,7 @@ def seed_db(db: Session) -> None:
     logger.info("✅ Usuarios verificados/creados.")
 
     # ==========================================
-    # 4. CREAR VEHÍCULOS PARA CLIENTES (NUEVO)
+    # 4. CREAR VEHÍCULOS
     # ==========================================
     carlos = db.query(Usuario).filter(Usuario.correo == "carlos@cliente.com").first()
     maria = db.query(Usuario).filter(Usuario.correo == "maria@cliente.com").first()
@@ -107,7 +108,7 @@ def seed_db(db: Session) -> None:
     logger.info("✅ Vehículos de prueba creados.")
 
     # ==========================================
-    # 5. CREAR INCIDENTES PENDIENTES (NUEVO)
+    # 5. CREAR INCIDENTES PENDIENTES
     # ==========================================
     v_carlos = db.query(Vehiculo).filter(Vehiculo.usuario_id == carlos.id).first()
     v_maria = db.query(Vehiculo).filter(Vehiculo.usuario_id == maria.id).first()
@@ -138,7 +139,6 @@ def seed_db(db: Session) -> None:
     ]
 
     for i in incidentes_base:
-        # Evitamos duplicar incidentes pendientes para el mismo vehículo
         incidente = db.query(Incidente).filter(
             Incidente.vehiculo_id == i["vehiculo_id"], 
             Incidente.estado == "pendiente"

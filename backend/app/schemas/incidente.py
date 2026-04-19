@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import Optional
 from decimal import Decimal
-
+from pydantic import BaseModel, Field, root_validator
 class IncidenteBase(BaseModel):
     vehiculo_id: int
     usuario_id: int
@@ -10,6 +10,19 @@ class IncidenteBase(BaseModel):
     longitud: Decimal = Field(..., ge=-180, le=180)
     prioridad: str = "media" # 'baja', 'media', 'alta'
     estado: str = "pendiente"
+    telefono_cliente: str = "No disponible"
+
+    class Config:
+        from_attributes = True
+
+    @root_validator(pre=True)
+    def extraer_telefono(cls, values):
+        # 🚩 Si 'values' es un objeto de SQLAlchemy (ORM)
+        usuario = getattr(values, "usuario", None)
+        if usuario:
+            # Buscamos el atributo 'telefono' en el modelo Usuario
+            values.telefono_cliente = getattr(usuario, "telefono", "No disponible")
+        return values
 
 class IncidenteCreate(IncidenteBase):
     # Campos que llena la IA inicialmente
