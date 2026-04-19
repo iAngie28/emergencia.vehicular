@@ -1,0 +1,1 @@
+ D:\\SEM_1_2026\\SI2\\1er\ Parcial\\emergencia.vehicular\\app_v\\.dart_tool\\flutter_build\\9af50c6b33686ab9cdb0accdc4f80d53\\dart_build_result.json: 
