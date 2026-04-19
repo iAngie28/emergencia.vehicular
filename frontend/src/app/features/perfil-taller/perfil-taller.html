@@ -1,0 +1,52 @@
+<div class="perfil-container">
+  <div class="header">
+    <h2>🏢 Gestión de Perfil del Taller</h2>
+    <p>Ubica tu taller en el mapa para que los clientes te encuentren en emergencias.</p>
+  </div>
+
+  <div class="perfil-grid">
+    <div class="form-section">
+      <form (ngSubmit)="guardar()" #f="ngForm">
+        <div class="form-group">
+          <label>Nombre del Taller</label>
+          <input type="text" [(ngModel)]="taller.nombre" name="nombre" required>
+        </div>
+
+        <div class="form-group">
+          <label>Dirección</label>
+          <input type="text" [(ngModel)]="taller.direccion" name="direccion" required>
+        </div>
+
+        <div class="coords">
+          <div class="form-group">
+            <label>Latitud</label>
+            <input type="number" [value]="taller.latitud | number:'1.6-6'" readonly>
+          </div>
+          <div class="form-group">
+            <label>Longitud</label>
+            <input type="number" [value]="taller.longitud | number:'1.6-6'" readonly>
+          </div>
+        </div>
+
+        <div class="status-box">
+          <label class="switch">
+            <input type="checkbox" [(ngModel)]="taller.estado" name="estado">
+            <span class="slider"></span>
+          </label>
+          <span>{{ taller.estado ? 'Disponible para Emergencias' : 'Fuera de Línea' }}</span>
+        </div>
+
+        <button type="submit" [disabled]="cargando" class="btn-save">
+          {{ cargando ? 'Guardando...' : '💾 Guardar Cambios' }}
+        </button>
+
+        <div *ngIf="mensaje" class="alert success">{{ mensaje }}</div>
+      </form>
+    </div>
+
+    <div class="map-section">
+      <label>Selecciona tu ubicación exacta:</label>
+      <div id="map"></div>
+    </div>
+  </div>
+</div>

@@ -8,28 +8,28 @@ import { LandingComponent } from './components/landing/landing';
 import { GestionAdminsComponent } from './features/gestion-admins/gestion-admins';
 import { ForgotPasswordComponent } from './features/auth/forgot-password/forgot-password';
 import { ResetPasswordComponent } from './features/auth/reset-password/reset-password';
+import { PerfilTallerComponent } from './features/perfil-taller/perfil-taller';
 
 export const routes: Routes = [
-  { path: '', component: LandingComponent },
-
+  // 1. AGREGA ESTO: pathMatch: 'full' es obligatorio para la ruta raíz
+  { path: '', component: LandingComponent, pathMatch: 'full' }, 
 
   { path: 'login', component: LoginComponent },
   { path: 'forgot-password', component: ForgotPasswordComponent },
   { path: 'reset-password', component: ResetPasswordComponent },
   { path: 'registro-taller', component: RegistroTallerComponent },
   
-  // Agrupamos las rutas que llevan el Sidebar
   {
     path: '',
     component: MainLayoutComponent,
     children: [
       { path: 'dashboard', component: DashboardComponent },
       { path: 'bitacora', component: BitacoraComponent },
+      { path: 'perfil-taller', component: PerfilTallerComponent }, // 👈 Revisa que el nombre sea IDÉNTICO al routerLink
       { path: 'administradores', component: GestionAdminsComponent },
-      // Aquí agregarás los CRUDs: { path: 'vehiculos', component: VehiculosComponent }
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
     ]
   },
-
-  { path: '**', redirectTo: '/login',}
+  // Este es el que te está mandando al login si algo falla arriba
+  { path: '**', redirectTo: '/login' }
 ];
