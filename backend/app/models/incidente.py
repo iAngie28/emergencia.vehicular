@@ -32,6 +32,7 @@ class Incidente(Base):
     longitud = Column(Numeric(11, 8))
     prioridad = Column(String(20)) # 'baja', 'media', 'alta'
     estado = Column(String(20), default="pendiente") # 'pendiente', 'en_proceso', 'atendido'
+    pago_estado = Column(String(20), default="pendiente")
     
     # --- CAMPOS PARA LA IA (Core del proyecto) ---
     transcripcion_audio = Column(Text)

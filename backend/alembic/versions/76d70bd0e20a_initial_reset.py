@@ -1,8 +1,8 @@
 """'Initial_Reset'
 
-Revision ID: 5da2ecd33be6
+Revision ID: 76d70bd0e20a
 Revises: 
-Create Date: 2026-04-18 23:33:45.241932
+Create Date: 2026-04-19 02:34:10.655515
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '5da2ecd33be6'
+revision: str = '76d70bd0e20a'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -140,6 +140,7 @@ def upgrade() -> None:
     sa.Column('longitud', sa.Numeric(precision=11, scale=8), nullable=True),
     sa.Column('prioridad', sa.String(length=20), nullable=True),
     sa.Column('estado', sa.String(length=20), nullable=True),
+    sa.Column('pago_estado', sa.String(length=20), nullable=True),
     sa.Column('transcripcion_audio', sa.Text(), nullable=True),
     sa.Column('clasificacion_ia', sa.String(length=100), nullable=True),
     sa.Column('resumen_ia', sa.Text(), nullable=True),

@@ -10,6 +10,7 @@ class IncidenteBase(BaseModel):
     longitud: Decimal = Field(..., ge=-180, le=180)
     prioridad: str = "media" # 'baja', 'media', 'alta'
     estado: str = "pendiente"
+    pago_estado: str = "pendiente"
     telefono_cliente: str = "No disponible"
 
     class Config:
@@ -34,6 +35,7 @@ class IncidenteUpdate(BaseModel):
     taller_id: Optional[int] = None
     prioridad: Optional[str] = None
     estado: Optional[str] = None # 'en_proceso', 'atendido', 'cancelado'
+    pago_estado: Optional[str] = None
     resumen_ia: Optional[str] = None
 
 class Incidente(IncidenteBase):

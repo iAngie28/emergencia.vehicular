@@ -2,65 +2,136 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 
+from app.models.incidente import Incidente
+from app.models.pago import Pago as PagoModel
 from app.api import deps
 from app.crud.crud_pago import pago_crud
-from app.schemas.pago import Pago, PagoCreate, PagoUpdate
+from app.crud.crud_bitacora import bitacora_crud # 🚩 Importamos la bitácora
+from app.schemas.pago import Pago, PagoCreate
 
 router = APIRouter()
 
-# 1. Registrar un nuevo pago (Calcula la comisión automáticamente en el CRUD)
-@router.post("/", response_model=Pago)
-def registrar_pago(
-    *,
+# 1. LISTAR TODOS LOS PAGOS DE MI TALLER (Para el nuevo historial)
+@router.get("/mi-historial", response_model=List[Pago])
+def listar_pagos_taller(
     db: Session = Depends(deps.get_db),
-    obj_in: PagoCreate
+    current_user = Depends(deps.get_current_admin_taller)
 ):
-    """
-    Registra un pago realizado por un usuario a un taller. 
-    El sistema calcula automáticamente el 10% de comisión para la plataforma.
-    """
-    # Usamos el usuario_id del que paga para la bitácora
-    return pago_crud.create(db, obj_in=obj_in)
+    return pago_crud.obtener_por_taller(db, taller_id=current_user.taller_id)
 
-# 2. Listar todos los pagos de un taller (Para el panel del mecánico)
-@router.get("/taller/{taller_id}", response_model=List[Pago])
-def leer_pagos_por_taller(
-    taller_id: int,
-    db: Session = Depends(deps.get_db)
-):
-    """
-    Retorna el historial de cobros de un taller específico.
-    """
-    return pago_crud.obtener_por_taller(db, taller_id=taller_id)
-
-# 3. Actualizar estado del pago (ej. de 'pendiente' a 'completado')
-@router.patch("/{id}/estado", response_model=Pago)
-def actualizar_estado_pago(
-    *,
+# 2. PASO A: GENERAR EL COBRO (Queda en estado PENDIENTE)
+@router.post("/generar-cobro/{incidente_id}")
+def generar_cobro_incidente(
+    incidente_id: int,
+    monto: float,
+    metodo: str, 
     db: Session = Depends(deps.get_db),
-    id: int,
-    estado: str,
-    usuario_id: int # ID del admin o sistema que valida el pago
+    current_user = Depends(deps.get_current_admin_taller)
 ):
-    """
-    Cambia el estado del pago (confirmación de transferencia o QR).
-    """
-    pago_db = pago_crud.get(db, id=id)
-    if not pago_db:
-        raise HTTPException(status_code=404, detail="Registro de pago no encontrado")
-    
-    return pago_crud.update(
-        db, 
-        db_obj=pago_db, 
-        obj_in={"estado": estado}, 
-        usuario_id=usuario_id
+    incidente = db.query(Incidente).filter(Incidente.id == incidente_id).first()
+    if not incidente or incidente.taller_id != current_user.taller_id:
+        raise HTTPException(status_code=403, detail="No tienes permiso")
+
+    # Cambiamos el estado del incidente para saber que ya se emitió una "factura/cobro"
+    incidente.pago_estado = "por_cobrar" 
+    db.add(incidente)
+
+    # Creamos el pago SIEMPRE como pendiente
+    nuevo_pago = pago_crud.create(db, obj_in=PagoCreate(
+        incidente_id=incidente_id,
+        usuario_id=incidente.usuario_id,
+        taller_id=current_user.taller_id,
+        monto=monto,
+        metodo_pago=metodo,
+        estado="pendiente"
+    ))
+
+    # 🚩 BITÁCORA
+    bitacora_crud.registrar(
+        db,
+        usuario_id=current_user.id,
+        taller_id=current_user.taller_id,
+        tabla="pago",
+        tabla_id=nuevo_pago.id,
+        accion="GENERAR_COBRO",
+        nuevo={"monto": monto, "metodo": metodo, "estado": "pendiente"}
     )
 
-# 4. Ver todos los pagos (Solo para el Admin del SaaS)
-@router.get("/", response_model=List[Pago])
-def listar_todos_los_pagos(
+    return {"status": "success", "mensaje": "Cobro generado", "pago_id": nuevo_pago.id}
+
+# 3. PASO B: CONFIRMAR EL PAGO (Marca como COMPLETADO)
+@router.put("/{pago_id}/confirmar")
+def confirmar_pago(
+    pago_id: int,
     db: Session = Depends(deps.get_db),
-    skip: int = 0,
-    limit: int = 100
+    current_user = Depends(deps.get_current_admin_taller)
 ):
-    return pago_crud.get_multi(db, skip=skip, limit=limit)
+    pago = db.query(PagoModel).filter(PagoModel.id == pago_id, PagoModel.taller_id == current_user.taller_id).first()
+    if not pago:
+        raise HTTPException(status_code=404, detail="Pago no encontrado")
+    
+    if pago.estado != "pendiente":
+        raise HTTPException(status_code=400, detail="El pago ya fue procesado o cancelado")
+
+    pago.estado = "completado"
+    db.add(pago)
+
+    # Actualizamos el incidente a pagado final
+    incidente = db.query(Incidente).filter(Incidente.id == pago.incidente_id).first()
+    if incidente:
+        incidente.pago_estado = "pagado"
+        db.add(incidente)
+
+    db.commit()
+
+    # 🚩 BITÁCORA
+    bitacora_crud.registrar(
+        db,
+        usuario_id=current_user.id,
+        taller_id=current_user.taller_id,
+        tabla="pago",
+        tabla_id=pago.id,
+        accion="CONFIRMAR_PAGO",
+        anterior={"estado": "pendiente"},
+        nuevo={"estado": "completado"}
+    )
+    return {"status": "success", "mensaje": "Pago completado"}
+
+# 4. PASO C: CANCELAR EL PAGO (Mantiene historial, revierte estado)
+@router.put("/{pago_id}/cancelar")
+def cancelar_pago(
+    pago_id: int,
+    db: Session = Depends(deps.get_db),
+    current_user = Depends(deps.get_current_admin_taller)
+):
+    pago = db.query(PagoModel).filter(PagoModel.id == pago_id, PagoModel.taller_id == current_user.taller_id).first()
+    if not pago:
+        raise HTTPException(status_code=404, detail="Pago no encontrado")
+
+    if pago.estado == "cancelado":
+        raise HTTPException(status_code=400, detail="El cobro ya estaba cancelado")
+
+    estado_anterior = pago.estado
+    pago.estado = "cancelado"
+    db.add(pago)
+
+    # El incidente vuelve a quedar pendiente de cobro
+    incidente = db.query(Incidente).filter(Incidente.id == pago.incidente_id).first()
+    if incidente:
+        incidente.pago_estado = "pendiente"
+        db.add(incidente)
+
+    db.commit()
+
+    # 🚩 BITÁCORA
+    bitacora_crud.registrar(
+        db,
+        usuario_id=current_user.id,
+        taller_id=current_user.taller_id,
+        tabla="pago",
+        tabla_id=pago.id,
+        accion="CANCELAR_PAGO",
+        anterior={"estado": estado_anterior},
+        nuevo={"estado": "cancelado"}
+    )
+    return {"status": "success", "mensaje": "Pago cancelado"}
