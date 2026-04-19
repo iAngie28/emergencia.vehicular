@@ -1,0 +1,54 @@
+@startuml
+left to right direction
+
+' --- MEJORAS DE DISEÑO DE FLECHAS Y ESPACIADO ---
+skinparam nodesep 40
+skinparam ranksep 80
+skinparam arrow {
+  Color #2c3e50
+  Thickness 1.5
+}
+' ------------------------------------------------
+
+skinparam packageStyle rectangle
+skinparam usecase {
+  BackgroundColor LightCyan
+  BorderColor DarkBlue
+}
+
+actor "Cliente (Conductor)" as Cliente
+actor "Taller" as Taller
+actor "Técnico" as Tecnico
+
+rectangle "Plataforma Inteligente de Emergencias Vehiculares" {
+
+    usecase "CU1: Iniciar Sesión" as CU1
+    usecase "CU2: Cerrar Sesión" as CU2
+    usecase "CU3: Registrar Usuario" as CU3
+    usecase "CU4: Visualizar Usuarios" as CU4
+    usecase "CU5: Visualizar Bitácora" as CU5
+
+}
+
+' Relaciones del Cliente
+Cliente --> CU1
+Cliente --> CU2
+Cliente --> CU3
+Cliente --> CU4
+
+' Relaciones del Taller
+Taller --> CU1
+Taller --> CU2
+Taller --> CU3
+Taller --> CU4
+Taller --> CU5
+
+' Relaciones del tecnico
+Tecnico --> CU1
+Tecnico --> CU2
+Tecnico --> CU3
+
+' El include debe llevar flecha punteada en estándar UML
+CU4 ..> CU3 : <<include>>
+
+@enduml

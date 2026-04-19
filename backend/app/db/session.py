@@ -1,18 +1,23 @@
 import os
+import sys
+from pathlib import Path
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from dotenv import load_dotenv
 from typing import Generator
 
-# 1. Cargar variables de entorno
-load_dotenv()
+# 1. Cargar variables de entorno desde .env
+# Buscar el archivo .env en el directorio del backend
+backend_dir = Path(__file__).parent.parent.parent
+env_path = backend_dir / ".env"
+load_dotenv(dotenv_path=str(env_path))
 
 # 2. Obtener la URL de la base de datos del archivo .env
-# Ejemplo: postgresql://user:password@localhost:5432/emergencias_db
 SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
 
+# Si no encuentra en .env, usar SQLite como fallback
 if not SQLALCHEMY_DATABASE_URL:
-    raise ValueError("La variable DATABASE_URL no está configurada en el archivo .env")
+    SQLALCHEMY_DATABASE_URL = "sqlite:///./emergencias.db"
 
 # 3. Crear el Engine (Motor de conexión)
 # 'pool_pre_ping' ayuda a reconectar si la base de datos se reinicia
