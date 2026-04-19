@@ -5,8 +5,9 @@ from app.db.base import Base
 from app.models.rol import Rol
 from app.models.taller import Taller
 from app.models.usuario import Usuario
+from app.models.vehiculo import Vehiculo   # 👈 Agregado
+from app.models.incidente import Incidente # 👈 Agregado
 # Asegúrate de importar tu función para encriptar contraseñas. 
-# Si tu función se llama diferente o está en otro lado, ajusta esta línea:
 from app.core.security import obtener_hash_clave as get_password_hash
 
 logging.basicConfig(level=logging.INFO)
@@ -85,7 +86,70 @@ def seed_db(db: Session) -> None:
             db.add(nuevo_usuario)
     db.commit()
     logger.info("✅ Usuarios verificados/creados.")
-    logger.info("🎉 ¡Base de datos poblada con éxito! (Contraseña de todos: 'password123')")
+
+    # ==========================================
+    # 4. CREAR VEHÍCULOS PARA CLIENTES (NUEVO)
+    # ==========================================
+    carlos = db.query(Usuario).filter(Usuario.correo == "carlos@cliente.com").first()
+    maria = db.query(Usuario).filter(Usuario.correo == "maria@cliente.com").first()
+
+    vehiculos_base = [
+        {"placa": "1234-ABC", "marca": "Toyota", "modelo": "Corolla", "anio": 2020, "color": "Blanco", "usuario_id": carlos.id},
+        {"placa": "5678-XYZ", "marca": "Suzuki", "modelo": "Vitara", "anio": 2022, "color": "Azul", "usuario_id": maria.id}
+    ]
+
+    for v in vehiculos_base:
+        vehiculo = db.query(Vehiculo).filter(Vehiculo.placa == v["placa"]).first()
+        if not vehiculo:
+            nuevo_vehiculo = Vehiculo(**v)
+            db.add(nuevo_vehiculo)
+    db.commit()
+    logger.info("✅ Vehículos de prueba creados.")
+
+    # ==========================================
+    # 5. CREAR INCIDENTES PENDIENTES (NUEVO)
+    # ==========================================
+    v_carlos = db.query(Vehiculo).filter(Vehiculo.usuario_id == carlos.id).first()
+    v_maria = db.query(Vehiculo).filter(Vehiculo.usuario_id == maria.id).first()
+
+    incidentes_base = [
+        {
+            "vehiculo_id": v_carlos.id, 
+            "usuario_id": carlos.id,
+            "latitud": -17.783312, 
+            "longitud": -63.182123, 
+            "prioridad": "alta", 
+            "estado": "pendiente",
+            "transcripcion_audio": "El motor está haciendo un ruido metálico fuerte y se apagó en medio de la avenida.",
+            "clasificacion_ia": "Falla mecánica crítica", 
+            "resumen_ia": "Posible rotura de correa o falla de motor interna. Requiere remolque inmediato."
+        },
+        {
+            "vehiculo_id": v_maria.id, 
+            "usuario_id": maria.id,
+            "latitud": -17.771234, 
+            "longitud": -63.192345, 
+            "prioridad": "media", 
+            "estado": "pendiente",
+            "transcripcion_audio": "Tengo una llanta pinchada y no tengo la llave cruz para cambiarla.",
+            "clasificacion_ia": "Auxilio de neumático", 
+            "resumen_ia": "Cambio de llanta pinchada. El cliente no cuenta con herramientas."
+        }
+    ]
+
+    for i in incidentes_base:
+        # Evitamos duplicar incidentes pendientes para el mismo vehículo
+        incidente = db.query(Incidente).filter(
+            Incidente.vehiculo_id == i["vehiculo_id"], 
+            Incidente.estado == "pendiente"
+        ).first()
+        if not incidente:
+            nuevo_incidente = Incidente(**i)
+            db.add(nuevo_incidente)
+    db.commit()
+    logger.info("✅ Incidentes de prueba creados.")
+    
+    logger.info("🎉 ¡Base de datos poblada con éxito! (Contraseña de todos: 'pas12345')")
 
 if __name__ == "__main__":
     logger.info("Iniciando el seeder de base de datos...")

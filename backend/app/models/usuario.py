@@ -1,5 +1,6 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Boolean
 from sqlalchemy.orm import relationship
+from datetime import datetime, timedelta
 from app.db.base_class import Base
 
 class Usuario(Base):
@@ -30,3 +31,13 @@ class Usuario(Base):
     notificaciones = relationship("Notificacion", back_populates="usuario", cascade="all, delete-orphan")
     tokens = relationship("TokenDispositivo", back_populates="usuario", cascade="all, delete-orphan")
     bitacoras = relationship("Bitacora", back_populates="usuario")
+
+
+class PasswordResetToken(Base):
+    __tablename__ = "password_reset_tokens"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("usuario.id"), nullable=False)
+    token = Column(String, unique=True, index=True, nullable=False)
+    expiracion = Column(DateTime, nullable=False)
+    usado = Column(Boolean, default=False)

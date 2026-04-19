@@ -16,9 +16,14 @@ class CRUDIncidente(CRUDBase[Incidente, IncidenteCreate, IncidenteUpdate]):
     # Función para obtener incidentes pendientes (Para que los talleres los vean)
     def obtener_pendientes(self, db: Session):
         return db.query(self.model).filter(self.model.estado == "pendiente").all()
+    
+    def obtener_por_taller(self, db: Session, *, taller_id: int):
+        return db.query(self.model).filter(self.model.taller_id == taller_id).all()
+
 
     # Función para filtrar por el cliente (Para que el usuario vea su historial)
     def obtener_por_usuario(self, db: Session, *, usuario_id: int):
         return db.query(self.model).filter(self.model.usuario_id == usuario_id).all()
+    
 
 incidente_crud = CRUDIncidente(Incidente)

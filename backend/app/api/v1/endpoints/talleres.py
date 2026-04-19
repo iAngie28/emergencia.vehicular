@@ -2,9 +2,11 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 
-from app.api import deps
+from app.api import deps  # 👈 Aquí vive la magia de la seguridad
 from app.crud.crud_taller import taller_crud
+from app.crud.crud_bitacora import bitacora_crud
 from app.schemas.taller import Taller, TallerCreate, TallerUpdate
+from fastapi.encoders import jsonable_encoder
 
 router = APIRouter()
 
@@ -14,28 +16,69 @@ def registrar_taller(
     *,
     db: Session = Depends(deps.get_db),
     obj_in: TallerCreate,
-    current_user = Depends(deps.get_current_admin_taller) # 👈 CANDADO APLICADO: Extrae datos del token
+    # Usamos la dependencia que definimos en deps.py
+    current_user = Depends(deps.get_current_active_user) 
 ):
-    """
-    Registra un taller en la plataforma con sus coordenadas y porcentaje de comisión.
-    """
-    # Usamos el ID del administrador que está haciendo la petición
-    return taller_crud.create(db, obj_in=obj_in, usuario_id=current_user.id)
+    """Registra un taller y lo vincula al admin actual."""
+    nuevo_taller = taller_crud.create(db, obj_in=obj_in)
+    
+    bitacora_crud.registrar(
+        db,
+        usuario_id=current_user.id,
+        taller_id=nuevo_taller.id,
+        tabla="talleres",
+        tabla_id=nuevo_taller.id,
+        accion="CREATE_TALLER",
+        nuevo=obj_in.dict()
+    )
+    return nuevo_taller
 
-# 2. Listar talleres activos (Para el mapa de la App)
+# 2. Listar talleres activos (Para el mapa de la App Móvil)
 @router.get("/activos", response_model=List[Taller])
 def leer_talleres_activos(
     db: Session = Depends(deps.get_db),
     skip: int = 0,
     limit: int = 100
 ):
-    """
-    Retorna solo los talleres que están marcados como activos para ser mostrados en el mapa.
-    Abierto para que la app móvil pueda listar.
-    """
     return taller_crud.obtener_activos(db, skip=skip, limit=limit)
 
-# 3. Leer un taller por su ID
+# 3. MI TALLER: El perfil que el admin gestiona (Endpoint /me)
+@router.get("/me", response_model=Taller)
+def obtener_mi_taller(
+    db: Session = Depends(deps.get_db),
+    current_user = Depends(deps.get_current_active_user)
+):
+    taller = taller_crud.get(db, id=current_user.taller_id)
+    if not taller:
+        raise HTTPException(status_code=404, detail="Taller no encontrado")
+    return taller
+
+@router.put("/me", response_model=Taller)
+def actualizar_mi_taller(
+    obj_in: TallerUpdate,
+    db: Session = Depends(deps.get_db),
+    current_user = Depends(deps.get_current_active_user)
+):
+    taller_db = taller_crud.get(db, id=current_user.taller_id)
+    
+    # 💾 USAMOS jsonable_encoder AQUÍ PARA EVITAR EL ERROR DE DECIMAL
+    nuevo_contenido = jsonable_encoder(obj_in)
+    anterior_contenido = jsonable_encoder(taller_db)
+
+    taller_actualizado = taller_crud.update(db, db_obj=taller_db, obj_in=obj_in)
+    
+    bitacora_crud.registrar(
+        db,
+        usuario_id=current_user.id,
+        taller_id=current_user.taller_id,
+        tabla="talleres",
+        tabla_id=taller_db.id,
+        accion="UPDATE_PERFIL_TALLER",
+        nuevo=nuevo_contenido # 👈 Ahora sí es serializable
+    )
+    return taller_actualizado
+
+# 4. Leer un taller por su ID (Genérico)
 @router.get("/{id}", response_model=Taller)
 def leer_taller_por_id(
     id: int,
@@ -45,19 +88,3 @@ def leer_taller_por_id(
     if not taller:
         raise HTTPException(status_code=404, detail="Taller no encontrado")
     return taller
-
-# 4. Actualizar datos (ej. cambiar ubicación o estado)
-@router.put("/{id}", response_model=Taller)
-def actualizar_taller(
-    *,
-    db: Session = Depends(deps.get_db),
-    id: int,
-    obj_in: TallerUpdate,
-    current_user = Depends(deps.get_current_admin_taller) # 👈 CANDADO APLICADO
-):
-    taller_db = taller_crud.get(db, id=id)
-    if not taller_db:
-        raise HTTPException(status_code=404, detail="Taller no encontrado")
-    
-    # Pasamos el usuario_id del token a la bitácora automáticamente
-    return taller_crud.update(db, db_obj=taller_db, obj_in=obj_in, usuario_id=current_user.id)

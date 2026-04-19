@@ -1,8 +1,8 @@
 """'Initial_Reset'
 
-Revision ID: df11e8ce658a
+Revision ID: 63e1dd55dd7b
 Revises: 
-Create Date: 2026-04-12 16:27:12.833360
+Create Date: 2026-04-18 22:46:11.512530
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'df11e8ce658a'
+revision: str = '63e1dd55dd7b'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -93,6 +93,17 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_bitacora_id'), 'bitacora', ['id'], unique=False)
+    op.create_table('password_reset_tokens',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.Column('token', sa.String(), nullable=False),
+    sa.Column('expiracion', sa.DateTime(), nullable=False),
+    sa.Column('usado', sa.Boolean(), nullable=True),
+    sa.ForeignKeyConstraint(['user_id'], ['usuario.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_password_reset_tokens_id'), 'password_reset_tokens', ['id'], unique=False)
+    op.create_index(op.f('ix_password_reset_tokens_token'), 'password_reset_tokens', ['token'], unique=True)
     op.create_table('token_dispositivo',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('usuario_id', sa.Integer(), nullable=False),
@@ -195,6 +206,9 @@ def downgrade() -> None:
     op.drop_table('vehiculo')
     op.drop_index(op.f('ix_token_dispositivo_id'), table_name='token_dispositivo')
     op.drop_table('token_dispositivo')
+    op.drop_index(op.f('ix_password_reset_tokens_token'), table_name='password_reset_tokens')
+    op.drop_index(op.f('ix_password_reset_tokens_id'), table_name='password_reset_tokens')
+    op.drop_table('password_reset_tokens')
     op.drop_index(op.f('ix_bitacora_id'), table_name='bitacora')
     op.drop_table('bitacora')
     op.drop_index(op.f('ix_usuario_id'), table_name='usuario')

@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from typing import Optional, Union, Dict, Any
 from fastapi.encoders import jsonable_encoder
+from app.core.security import obtener_hash_clave
 
 from app.core.security import verificar_clave
 from app.crud.base import CRUDBase
@@ -78,6 +79,10 @@ class CRUDUsuario(CRUDBase[Usuario, UsuarioCreate, UsuarioUpdate]):
     def obtener_por_correo(self, db: Session, *, correo: str) -> Optional[Usuario]:
         return db.query(Usuario).filter(Usuario.correo == correo).first()
     
+    def get_by_email(self, db: Session, *, email: str):
+        # Asegúrate de que el campo en tu modelo se llame 'correo'
+        return db.query(Usuario).filter(Usuario.correo == email).first()
+    
     def authenticate(self, db: Session, *, correo: str, clave: str) -> Optional[Usuario]:
         # 1. Buscamos al usuario por correo
         usuario = db.query(Usuario).filter(Usuario.correo == correo).first()
@@ -89,5 +94,15 @@ class CRUDUsuario(CRUDBase[Usuario, UsuarioCreate, UsuarioUpdate]):
             return None
         
         return usuario
+    
+    def update_password(self, db: Session, *, db_obj: Usuario, nueva_clave: str) -> Usuario:
+        """
+        Actualiza la clave del usuario de forma segura.
+        """
+        db_obj.clave_hash = obtener_hash_clave(nueva_clave)
+        db.add(db_obj)
+        db.commit()
+        db.refresh(db_obj)
+        return db_obj
     
 usuario_crud = CRUDUsuario(Usuario)

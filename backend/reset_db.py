@@ -76,6 +76,16 @@ def reset_database():
     try:
         seed_db(db_session)
         print("✅ Base de datos poblada exitosamente.")
+        # Dentro de reset_database(), después de seed_db(db_session)
+        try:
+            print("🔄 Sincronizando secuencias de IDs...")
+            with engine.connect() as conn:
+                conn.execute(text("SELECT setval('taller_id_seq', (SELECT MAX(id) FROM taller));"))
+                conn.execute(text("SELECT setval('usuario_id_seq', (SELECT MAX(id) FROM usuario));"))
+                conn.commit()
+            print("✅ Secuencias sincronizadas.")
+        except Exception as e:
+            print(f"⚠️ Nota: No se pudo sincronizar secuencias (esto es normal si no hay datos aún): {e}")
     except Exception as e:
         print(f"❌ Error al ejecutar el seeder: {e}")
     finally:
@@ -87,3 +97,5 @@ def reset_database():
     
 if __name__ == "__main__":
     reset_database()
+
+    

@@ -1,10 +1,11 @@
-from typing import Generator, Optional
+from typing import Generator
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
 from sqlalchemy.orm import Session
+
 from app.db.session import SessionLocal
-from app.models.usuario import Usuario 
+from app.models.usuario import Usuario # 👈 Ya lo importas aquí
 from app.core.config import settings 
 
 # Este es el endpoint donde el usuario pide el token
@@ -25,7 +26,6 @@ def get_current_user(
     print(f"🕵️‍♂️ QA Backend -> Token recibido (primeros 15 chars): {token[:15]}...")
     
     try:
-        # Decodificamos el token usando la configuración global
         payload = jwt.decode(
             token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
         )
@@ -37,15 +37,12 @@ def get_current_user(
                 detail="No se pudo validar el usuario: sub faltante",
             )
     except JWTError as e:
-        # --- MODO QA DEBUG ---
         print(f"❌ ERROR JWT DETALLADO: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            # Ahora el error en Angular te dirá exactamente por qué falló
             detail=f"Token inválido: {str(e)}", 
         )
     
-    # Buscamos el usuario asegurando que el ID sea entero
     try:
         user = db.query(Usuario).filter(Usuario.id == int(user_id)).first()
     except ValueError:
@@ -56,20 +53,26 @@ def get_current_user(
     
     return user
 
+# --- CANDADOS DE SEGURIDAD ---
+
+def get_current_active_user(
+    current_user: Usuario = Depends(get_current_user),
+) -> Usuario:
+    return current_user
 
 def get_current_admin_taller(
-    current_user: Usuario = Depends(get_current_user),
+    current_user: Usuario = Depends(get_current_active_user), # 👈 Encadenamos con el validador de activo
 ) -> Usuario:
     """Candado: Solo permite el paso a Administradores de Taller (Web)"""
     if current_user.rol_id != 1:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Acceso denegado: Se requieren permisos de Administrador de Taller.",
+            detail="Acceso denegado: Se requieren permisos de Administrador.",
         )
     return current_user
 
 def get_current_cliente(
-    current_user: Usuario = Depends(get_current_user),
+    current_user: Usuario = Depends(get_current_active_user),
 ) -> Usuario:
     """Candado: Solo permite el paso a Clientes (Móvil)"""
     if current_user.rol_id != 2:
