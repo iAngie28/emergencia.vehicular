@@ -14,7 +14,7 @@
   </div>
 
   <div class="content-wrapper">
-    <div *ngIf="tabActiva === 'pendientes'">
+    @if (tabActiva === 'pendientes') {
       <div *ngIf="incidentesPendientes.length === 0" class="empty-state">📭 No hay solicitudes pendientes.</div>
       <table *ngIf="incidentesPendientes.length > 0" class="modern-table">
         <thead>
@@ -34,9 +34,9 @@
           </tr>
         </tbody>
       </table>
-    </div>
+    }
 
-    <div *ngIf="tabActiva === 'mis-atenciones'">
+    @if (tabActiva === 'mis-atenciones') {
       <div *ngIf="misAtenciones.length === 0" class="empty-state">🚧 No tienes auxilios activos.</div>
       <table *ngIf="misAtenciones.length > 0" class="modern-table">
         <thead>
@@ -63,7 +63,7 @@
           </tr>
         </tbody>
       </table>
-    </div>
+    }
   </div>
 
   <aside class="side-panel" [class.open]="incidenteSeleccionado">
