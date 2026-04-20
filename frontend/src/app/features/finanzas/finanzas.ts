@@ -2,6 +2,8 @@ import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms'; 
 import { HttpClient, HttpHeaders } from '@angular/common/http';
+// 👇 1. Importamos el environment global
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-finanzas',
@@ -12,6 +14,8 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 })
 export class FinanzasComponent implements OnInit {
   private http = inject(HttpClient);
+  // 👇 2. Definimos la base URL usando el environment
+  private apiUrl = `${environment.apiUrl}/pagos`;
   
   pagosHistorial: any[] = [];
   cargando: boolean = false;
@@ -28,9 +32,9 @@ export class FinanzasComponent implements OnInit {
     const token = localStorage.getItem('token');
     const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
     
-    this.http.get<any[]>('http://localhost:8000/api/v1/pagos/mi-historial', { headers }).subscribe({
+    // 👇 3. Cambiado localhost por this.apiUrl
+    this.http.get<any[]>(`${this.apiUrl}/mi-historial`, { headers }).subscribe({
       next: (data) => {
-        // 🚩 ORDENAMIENTO: Forzamos a que los IDs más altos (más nuevos) salgan primero
         this.pagosHistorial = data.sort((a, b) => b.id - a.id);
         this.cargando = false;
       },
@@ -54,25 +58,19 @@ export class FinanzasComponent implements OnInit {
     const token = localStorage.getItem('token');
     const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
     
-    // Empaquetamos los datos editados
     const payload = {
       monto: this.pagoEditado.monto,
       metodo_pago: this.pagoEditado.metodo_pago,
       estado: this.pagoEditado.estado
     };
 
-    // Llamamos al nuevo endpoint PUT
-    this.http.put(`http://localhost:8000/api/v1/pagos/${this.pagoEditado.id}`, payload, { headers }).subscribe({
+    // 👇 4. Cambiado localhost por this.apiUrl
+    this.http.put(`${this.apiUrl}/${this.pagoEditado.id}`, payload, { headers }).subscribe({
       next: () => {
         alert('¡Cambios guardados con éxito! 💾');
-        
-        // 1. Actualizamos la tabla reactivamente
         this.pagosHistorial = this.pagosHistorial.map(p => 
           p.id === this.pagoEditado.id ? { ...p, ...payload } : p
         );
-
-        // 2. Actualizamos el panel lateral actual. 
-        // Si el estado cambió a 'completado' o 'cancelado', la vista se transformará en el "Recibo de Solo Lectura" instantáneamente.
         this.pagoSeleccionado = { ...this.pagoSeleccionado, ...payload };
       },
       error: (err) => alert('Error al guardar: ' + err.error?.detail)
@@ -84,14 +82,12 @@ export class FinanzasComponent implements OnInit {
     const token = localStorage.getItem('token');
     const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
     
-    this.http.put(`http://localhost:8000/api/v1/pagos/${pagoId}/confirmar`, {}, { headers }).subscribe({
+    // 👇 5. Cambiado localhost por this.apiUrl
+    this.http.put(`${this.apiUrl}/${pagoId}/confirmar`, {}, { headers }).subscribe({
       next: () => {
-        // 🚩 ACTUALIZACIÓN REACTIVA: Cambiamos la tabla al instante
         this.pagosHistorial = this.pagosHistorial.map(p => 
           p.id === pagoId ? { ...p, estado: 'completado' } : p
         );
-
-        // Si el panel lateral está abierto, también actualizamos su estado para que cambie a "Solo lectura"
         if (this.pagoSeleccionado?.id === pagoId) {
           this.pagoSeleccionado = { ...this.pagoSeleccionado, estado: 'completado' };
         }
@@ -105,14 +101,12 @@ export class FinanzasComponent implements OnInit {
     const token = localStorage.getItem('token');
     const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
     
-    this.http.put(`http://localhost:8000/api/v1/pagos/${pagoId}/cancelar`, {}, { headers }).subscribe({
+    // 👇 6. Cambiado localhost por this.apiUrl
+    this.http.put(`${this.apiUrl}/${pagoId}/cancelar`, {}, { headers }).subscribe({
       next: () => {
-        // 🚩 ACTUALIZACIÓN REACTIVA: Cambiamos la tabla al instante
         this.pagosHistorial = this.pagosHistorial.map(p => 
           p.id === pagoId ? { ...p, estado: 'cancelado' } : p
         );
-
-        // Actualizamos el panel lateral para que muestre el bloqueo rojo
         if (this.pagoSeleccionado?.id === pagoId) {
           this.pagoSeleccionado = { ...this.pagoSeleccionado, estado: 'cancelado' };
         }
