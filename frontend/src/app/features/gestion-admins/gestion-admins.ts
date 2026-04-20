@@ -50,71 +50,37 @@ export class GestionAdminsComponent implements OnInit {
   }
 
   guardar() {
-    // 1. Validación de longitud de contraseña
-    if (!this.editandoId || (this.nuevoAdmin.clave && this.nuevoAdmin.clave.trim() !== '')) {
-      if (this.nuevoAdmin.clave.length < 8) {
-        alert('La contraseña debe tener al menos 8 caracteres. 🔐');
-        return;
-      }
-    }
-
-    const data: any = {
-      nombre: this.nuevoAdmin.nombre,
-      correo: this.nuevoAdmin.correo,
-      telefono: this.nuevoAdmin.telefono,
-    };
+    // 🛡️ Clonamos los datos para procesarlos antes de enviar
+    const data = { ...this.nuevoAdmin };
 
     if (this.editandoId) {
-      // --- ACTUALIZACIÓN ---
-      if (this.nuevoAdmin.clave && this.nuevoAdmin.clave.trim() !== '') {
-        data.clave_hash = this.nuevoAdmin.clave;
+      // 🔍 FIX QA: Si la clave está vacía en edición, la eliminamos del objeto
+      // para que el backend no intente validarla (evita el error 422)
+      if (!data.clave || data.clave.trim() === '') {
+        delete data.clave;
       }
 
       this.usuariosService.actualizarAdmin(this.editandoId, data).subscribe({
-        next: (adminActualizado) => {
+        next: () => {
           alert('¡Datos del colega actualizados! ✅');
-          
-          // ACTUALIZACIÓN REACTIVA: Buscamos en la lista y reemplazamos los datos
-          this.admins = this.admins.map(a => a.id === this.editandoId ? { ...a, ...data } : a);
-          
           this.cancelarEdicion();
+          this.cargarAdmins();
         },
-        error: (e) => this.mostrarError(e)
+        error: (e) => alert(e.error?.detail || 'Error al actualizar')
       });
     } else {
-      // --- REGISTRO NUEVO ---
-      data.clave_hash = this.nuevoAdmin.clave; 
-      data.rol_id = 1; 
+      // 🚀 REGISTRAR NUEVO: Forzamos el rol de Administrador de Taller (ID: 1)
+      data.rol_id = 1;
       
       this.usuariosService.crearColega(data).subscribe({
-        next: (nuevoAdminCreado) => { 
-          alert('¡Administrador Registrado con éxito! 🎉');
-          
-          // ACTUALIZACIÓN REACTIVA: Metemos al nuevo admin al principio de la lista
-          // Usamos lo que nos devuelve el servidor (nuevoAdminCreado) para tener el ID real
-          this.admins = [nuevoAdminCreado, ...this.admins];
-          
+        next: () => { 
+          alert('¡Administrador Registrado y vinculado a tu taller! 🎉');
           this.cancelarEdicion();
+          this.cargarAdmins();
         },
-        error: (e) => this.mostrarError(e)
+        error: (e) => alert(e.error?.detail || 'Error al registrar')
       });
     }
-  }
-
-  // Función auxiliar para extraer el mensaje de error y evitar el [object Object]
-  private mostrarError(e: any) {
-    let mensaje = 'Ocurrió un error inesperado';
-    
-    if (e.error && e.error.detail) {
-      if (Array.isArray(e.error.detail)) {
-        // Errores de validación de FastAPI suelen ser una lista
-        mensaje = e.error.detail[0].msg || 'Error de validación en los datos';
-      } else {
-        mensaje = e.error.detail;
-      }
-    }
-    
-    alert(mensaje);
   }
 
   borrar(id: number) {
