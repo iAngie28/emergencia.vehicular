@@ -1,8 +1,10 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms'; // 🚩 Necesario para el input del monto
+import { FormsModule } from '@angular/forms'; 
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { IncidentesService } from '../../core/services/incidentes';
+// 👇 1. Importamos el environment
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-auxilios',
@@ -21,7 +23,6 @@ export class AuxiliosComponent implements OnInit {
   cargando: boolean = false;
   incidenteSeleccionado: any = null;
 
-  // 🚩 Variables para el modal minimalista
   mostrarModalCobro: boolean = false;
   incidenteACobrar: any = null;
   montoCobro: number = 0;
@@ -75,7 +76,6 @@ export class AuxiliosComponent implements OnInit {
     });
   }
 
-  // 🚩 MÉTODOS DEL MODAL DE COBRO
   abrirModalCobro(incidente: any) {
     this.incidenteACobrar = incidente;
     this.montoCobro = 0;
@@ -93,13 +93,12 @@ export class AuxiliosComponent implements OnInit {
     const token = localStorage.getItem('token');
     const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
     
-    // Le enviamos "por_definir" porque en Finanzas es donde decidiremos si fue QR o Efectivo
-    const url = `http://localhost:8000/api/v1/pagos/generar-cobro/${this.incidenteACobrar.id}?monto=${this.montoCobro}&metodo=por_definir`;
+    // 👇 2. Usamos el link global para arreglar el CORS de los pagos
+    const url = `${environment.apiUrl}/pagos/generar-cobro/${this.incidenteACobrar.id}?monto=${this.montoCobro}&metodo=por_definir`;
 
     this.http.post(url, {}, { headers }).subscribe({
       next: () => {
         alert('Cobro emitido y enviado a Finanzas 💸');
-        // Actualizamos localmente para que aparezca el "⏳ Cobro Emitido"
         this.misAtenciones = this.misAtenciones.map(inc => 
           inc.id === this.incidenteACobrar.id ? { ...inc, pago_estado: 'por_cobrar' } : inc
         );
