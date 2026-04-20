@@ -98,9 +98,14 @@ export class GestionAdminsComponent implements OnInit {
       
       this.usuariosService.crearColega(data).subscribe({
         next: () => { 
-          alert('¡Administrador Registrado y vinculado a tu taller! 🎉');
           this.cancelarEdicion();
-          this.cargarAdmins();
+          this.usuariosService.getMisAdmins().subscribe({
+            next: (admins) => {
+              this.admins = admins;
+              alert('¡Administrador Registrado y vinculado a tu taller! 🎉');
+            },
+            error: () => alert('Administrador creado pero error al recargar la tabla')
+          });
         },
         error: (e) => alert(this.obtenerMensajeError(e))
       });
