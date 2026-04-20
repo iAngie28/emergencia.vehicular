@@ -17,7 +17,8 @@ mail_conf = ConnectionConfig(
 
 async def enviar_correo_recuperacion(email_to: str, token: str):
     # En producción, cambia localhost por tu dominio real
-    url_recuperacion = f"http://localhost:4200/reset-password?token={token}"
+    # Reemplaza con el link real de tu frontend en Render
+    url_recuperacion = f"https://emergencia-vehicular-1.onrender.com/reset-password?token={token}"
     
     html = f"""
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto;">
