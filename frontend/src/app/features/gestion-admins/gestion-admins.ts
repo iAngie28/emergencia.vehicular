@@ -49,65 +49,62 @@ export class GestionAdminsComponent implements OnInit {
     };
   }
 
+  private obtenerMensajeError(error: any): string {
+    // Si es un objeto con propiedades de campos, mostrar el campo específico
+    if (error.error && typeof error.error === 'object') {
+      // Si tiene 'detail', lo mostramos
+      if (error.error.detail) {
+        return error.error.detail;
+      }
+      // Si tiene estructura de errores por campo
+      if (error.error.errors || error.error.field_errors) {
+        const errores = error.error.errors || error.error.field_errors;
+        const campos = Object.keys(errores);
+        if (campos.length > 0) {
+          return `Campo inválido: ${campos[0]} - ${errores[campos[0]]}`;
+        }
+      }
+      // Si no, intentar obtener la primera clave-valor
+      const claves = Object.keys(error.error);
+      if (claves.length > 0 && claves[0] !== 'detail') {
+        return `${claves[0]}: ${error.error[claves[0]]}`;
+      }
+    }
+    return 'Error desconocido';
+  }
+
   guardar() {
     // 🛡️ Clonamos los datos para procesarlos antes de enviar
     const data = { ...this.nuevoAdmin };
 
-    // 🚩 REVISIÓN DE CAMPO: Mapeamos 'clave' a 'password' para el Backend
-    // Si tu modelo pide 'password', esto soluciona el error de validación.
-    if (data.clave) {
-      data.password = data.clave;
-      delete data.clave;
-    }
-
     if (this.editandoId) {
-      // MODO EDICIÓN
-      if (!data.password || data.password.trim() === '') {
-        delete data.password;
+      // 🔍 FIX QA: Si la clave está vacía en edición, la eliminamos del objeto
+      // para que el backend no intente validarla (evita el error 422)
+      if (!data.clave || data.clave.trim() === '') {
+        delete data.clave;
       }
 
       this.usuariosService.actualizarAdmin(this.editandoId, data).subscribe({
         next: () => {
           alert('¡Datos del colega actualizados! ✅');
           this.cancelarEdicion();
-          this.cargarAdmins(); // 🔄 Recarga la tabla
+          this.cargarAdmins();
         },
-        error: (e) => this.mostrarError(e) // 🧐 Manejo de errores detallado
+        error: (e) => alert(this.obtenerMensajeError(e))
       });
     } else {
-      // MODO REGISTRO NUEVO
+      // 🚀 REGISTRAR NUEVO: Forzamos el rol de Administrador de Taller (ID: 1)
       data.rol_id = 1;
       
       this.usuariosService.crearColega(data).subscribe({
         next: () => { 
-          alert('¡Administrador Registrado! 🎉');
+          alert('¡Administrador Registrado y vinculado a tu taller! 🎉');
           this.cancelarEdicion();
-          this.cargarAdmins(); // 🔄 Recarga la tabla
+          this.cargarAdmins();
         },
-        error: (e) => this.mostrarError(e) // 🧐 Manejo de errores detallado
+        error: (e) => alert(this.obtenerMensajeError(e))
       });
     }
-  }
-
-  // 👇 NUEVA FUNCIÓN: Para que no salga [object Object]
-  private mostrarError(e: any) {
-    console.error(e);
-    let mensaje = 'Ocurrió un error inesperado';
-
-    if (e.error && e.error.detail) {
-      // Si FastAPI devuelve una lista de errores de validación (Pydantic)
-      if (Array.isArray(e.error.detail)) {
-        mensaje = e.error.detail.map((err: any) => {
-          // Extrae el campo (ej: password) y el mensaje (ej: too short)
-          const campo = err.loc[err.loc.length - 1];
-          return `${campo}: ${err.msg}`;
-        }).join('\n');
-      } else {
-        // Si es un string simple
-        mensaje = e.error.detail;
-      }
-    }
-    alert(mensaje);
   }
 
   borrar(id: number) {
