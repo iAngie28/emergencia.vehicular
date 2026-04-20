@@ -50,7 +50,7 @@ export class GestionAdminsComponent implements OnInit {
   }
 
   guardar() {
-    // 1. Validación de longitud de contraseña (mínimo 8 caracteres)
+    // 1. Validación de longitud de contraseña
     if (!this.editandoId || (this.nuevoAdmin.clave && this.nuevoAdmin.clave.trim() !== '')) {
       if (this.nuevoAdmin.clave.length < 8) {
         alert('La contraseña debe tener al menos 8 caracteres. 🔐');
@@ -58,7 +58,6 @@ export class GestionAdminsComponent implements OnInit {
       }
     }
 
-    // 2. Preparamos el objeto exacto que espera el Backend (mapeando clave -> password)
     const data: any = {
       nombre: this.nuevoAdmin.nombre,
       correo: this.nuevoAdmin.correo,
@@ -66,37 +65,38 @@ export class GestionAdminsComponent implements OnInit {
     };
 
     if (this.editandoId) {
-      // --- LÓGICA DE ACTUALIZACIÓN ---
+      // --- ACTUALIZACIÓN ---
       if (this.nuevoAdmin.clave && this.nuevoAdmin.clave.trim() !== '') {
         data.password = this.nuevoAdmin.clave;
       }
 
       this.usuariosService.actualizarAdmin(this.editandoId, data).subscribe({
-        next: () => {
+        next: (adminActualizado) => {
           alert('¡Datos del colega actualizados! ✅');
+          
+          // ACTUALIZACIÓN REACTIVA: Buscamos en la lista y reemplazamos los datos
+          this.admins = this.admins.map(a => a.id === this.editandoId ? { ...a, ...data } : a);
+          
           this.cancelarEdicion();
-          this.cargarAdmins();
         },
-        error: (e) => {
-          console.error('Error PUT:', e);
-          this.mostrarError(e);
-        }
+        error: (e) => this.mostrarError(e)
       });
     } else {
-      // --- LÓGICA DE REGISTRO NUEVO ---
+      // --- REGISTRO NUEVO ---
       data.password = this.nuevoAdmin.clave; 
-      data.rol_id = 1; // Administrador de Taller
+      data.rol_id = 1; 
       
       this.usuariosService.crearColega(data).subscribe({
-        next: () => { 
+        next: (nuevoAdminCreado) => { 
           alert('¡Administrador Registrado con éxito! 🎉');
+          
+          // ACTUALIZACIÓN REACTIVA: Metemos al nuevo admin al principio de la lista
+          // Usamos lo que nos devuelve el servidor (nuevoAdminCreado) para tener el ID real
+          this.admins = [nuevoAdminCreado, ...this.admins];
+          
           this.cancelarEdicion();
-          this.cargarAdmins();
         },
-        error: (e) => {
-          console.error('Error POST:', e);
-          this.mostrarError(e);
-        }
+        error: (e) => this.mostrarError(e)
       });
     }
   }
