@@ -2,19 +2,11 @@ import os
 import subprocess
 from sqlalchemy import create_engine, text
 from app.db.session import SessionLocal 
-from app.db.seeder import seed_db
-# --- CONFIGURACIÓN ---
-# Reemplaza con tus datos reales
-DB_USER = "postgres"
-DB_PASS = "adm123" # <--- Pon tu contraseña aquí
-DB_HOST = "localhost"
-DB_PORT = "5432"
-DB_NAME = "emergencias_db" # <--- Pon el nombre de tu DB aquí
-
-DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+from app.db.seeder import seed_db  # <--- Tu archivo de semillas
+from app.core.config import settings
 
 def run_command(command):
-    """Ejecuta un comando de consola y muestra la salida"""
+    """Ejecuta comandos de terminal (Alembic)"""
     print(f"Executing: {command}")
     result = subprocess.run(command, shell=True, capture_output=True, text=True)
     if result.returncode != 0:
@@ -23,14 +15,16 @@ def run_command(command):
         print(f"✅ Éxito: {result.stdout}")
 
 def reset_database():
-    print("🚀 --- INICIANDO RESETEO TOTAL ---")
-    
-    # 1. Limpiar la Base de Datos físicamente
+    # 1. Obtener URL de Render o Local automáticamente
+    DATABASE_URL = settings.DATABASE_URL
+    print(f"🚀 --- INICIANDO PROCESO EN: {DATABASE_URL.split('@')[-1]} ---")
+
+    # 2. Limpiar Base de Datos (Bomba Atómica)
     try:
         engine = create_engine(DATABASE_URL)
-        print("🧹 Borrando esquema público...")
         with engine.connect() as conn:
-            # Terminamos conexiones activas para que nos deje borrar el esquema
+            print("🧹 Borrando esquema público...")
+            # Cortar conexiones para que Postgres nos deje borrar
             conn.execute(text("""
                 SELECT pg_terminate_backend(pg_stat_activity.pid)
                 FROM pg_stat_activity
@@ -39,63 +33,63 @@ def reset_database():
             """))
             conn.execute(text("DROP SCHEMA IF EXISTS public CASCADE;"))
             conn.execute(text("CREATE SCHEMA public;"))
-            conn.execute(text("GRANT ALL ON SCHEMA public TO postgres;"))
             conn.execute(text("GRANT ALL ON SCHEMA public TO public;"))
             conn.commit()
-        print("✅ Base de datos limpia (Schema public recreado).")
+        print("✅ Base de datos vaciada.")
     except Exception as e:
-        print(f"❌ Error conectando a la DB: {e}")
+        print(f"❌ Error al limpiar DB: {e}")
         return
 
-    # 2. Borrar archivos de versiones de Alembic
-    # Intentamos ambas rutas comunes por si acaso
+    # 3. Limpiar archivos de Alembic locales
+    # Esto evita el error de "Can't locate revision"
     versions_dir = "app/alembic/versions" if os.path.exists("app/alembic") else "alembic/versions"
-    
     if os.path.exists(versions_dir):
-        print(f"📂 Limpiando carpeta: {versions_dir}")
+        print(f"📂 Limpiando carpeta de versiones: {versions_dir}")
         for filename in os.listdir(versions_dir):
             if filename.endswith(".py") and filename != "__init__.py":
-                file_path = os.path.join(versions_dir, filename)
-                os.remove(file_path)
-        print("✅ Versiones físicas eliminadas.")
-    else:
-        print(f"⚠️ No se encontró la carpeta de versiones en {versions_dir}")
+                os.remove(os.path.join(versions_dir, filename))
 
-    # 3. Generar y Aplicar Migraciones
+    # 4. Reconstruir Tablas (Alembic)
     print("⚙️ Generando nueva migración inicial...")
     run_command("python -m alembic revision --autogenerate -m 'Initial_Reset'")
-    
-    print("📈 Aplicando migración a la DB...")
+    print("📈 Aplicando tablas a la DB...")
     run_command("python -m alembic upgrade head")
-    
-    print("\n✨ ¡PROCESO COMPLETADO CON ÉXITO! ✨")
-    print("Ya puedes iniciar uvicorn y probar tu Swagger.")
 
-    print("🌱 Ejecutando el Seeder para poblar la base de datos...")
-    db_session = SessionLocal()
+    # 5. LLAMADA AL SEEDER 🌱
+    print("🌱 Ejecutando Seeder para poblar datos...")
+    db = SessionLocal()
     try:
-        seed_db(db_session)
-        print("✅ Base de datos poblada exitosamente.")
-        # Dentro de reset_database(), después de seed_db(db_session)
-        try:
-            print("🔄 Sincronizando secuencias de IDs...")
-            with engine.connect() as conn:
-                conn.execute(text("SELECT setval('taller_id_seq', (SELECT MAX(id) FROM taller));"))
-                conn.execute(text("SELECT setval('usuario_id_seq', (SELECT MAX(id) FROM usuario));"))
-                conn.commit()
-            print("✅ Secuencias sincronizadas.")
-        except Exception as e:
-            print(f"⚠️ Nota: No se pudo sincronizar secuencias (esto es normal si no hay datos aún): {e}")
+        seed_db(db) # <--- Aquí es donde ocurre la magia de insertar talleres/usuarios
+        print("✅ Datos de prueba insertados con éxito.")
+
+        # 6. Sincronizar Secuencias
+        # (Esto es vital para que no falle el próximo registro manual)
+        print("🔄 Sincronizando contadores (Sequences)...")
+        with engine.connect() as conn:
+            tablas = ['rol', 'usuario', 'taller', 'incidente', 'pago'] # Ajusta según tus tablas
+            for tabla in tablas:
+                try:
+                    conn.execute(text(f"SELECT setval('{tabla}_id_seq', (SELECT MAX(id) FROM {tabla}));"))
+                except:
+                    continue
+            conn.commit()
+        print("✅ Secuencias alineadas.")
+
     except Exception as e:
-        print(f"❌ Error al ejecutar el seeder: {e}")
+        print(f"❌ Error en el Seeder: {e}")
     finally:
-        db_session.close()
+        db.close()
 
-    print("\n✨ ¡PROCESO COMPLETADO CON ÉXITO! ✨")
-    print("La base de datos está reseteada, migrada y con datos semilla.")
-    print("Ya puedes iniciar uvicorn y probar tu Swagger.")
-    
+    print("\n✨ ¡SISTEMA RESETEADO Y POBLADO! ✨")
+    print("Ya puedes usar tus credenciales del seeder para entrar.")
+
 if __name__ == "__main__":
-    reset_database()
-
-    
+    # Seguridad: Si no es localhost, pedir confirmación
+    if "localhost" not in settings.DATABASE_URL and "127.0.0.1" not in settings.DATABASE_URL:
+        confirm = input("⚠️ ¡ESTÁS APUNTANDO A RENDER! ¿Borrar todo? (s/n): ")
+        if confirm.lower() == 's':
+            reset_database()
+        else:
+            print("❌ Abortado.")
+    else:
+        reset_database()
