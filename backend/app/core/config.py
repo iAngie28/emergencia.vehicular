@@ -7,7 +7,7 @@ class Settings:
     PROJECT_NAME: str = "SaaS Emergencias Vehiculares"
     DATABASE_URL: str = os.getenv("DATABASE_URL")
 
-    SECRET_KEY: str = os.getenv("JWT_SECRET")
+    SECRET_KEY: str = os.getenv("SECRET_KEY")
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8  # 8 días de duración
 
