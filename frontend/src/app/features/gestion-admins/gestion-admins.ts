@@ -67,7 +67,7 @@ export class GestionAdminsComponent implements OnInit {
     if (this.editandoId) {
       // --- ACTUALIZACIÓN ---
       if (this.nuevoAdmin.clave && this.nuevoAdmin.clave.trim() !== '') {
-        data.password = this.nuevoAdmin.clave;
+        data.clave_hash = this.nuevoAdmin.clave;
       }
 
       this.usuariosService.actualizarAdmin(this.editandoId, data).subscribe({
@@ -83,7 +83,7 @@ export class GestionAdminsComponent implements OnInit {
       });
     } else {
       // --- REGISTRO NUEVO ---
-      data.password = this.nuevoAdmin.clave; 
+      data.clave_hash = this.nuevoAdmin.clave; 
       data.rol_id = 1; 
       
       this.usuariosService.crearColega(data).subscribe({
