@@ -1,6 +1,8 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
+// 👇 1. Importamos el environment global
+import { environment } from '../../../environments/environment';
 
 // --- INTERFACES DIRECTAS ---
 export interface LoginRequest {
@@ -31,8 +33,8 @@ export interface RegistroSaaS {
 })
 export class AuthService {
   private http = inject(HttpClient);
-  // Base de la URL de autenticación
-  private baseUrl = 'http://localhost:8000/api/v1/auth'; 
+  // 👇 2. Cambiamos la base al environment de producción
+  private baseUrl = `${environment.apiUrl}/auth`; 
 
   public isAuthenticated = signal<boolean>(this.hasToken());
 
@@ -91,12 +93,12 @@ export class AuthService {
   // ==========================================
 
   solicitarRecuperacion(correo: string) {
-    // Apunta directamente a http://localhost:8000/api/v1/auth/forgot-password
+    // Apunta a /api/v1/auth/forgot-password
     return this.http.post(`${this.baseUrl}/forgot-password`, { correo });
   }
 
   restablecerClave(token: string, nueva_clave: string) {
-    // Apunta directamente a http://localhost:8000/api/v1/auth/reset-password
+    // Apunta a /api/v1/auth/reset-password
     return this.http.post(`${this.baseUrl}/reset-password`, { 
       token: token, 
       nueva_clave: nueva_clave 

@@ -1,13 +1,16 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
+// 👇 1. Importamos el environment
+import { environment } from '../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class IncidentesService {
   private http = inject(HttpClient);
-  private apiUrl = 'http://localhost:8000/api/v1/incidentes'; // Ajusta si tu puerto es distinto
+  // 👇 2. Usamos el link global
+  private apiUrl = `${environment.apiUrl}/incidentes`; 
 
   // Helper para los headers con el token de Rossy
   private getHeaders() {

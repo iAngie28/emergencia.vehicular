@@ -1,6 +1,8 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+// 👇 1. Importamos el environment global
+import { environment } from '../../../environments/environment';
 
 export interface BitacoraEntry {
   id: number;
@@ -18,7 +20,8 @@ export interface BitacoraEntry {
 @Injectable({ providedIn: 'root' })
 export class BitacoraService {
   private http = inject(HttpClient);
-  private apiUrl = 'http://localhost:8000/api/v1/bitacora/';
+  // 👇 2. Cambiamos localhost por el environment
+  private apiUrl = `${environment.apiUrl}/bitacora/`;
 
   getLogs(skip: number = 0, limit: number = 100): Observable<BitacoraEntry[]> {
     const token = localStorage.getItem('token'); 

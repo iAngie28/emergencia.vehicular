@@ -1,11 +1,14 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
+// 👇 Importamos el environment global
+import { environment } from '../../../environments/environment'; 
 
 @Injectable({ providedIn: 'root' })
 export class TalleresService {
   private http = inject(HttpClient);
-  private apiUrl = 'http://localhost:8000/api/v1/talleres';
+  // 👇 Usamos la variable dinámica en lugar del localhost quemado
+  private apiUrl = `${environment.apiUrl}/talleres`;
 
   private getHeaders() {
     return new HttpHeaders().set('Authorization', `Bearer ${localStorage.getItem('token')}`);
