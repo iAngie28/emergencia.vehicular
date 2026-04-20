@@ -2,7 +2,7 @@ from logging.config import fileConfig
 from app.db.base import Base
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
-
+import os # Asegúrate de importar os
 from alembic import context
 
 # this is the Alembic Config object, which provides
@@ -50,15 +50,21 @@ def run_migrations_offline() -> None:
         context.run_migrations()
 
 
+
 def run_migrations_online() -> None:
-    """Run migrations in 'online' mode.
+    # 1. Obtener la URL de la variable de entorno de Render
+    url = os.getenv("DATABASE_URL")
+    
+    # 2. Fix por si Render manda 'postgres://'
+    if url and url.startswith("postgres://"):
+        url = url.replace("postgres://", "postgresql://", 1)
+        
+    # 3. Forzar a Alembic a usar esta URL
+    configuration = config.get_section(config.config_ini_section)
+    configuration["sqlalchemy.url"] = url 
 
-    In this scenario we need to create an Engine
-    and associate a connection with the context.
-
-    """
     connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
+        configuration,
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
@@ -70,6 +76,7 @@ def run_migrations_online() -> None:
 
         with context.begin_transaction():
             context.run_migrations()
+
 
 
 if context.is_offline_mode():
