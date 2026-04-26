@@ -164,9 +164,9 @@ async def solicitar_recuperacion(
     expiracion = datetime.utcnow() + timedelta(minutes=15)
 
     db_token = PasswordResetToken(
-        user_id=usuario.id,
+        usuario_id=usuario.id,
         token=token_str,
-        expiracion=expiracion
+        expira_en=expiracion
     )
     db.add(db_token)
     db.commit()
@@ -183,13 +183,13 @@ def restablecer_clave(datos: RestablecerClaveInput, db: Session = Depends(get_db
     token_record = db.query(PasswordResetToken).filter(
         PasswordResetToken.token == datos.token,
         PasswordResetToken.usado == False,
-        PasswordResetToken.expiracion > datetime.utcnow()
+        PasswordResetToken.expira_en > datetime.utcnow()
     ).first()
 
     if not token_record:
         raise HTTPException(status_code=400, detail="El enlace es inválido o ha expirado.")
 
-    usuario = db.query(Usuario).filter(Usuario.id == token_record.user_id).first()
+    usuario = db.query(Usuario).filter(Usuario.id == token_record.usuario_id).first()
     if not usuario:
         raise HTTPException(status_code=404, detail="Usuario no encontrado.")
 

@@ -16,6 +16,12 @@
       <input type="password" formControlName="password" placeholder="***">
     </div>
 
+    <div style="margin-top: 8px; text-align: right;">
+      <a routerLink="/forgot-password" style="font-size: 12px; color: #3b82f6; text-decoration: none; cursor: pointer;">
+        ¿Olvidaste tu contraseña?
+      </a>
+    </div>
+
     <div *ngIf="errorMessage" style="color: red; margin-top: 10px;">
       {{ errorMessage }}
     </div>

@@ -1,13 +1,14 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router'; // 🆕 Importar RouterLink
 import { AuthService, LoginRequest } from '../../../core/services/auth';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  // 🆕 Agregamos RouterLink al arreglo de imports
+  imports: [CommonModule, ReactiveFormsModule, RouterLink], 
   templateUrl: './login.html', 
   styleUrls: ['./login.css'] 
 })
@@ -36,7 +37,7 @@ export class LoginComponent {
     };
 
     this.authService.login(credentials).subscribe({
-      next: (res: any) => { // Usamos 'any' por si tu interfaz no tiene access_token definido
+      next: (res: any) => { 
         this.isLoading = false;
         console.log('Login exitoso, guardando token y redirigiendo...');
         localStorage.setItem('token', res.access_token); 
