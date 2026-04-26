@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, List
 from decimal import Decimal
 
 class TallerBase(BaseModel):
@@ -23,8 +23,17 @@ class TallerUpdate(BaseModel):
     estado: Optional[bool] = None
     comision_porcentaje: Optional[float] = None
     telefono: Optional[str] = None
+
 class Taller(TallerBase):
     id: int
 
     class Config:
         from_attributes = True
+
+class Taller(TallerBase):
+    id: int
+    # 👈 AGREGA ESTA LÍNEA PARA QUE SE ENVÍE AL FRONTEND
+    especialidades_activas: List[str] = [] 
+
+    class Config:
+        from_attributes = True # O orm_mode = True si usas Pydantic v1

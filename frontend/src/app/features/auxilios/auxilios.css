@@ -418,3 +418,36 @@ body, h1, p, table, th, td, input, button {
   border-radius: 10px;
   border: 1px dashed #cbd5e1;
 }
+/* --- Nuevos estilos integrados --- */
+.btn-reject {
+  background: #fff1f2;
+  color: #e11d48;
+  border: 1px solid #fecdd3;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+}
+
+.btn-reject:hover {
+  background: #ffe4e6;
+}
+
+.btn-pay {
+  background: #f8fafc;
+  color: #1e293b;
+  border: 1px solid #e2e8f0;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.status-text {
+    text-transform: capitalize;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #475569;
+}

@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms'; 
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { IncidentesService } from '../../core/services/incidentes';
-// 👇 1. Importamos el environment
+import { UsuariosService } from '../../core/services/usuarios'; 
 import { environment } from '../../../environments/environment';
 
 @Component({
@@ -15,96 +15,172 @@ import { environment } from '../../../environments/environment';
 })
 export class AuxiliosComponent implements OnInit {
   private incidentesService = inject(IncidentesService);
+  private usuariosService = inject(UsuariosService);
   private http = inject(HttpClient);
 
   tabActiva: 'pendientes' | 'mis-atenciones' = 'pendientes';
   incidentesPendientes: any[] = [];
   misAtenciones: any[] = [];
+  tecnicosDisponibles: any[] = []; 
   cargando: boolean = false;
   incidenteSeleccionado: any = null;
 
+  // Estados de Modales
   mostrarModalCobro: boolean = false;
-  incidenteACobrar: any = null;
-  montoCobro: number = 0;
+  mostrarModalAsignar: boolean = false; 
+  mostrarModalRechazo: boolean = false; 
 
-  ngOnInit() { this.cargarDatos(); }
+  // Datos temporales para las acciones
+  incidenteAccion: any = null; 
+  montoCobro: number = 0;
+  idTecnicoSeleccionado: number = 0;
+  motivoRechazo: string = '';
+
+  ngOnInit() { 
+    this.cargarDatos();
+    this.cargarTecnicos();
+  }
+
+  cargarDatos() {
+    this.cargando = true;
+    this.incidentesService.getPendientes().subscribe(data => this.incidentesPendientes = data);
+    this.incidentesService.getMisAtenciones().subscribe(data => {
+      this.misAtenciones = data;
+      this.cargando = false;
+    });
+  }
+
+  cargarTecnicos() {
+    this.usuariosService.getMisTecnicos().subscribe(data => {
+      // Filtramos solo los que el taller marcó como activos
+      this.tecnicosDisponibles = data.filter((t: any) => t.esta_activo);
+    });
+  }
 
   cambiarTab(tab: 'pendientes' | 'mis-atenciones') { 
     this.tabActiva = tab; 
     this.incidenteSeleccionado = null; 
   }
 
-  cargarDatos() {
-    this.cargando = true;
-    this.incidentesService.getPendientes().subscribe({
-      next: (data) => this.incidentesPendientes = data,
-      error: () => this.cargando = false
-    });
-
-    this.incidentesService.getMisAtenciones().subscribe({
-      next: (data) => {
-        this.misAtenciones = data;
-        this.cargando = false;
-      },
-      error: () => this.cargando = false
-    });
+  seleccionarIncidente(inc: any) { 
+    this.incidenteSeleccionado = inc; 
   }
 
-  verDetalle(incidente: any) { this.incidenteSeleccionado = incidente; }
-  cerrarDetalle() { this.incidenteSeleccionado = null; }
+  // --- LÓGICA DE ASIGNACIÓN Y REASIGNACIÓN ---
 
-  aceptarAuxilio(id: number) {
-    if (!confirm('¿Atender este auxilio?')) return;
+  // Se usa cuando aceptas un incidente nuevo
+  aceptarIncidente(id: number) {
     this.incidentesService.aceptarIncidente(id).subscribe({
-      next: () => {
-        this.incidentesPendientes = this.incidentesPendientes.filter(i => i.id !== id);
-        this.tabActiva = 'mis-atenciones';
-        this.cargarDatos(); 
-      }
+      next: (res) => {
+        this.cargarDatos();
+        this.incidenteAccion = res;
+        this.idTecnicoSeleccionado = 0;
+        this.mostrarModalAsignar = true;
+      },
+      error: (e) => alert('Error al aceptar: ' + e.error?.detail)
     });
   }
 
-  finalizarAuxilio(id: number) {
+  // Se usa desde el panel lateral para cambiar al técnico
+  abrirReasignacion() {
+    if (!this.incidenteSeleccionado) return;
+    this.incidenteAccion = this.incidenteSeleccionado;
+    // Pre-seleccionamos el ID actual si ya tiene uno
+    this.idTecnicoSeleccionado = this.incidenteSeleccionado.tecnico_id || 0;
+    this.mostrarModalAsignar = true;
+  }
+
+  confirmarAsignacion() {
+    if (!this.idTecnicoSeleccionado) return alert('Debes seleccionar un técnico.');
+    
+    this.incidentesService.asignarTecnico(this.incidenteAccion.id, this.idTecnicoSeleccionado).subscribe({
+      next: () => {
+        alert('Técnico asignado correctamente 🔧');
+        
+        // Actualización reactiva del panel lateral si está abierto
+        const tecnicoNuevo = this.tecnicosDisponibles.find(t => t.id == this.idTecnicoSeleccionado);
+        if (this.incidenteSeleccionado && this.incidenteSeleccionado.id === this.incidenteAccion.id) {
+          this.incidenteSeleccionado.tecnico = tecnicoNuevo;
+          this.incidenteSeleccionado.tecnico_id = this.idTecnicoSeleccionado;
+        }
+
+        this.cerrarModalAsignar();
+        this.cargarDatos();
+      },
+      error: (e) => alert('Error en asignación: ' + e.error?.detail)
+    });
+  }
+
+  cerrarModalAsignar() {
+    this.mostrarModalAsignar = false;
+    this.incidenteAccion = null;
+    this.idTecnicoSeleccionado = 0;
+  }
+
+  // --- FLUJO DE RECHAZO ---
+
+  abrirModalRechazo(inc: any) {
+    this.incidenteAccion = inc;
+    this.motivoRechazo = '';
+    this.mostrarModalRechazo = true;
+  }
+
+  confirmarRechazo() {
+    if (!this.motivoRechazo.trim()) return alert('Por favor escribe un motivo.');
+
+    this.incidentesService.rechazarIncidente(this.incidenteAccion.id, this.motivoRechazo).subscribe({
+      next: () => {
+        alert('Pedido rechazado con éxito.');
+        this.mostrarModalRechazo = false;
+        if (this.incidenteSeleccionado?.id === this.incidenteAccion.id) {
+          this.incidenteSeleccionado = null;
+        }
+        this.cargarDatos();
+      },
+      error: (e) => alert('Error al rechazar: ' + e.error?.detail)
+    });
+  }
+
+  // --- FINALIZACIÓN Y COBRO ---
+
+  finalizarAyuda(id: number) {
     if (!confirm('¿Marcar el servicio como completado?')) return;
     this.incidentesService.actualizarEstado(id, { estado: 'atendido' }).subscribe({
       next: () => {
-        this.misAtenciones = this.misAtenciones.map(inc => 
-          inc.id === id ? { ...inc, estado: 'atendido' } : inc
-        );
+        if (this.incidenteSeleccionado?.id === id) {
+          this.incidenteSeleccionado.estado = 'atendido';
+        }
         this.cargarDatos();
       }
     });
   }
 
   abrirModalCobro(incidente: any) {
-    this.incidenteACobrar = incidente;
+    this.incidenteAccion = incidente;
     this.montoCobro = 0;
     this.mostrarModalCobro = true;
   }
 
   cerrarModalCobro() {
     this.mostrarModalCobro = false;
-    this.incidenteACobrar = null;
+    this.incidenteAccion = null;
   }
-
   generarCobro() {
-    if (this.montoCobro <= 0) return alert('Por favor ingresa un monto válido mayor a 0.');
-    
+    if (this.montoCobro <= 0) return alert('Monto inválido.');
+  
     const token = localStorage.getItem('token');
     const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
-    
-    // 👇 2. Usamos el link global para arreglar el CORS de los pagos
-    const url = `${environment.apiUrl}/pagos/generar-cobro/${this.incidenteACobrar.id}?monto=${this.montoCobro}&metodo=por_definir`;
+    const url = `${environment.apiUrl}/pagos/generar-cobro/${this.incidenteAccion.id}?monto=${this.montoCobro}&metodo=por_definir`;
 
     this.http.post(url, {}, { headers }).subscribe({
-      next: () => {
-        alert('Cobro emitido y enviado a Finanzas 💸');
-        this.misAtenciones = this.misAtenciones.map(inc => 
-          inc.id === this.incidenteACobrar.id ? { ...inc, pago_estado: 'por_cobrar' } : inc
-        );
+      next: (res: any) => {
+        // ✅ ELIMINADO: window.open (Ya no abre links externos)
+        alert('Cobro registrado y emitido con éxito 💵');
+      
         this.cerrarModalCobro();
+        this.cargarDatos(); // 🔄 Recargamos para que el estado 'pago_estado' cambie en la tabla
       },
-      error: (err) => alert('Error al generar cobro: ' + err.error?.detail)
+      error: (e) => alert('Error al generar cobro: ' + e.error?.detail)
     });
   }
 }

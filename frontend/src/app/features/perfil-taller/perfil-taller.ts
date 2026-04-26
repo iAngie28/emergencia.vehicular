@@ -13,16 +13,18 @@ import * as L from 'leaflet';
 })
 export class PerfilTallerComponent implements OnInit {
   private talleresService = inject(TalleresService);
-  private zone = inject(NgZone); // 👈 Inyectamos NgZone
+  private zone = inject(NgZone);
   private map: any;
   private marker: any;
 
   taller: any = {
     nombre: '',
     direccion: '',
+    telefono: '',
     latitud: -17.7833,
     longitud: -63.1821,
-    estado: true
+    estado: true,
+    especialidades_activas: [] // 👈 Lista de strings que envía el backend
   };
 
   cargando: boolean = false;
@@ -45,13 +47,12 @@ export class PerfilTallerComponent implements OnInit {
     });
   }
 
+  // --- LÓGICA DEL MAPA (Se mantiene igual) ---
   private initMap() {
     if (this.map) { this.map.remove(); }
-
     this.map = L.map('map').setView([this.taller.latitud, this.taller.longitud], 15);
-
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(this.map);
-
+    
     const customIcon = L.icon({
       iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
       shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
@@ -64,12 +65,7 @@ export class PerfilTallerComponent implements OnInit {
       draggable: true 
     }).addTo(this.map);
 
-    // ✅ Al hacer clic en el mapa
-    this.map.on('click', (e: any) => {
-      this.actualizarCoordenadas(e.latlng.lat, e.latlng.lng);
-    });
-
-    // ✅ Al arrastrar el marcador
+    this.map.on('click', (e: any) => this.actualizarCoordenadas(e.latlng.lat, e.latlng.lng));
     this.marker.on('dragend', () => {
       const position = this.marker.getLatLng();
       this.actualizarCoordenadas(position.lat, position.lng);
@@ -77,7 +73,6 @@ export class PerfilTallerComponent implements OnInit {
   }
 
   private actualizarCoordenadas(lat: number, lng: number) {
-    // 🌀 Forzamos a Angular a actualizar la UI
     this.zone.run(() => {
       this.taller.latitud = lat;
       this.taller.longitud = lng;
@@ -88,15 +83,15 @@ export class PerfilTallerComponent implements OnInit {
   guardar() {
     this.cargando = true;
     this.mensaje = '';
+    // Enviamos el objeto taller al backend (ignorará especialidades_activas al ser property)
     this.talleresService.updateMiTaller(this.taller).subscribe({
       next: () => {
-        this.mensaje = '¡Perfil actualizado correctamente!';
+        this.mensaje = '¡Perfil actualizado correctamente! ✅';
         this.cargando = false;
         setTimeout(() => this.mensaje = '', 3000);
       },
       error: (err) => {
-        console.error('Error al guardar', err);
-        this.mensaje = 'Error al actualizar los datos.';
+        this.mensaje = 'Error al actualizar los datos ❌';
         this.cargando = false;
       }
     });

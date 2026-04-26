@@ -1,7 +1,7 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { UsuariosService } from '../../core/services/usuarios';
+import { UsuariosService } from '../../core/services/usuarios'; 
 
 @Component({
   selector: 'app-gestion-admins',
@@ -12,114 +12,150 @@ import { UsuariosService } from '../../core/services/usuarios';
 })
 export class GestionAdminsComponent implements OnInit {
   private usuariosService = inject(UsuariosService);
+  private cdr = inject(ChangeDetectorRef);
+  
+  vistaActual: 'admins' | 'tecnicos' | 'especialidades' = 'admins'; 
   
   admins: any[] = [];
-  nuevoAdmin: any = { 
-    nombre: '', 
-    correo: '', 
-    clave: '', 
-    telefono: '' 
-  };
+  tecnicos: any[] = [];
+  especialidades: any[] = []; 
+  usuariosFiltrados: any[] = []; 
+
+  nuevoUsuario: any = this.getUsuarioBase();
+  nuevaEspecialidad = { nombre: '', descripcion: '' };
   editandoId: number | null = null;
 
+  filtroEspecialidad: string = '';
+  mostrarDropdown: boolean = false;
+
   ngOnInit() { 
-    this.cargarAdmins(); 
+    this.cargarCatalogos();
+    this.refrescarTodo();
   }
 
-  cargarAdmins() {
-    this.usuariosService.getMisAdmins().subscribe({
-      next: (data) => this.admins = data,
-      error: (e) => console.error('Error al cargar admins:', e)
+  getUsuarioBase() {
+    return { nombre: '', correo: '', clave: '', telefono: '', esta_activo: true, especialidades_ids: [] };
+  }
+
+  cargarCatalogos() {
+    this.usuariosService.getEspecialidades().subscribe({
+      next: (data) => this.especialidades = data,
+      error: (e) => console.error('Error especialidades:', e)
     });
   }
 
-  prepararEdicion(admin: any) {
-    this.editandoId = admin.id;
-    // Clonamos el objeto y reseteamos la clave para el formulario
-    this.nuevoAdmin = { ...admin, clave: '' };
+  refrescarTodo() {
+    this.usuariosService.getMisAdmins().subscribe(data => {
+      this.admins = data;
+      if (this.vistaActual === 'admins') this.actualizarTabla();
+    });
+    this.usuariosService.getMisTecnicos().subscribe(data => {
+      this.tecnicos = data;
+      if (this.vistaActual === 'tecnicos') this.actualizarTabla();
+    });
+  }
+
+  cambiarVista(vista: 'admins' | 'tecnicos' | 'especialidades') {
+    this.vistaActual = vista;
+    this.cancelarEdicion();
+    if (vista !== 'especialidades') {
+      this.actualizarTabla();
+    }
+  }
+
+  actualizarTabla() {
+    const fuente = this.vistaActual === 'admins' ? this.admins : this.tecnicos;
+    this.usuariosFiltrados = [...fuente];
+    this.cdr.detectChanges();
+  }
+
+  // --- GESTIÓN DE ESPECIALIDADES ---
+  guardarEspecialidad() {
+    if (!this.nuevaEspecialidad.nombre) return alert('El nombre es obligatorio');
+    this.usuariosService.crearEspecialidad(this.nuevaEspecialidad).subscribe({
+      next: () => {
+        alert('Especialidad añadida al catálogo ✅');
+        this.nuevaEspecialidad = { nombre: '', descripcion: '' };
+        this.cargarCatalogos();
+      },
+      error: (e) => alert(this.obtenerMensajeError(e))
+    });
+  }
+
+  borrarEspecialidad(id: number) {
+    if (confirm('¿Eliminar esta especialidad del catálogo global?')) {
+      this.usuariosService.eliminarEspecialidad(id).subscribe({
+        next: () => this.cargarCatalogos(),
+        error: (e) => alert('No se puede eliminar: posiblemente está asignada a un técnico.')
+      });
+    }
+  }
+
+  // --- TRADUCCIÓN DE ERRORES ---
+  private obtenerMensajeError(error: any): string {
+    if (error.error && error.error.detail) {
+      if (Array.isArray(error.error.detail)) {
+        return error.error.detail.map((err: any) => `⚠️ ${err.loc[err.loc.length - 1]}: ${err.msg}`).join('\n');
+      }
+      return `⚠️ ${error.error.detail}`;
+    }
+    return '❌ Error de conexión.';
+  }
+
+  // --- LÓGICA DE USUARIOS Y CHIPS ---
+  get especialidadesFiltradas() {
+    return this.especialidades.filter(esp => 
+      esp.nombre.toLowerCase().includes(this.filtroEspecialidad.toLowerCase()) &&
+      !this.nuevoUsuario.especialidades_ids.includes(esp.id)
+    );
+  }
+
+  get especialidadesSeleccionadas() {
+    return this.especialidades.filter(esp => this.nuevoUsuario.especialidades_ids.includes(esp.id));
+  }
+
+  toggleEspecialidad(id: number) {
+    const index = this.nuevoUsuario.especialidades_ids.indexOf(id);
+    if (index > -1) this.nuevoUsuario.especialidades_ids.splice(index, 1);
+    else this.nuevoUsuario.especialidades_ids.push(id);
+  }
+
+  prepararEdicion(usuario: any) {
+    this.editandoId = usuario.id;
+    const espIds = usuario.especialidades ? usuario.especialidades.map((e: any) => e.id) : [];
+    this.nuevoUsuario = { ...usuario, clave: '', especialidades_ids: espIds, esta_activo: usuario.esta_activo ?? true };
   }
 
   cancelarEdicion() {
     this.editandoId = null;
-    this.nuevoAdmin = { 
-      nombre: '', 
-      correo: '', 
-      clave: '', 
-      telefono: '' 
-    };
-  }
-
-  private obtenerMensajeError(error: any): string {
-    // Si es un objeto con propiedades de campos, mostrar el campo específico
-    if (error.error && typeof error.error === 'object') {
-      // Si tiene 'detail', lo mostramos
-      if (error.error.detail) {
-        return error.error.detail;
-      }
-      // Si tiene estructura de errores por campo
-      if (error.error.errors || error.error.field_errors) {
-        const errores = error.error.errors || error.error.field_errors;
-        const campos = Object.keys(errores);
-        if (campos.length > 0) {
-          return `Campo inválido: ${campos[0]} - ${errores[campos[0]]}`;
-        }
-      }
-      // Si no, intentar obtener la primera clave-valor
-      const claves = Object.keys(error.error);
-      if (claves.length > 0 && claves[0] !== 'detail') {
-        return `${claves[0]}: ${error.error[claves[0]]}`;
-      }
-    }
-    return 'Error desconocido';
+    this.nuevoUsuario = this.getUsuarioBase();
+    this.filtroEspecialidad = '';
+    this.mostrarDropdown = false;
   }
 
   guardar() {
-    // 🛡️ Clonamos los datos para procesarlos antes de enviar
-    const data = { ...this.nuevoAdmin };
+    const data = { ...this.nuevoUsuario };
+    if (!data.clave || data.clave.trim() === '') delete data.clave;
 
-    if (this.editandoId) {
-      // 🔍 FIX QA: Si la clave está vacía en edición, la eliminamos del objeto
-      // para que el backend no intente validarla (evita el error 422)
-      if (!data.clave || data.clave.trim() === '') {
-        delete data.clave;
-      }
+    const peticion = this.vistaActual === 'admins' 
+      ? (this.editandoId ? this.usuariosService.actualizarAdmin(this.editandoId, data) : this.usuariosService.crearColega(data))
+      : (this.editandoId ? this.usuariosService.actualizarTecnico(this.editandoId, data) : this.usuariosService.crearTecnico(data));
 
-      this.usuariosService.actualizarAdmin(this.editandoId, data).subscribe({
-        next: () => {
-          alert('¡Datos del colega actualizados! ✅');
-          this.cancelarEdicion();
-          this.cargarAdmins();
-        },
-        error: (e) => alert(this.obtenerMensajeError(e))
-      });
-    } else {
-      // 🚀 REGISTRAR NUEVO: Forzamos el rol de Administrador de Taller (ID: 1)
-      data.rol_id = 1;
-      
-      this.usuariosService.crearColega(data).subscribe({
-        next: () => { 
-          this.cancelarEdicion();
-          this.usuariosService.getMisAdmins().subscribe({
-            next: (admins) => {
-              this.admins = admins;
-              alert('¡Administrador Registrado y vinculado a tu taller! 🎉');
-            },
-            error: () => alert('Administrador creado pero error al recargar la tabla')
-          });
-        },
-        error: (e) => alert(this.obtenerMensajeError(e))
-      });
-    }
+    peticion.subscribe({
+      next: () => {
+        alert('Guardado con éxito ✅');
+        this.cancelarEdicion();
+        this.refrescarTodo();
+      },
+      error: (e) => alert(this.obtenerMensajeError(e))
+    });
   }
 
   borrar(id: number) {
-    if (confirm('¿Seguro que quieres quitar a este administrador de tu equipo?')) {
+    if (confirm('¿Eliminar este usuario?')) {
       this.usuariosService.eliminarAdmin(id).subscribe({
-        next: () => {
-          this.admins = this.admins.filter(admin => admin.id !== id);
-          alert('Eliminado con éxito');
-        },
-        error: (e) => alert(e.error?.detail || 'No se pudo eliminar')
+        next: () => this.refrescarTodo(),
+        error: (e) => alert('Error al eliminar')
       });
     }
   }

@@ -1,56 +1,47 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Numeric, JSON, Text
+from sqlalchemy import Column, Integer, String, ForeignKey, Numeric, Text
 from sqlalchemy.orm import relationship
 from app.db.base_class import Base
 
 class Incidente(Base):
-    __tablename__ = "incidente" # Recomendado forzar el nombre
+    __tablename__ = "incidente"
 
     id = Column(Integer, primary_key=True, index=True)
     
-    # --- LLAVES FORÁNEAS ---
-    # Un incidente NO puede quedar huérfano de vehículo o usuario
-    vehiculo_id = Column(
-        Integer, 
-        ForeignKey("vehiculo.id", ondelete="RESTRICT"), 
-        nullable=False
-    )
+    # --- LLAVES FORÁNEAS FÍSICAS ---
+    vehiculo_id = Column(Integer, ForeignKey("vehiculo.id", ondelete="RESTRICT"), nullable=False)
+    usuario_id = Column(Integer, ForeignKey("usuario.id", ondelete="RESTRICT"), nullable=False)
+    
+    # ID del taller que toma el servicio
+    taller_id = Column(Integer, ForeignKey("taller.id", ondelete="SET NULL"), nullable=True)
+    
+    # ID del técnico específico asignado
+    tecnico_id = Column(Integer, ForeignKey("usuario.id", ondelete="SET NULL"), nullable=True)
 
-    usuario_id = Column(
-        Integer, 
-        ForeignKey("usuario.id", ondelete="RESTRICT"), 
-        nullable=False
-    )
-
-# Si el taller desaparece, el incidente queda libre para otro (SET NULL)
-    taller_id = Column(
-        Integer, 
-        ForeignKey("taller.id", ondelete="SET NULL"), 
-        nullable=True
-    )
-    # --- DATOS DE UBICACIÓN Y ESTADO ---
+    # --- DATOS DE ESTADO Y UBICACIÓN ---
     latitud = Column(Numeric(10, 8))
     longitud = Column(Numeric(11, 8))
     prioridad = Column(String(20)) # 'baja', 'media', 'alta'
-    estado = Column(String(20), default="pendiente") # 'pendiente', 'en_proceso', 'atendido'
+    estado = Column(String(20), default="pendiente") 
     pago_estado = Column(String(20), default="pendiente")
+    motivo_cancelacion = Column(Text, nullable=True)
     
-    # --- CAMPOS PARA LA IA (Core del proyecto) ---
+    # --- CAMPOS PARA LA IA ---
     transcripcion_audio = Column(Text)
-    clasificacion_ia = Column(String(100)) # (Nota: quité la tilde para evitar líos de encoding)
+    clasificacion_ia = Column(String(100))
     resumen_ia = Column(Text)
 
-    # --- RELACIONES (Bidireccionales) ---
-    # Para saber qué auto es: incidente.vehiculo.marca
+    # --- RELACIONES EXPLÍCITAS ---
     vehiculo = relationship("Vehiculo", back_populates="incidentes")
     
-    # Para saber quién es el cliente: incidente.usuario.nombre
-    usuario = relationship("Usuario", back_populates="incidentes")
+    # Cliente: indicamos que usa la columna usuario_id
+    usuario = relationship("Usuario", back_populates="incidentes", foreign_keys=[usuario_id])
     
-    # Para saber qué taller lo atiende: incidente.taller.nombre
-    taller = relationship("Taller", back_populates="incidentes")
+    # Técnico: indicamos que usa la columna tecnico_id
+    tecnico = relationship("Usuario", foreign_keys=[tecnico_id], back_populates="servicios_asignados")
     
-    # Para ver las fotos/audios: incidente.evidencias
+    # Taller: indicamos que usa la columna taller_id
+    taller = relationship("Taller", back_populates="incidentes", foreign_keys=[taller_id])
+
     evidencias = relationship("Evidencia", back_populates="incidente", cascade="all, delete-orphan")
-    # Relación con Pagos (Un incidente puede generar un pago)
     pagos = relationship("Pago", back_populates="incidente", uselist=False, cascade="all, delete-orphan")
     notificaciones = relationship("Notificacion", back_populates="incidente")

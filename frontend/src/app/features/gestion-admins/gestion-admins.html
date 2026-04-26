@@ -1,72 +1,183 @@
 <div class="admin-container">
   <div class="header-section">
-    <h2>👥 Gestión de Administradores</h2>
-    <p class="subtitle">Administra los accesos de tu equipo técnico y administrativo.</p>
+    <h2>👥 Gestión de Equipo y Catálogo</h2>
+    <p class="subtitle">Administra los accesos de tu equipo y el catálogo global de especialidades.</p>
   </div>
 
-  <div class="form-card">
-    <div class="card-header">
-      <h4>{{ editandoId ? '✏️ Editando Administrador' : '➕ Agregar Nuevo Administrador' }}</h4>
-    </div>
-    
-    <div class="form-grid">
-      <div class="input-group">
-        <label>Nombre Completo</label>
-        <input [(ngModel)]="nuevoAdmin.nombre" placeholder="Ej. Juan Perez" type="text">
-      </div>
-      <div class="input-group">
-        <label>Correo Electrónico</label>
-        <input [(ngModel)]="nuevoAdmin.correo" placeholder="correo@taller.com" type="email">
-      </div>
-      <div class="input-group">
-        <label>Teléfono</label>
-        <input [(ngModel)]="nuevoAdmin.telefono" placeholder="70012345" type="text">
-      </div>
-      <div class="input-group">
-        <label>{{ editandoId ? 'Nueva Clave (opcional)' : 'Contraseña' }}</label>
-        <input [(ngModel)]="nuevoAdmin.clave" type="password" placeholder="********">
-      </div>
-    </div>
-
-    <div class="form-actions">
-      <button (click)="guardar()" [ngClass]="editandoId ? 'btn-update' : 'btn-save'">
-        {{ editandoId ? 'Actualizar Datos' : 'Registrar Administrador' }}
-      </button>
-      <button *ngIf="editandoId" (click)="cancelarEdicion()" class="btn-cancel">
-        Cancelar
-      </button>
-    </div>
+  <div class="tabs">
+    <button [class.active]="vistaActual === 'admins'" (click)="cambiarVista('admins')">
+      🛡️ Administradores
+    </button>
+    <button [class.active]="vistaActual === 'tecnicos'" (click)="cambiarVista('tecnicos')">
+      🔧 Técnicos
+    </button>
+    <button [class.active]="vistaActual === 'especialidades'" (click)="cambiarVista('especialidades')">
+      📚 Catálogo
+    </button>
   </div>
 
-  <div class="table-responsive">
-    <table class="modern-table">
-      <thead>
-        <tr>
-          <th>Nombre</th>
-          <th>Contacto</th>
-          <th>Estado</th>
-          <th class="text-center">Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let admin of admins">
-          <td class="user-cell">
-            <div class="avatar">{{ admin.nombre[0] }}</div>
-            <span>{{ admin.nombre }}</span>
-          </td>
-          <td>
-            <div class="contact-info">
-              <span class="email">{{ admin.correo }}</span>
-              <span class="phone">{{ admin.telefono || 'Sin teléfono' }}</span>
+  <ng-container *ngIf="vistaActual !== 'especialidades'">
+    <div class="form-card">
+      <div class="card-header">
+        <h4>{{ editandoId ? '✏️ Editando ' : '➕ Agregar Nuevo ' }} {{ vistaActual === 'admins' ? 'Administrador' : 'Técnico' }}</h4>
+      </div>
+      
+      <div class="form-grid">
+        <div class="input-group">
+          <label>Nombre Completo</label>
+          <input [(ngModel)]="nuevoUsuario.nombre" placeholder="Ej. Juan Perez" type="text">
+        </div>
+        <div class="input-group">
+          <label>Correo Electrónico</label>
+          <input [(ngModel)]="nuevoUsuario.correo" placeholder="correo@taller.com" type="email">
+        </div>
+        <div class="input-group">
+          <label>Teléfono</label>
+          <input [(ngModel)]="nuevoUsuario.telefono" placeholder="70012345" type="text">
+        </div>
+        <div class="input-group">
+          <label>{{ editandoId ? 'Nueva Clave (opcional)' : 'Contraseña' }}</label>
+          <input [(ngModel)]="nuevoUsuario.clave" type="password" placeholder="********">
+        </div>
+
+        <ng-container *ngIf="vistaActual === 'tecnicos'">
+          <div class="input-group full-width status-toggle">
+            <label>Estado Laboral</label>
+            <label class="switch">
+              <input type="checkbox" [(ngModel)]="nuevoUsuario.esta_activo">
+              <span class="slider round"></span>
+            </label>
+            <span class="status-text" [class.active-text]="nuevoUsuario.esta_activo">
+              {{ nuevoUsuario.esta_activo ? 'Trabajando (Activa las especialidades en el Taller)' : 'Inactivo / Fuera de turno' }}
+            </span>
+          </div>
+
+          <div class="input-group full-width">
+            <label>Especialidades (Buscador)</label>
+            <div class="custom-select-container">
+              <div class="selected-chips">
+                <span class="chip-item" *ngFor="let esp of especialidadesSeleccionadas">
+                  {{ esp.nombre }}
+                  <button type="button" (click)="toggleEspecialidad(esp.id)" class="btn-remove-chip">×</button>
+                </span>
+                <input 
+                  type="text" 
+                  [(ngModel)]="filtroEspecialidad" 
+                  (focus)="mostrarDropdown = true"
+                  placeholder="Buscar especialidad..."
+                  class="search-input"
+                >
+              </div>
+              <div class="dropdown-list" *ngIf="mostrarDropdown && especialidadesFiltradas.length > 0">
+                <div 
+                  class="dropdown-item" 
+                  *ngFor="let esp of especialidadesFiltradas" 
+                  (click)="toggleEspecialidad(esp.id); filtroEspecialidad = ''; mostrarDropdown = false"
+                >
+                  <span>+</span> {{ esp.nombre }}
+                </div>
+              </div>
+              <div class="dropdown-list" *ngIf="mostrarDropdown && filtroEspecialidad && especialidadesFiltradas.length === 0">
+                <div class="dropdown-no-results">No se encontraron especialidades</div>
+              </div>
             </div>
-          </td>
-          <td><span class="status-badge">Activo</span></td>
-          <td class="actions-cell">
-            <button (click)="prepararEdicion(admin)" class="action-btn edit">✏️</button>
-            <button (click)="borrar(admin.id)" class="action-btn delete">🗑️</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+            <div class="overlay-hidden" *ngIf="mostrarDropdown" (click)="mostrarDropdown = false"></div>
+          </div>
+        </ng-container>
+      </div>
+
+      <div class="form-actions">
+        <button (click)="guardar()" [ngClass]="editandoId ? 'btn-update' : 'btn-save'">
+          {{ editandoId ? 'Actualizar Datos' : 'Registrar ' + (vistaActual === 'admins' ? 'Administrador' : 'Técnico') }}
+        </button>
+        <button *ngIf="editandoId" (click)="cancelarEdicion()" class="btn-cancel">Cancelar</button>
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="modern-table">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Contacto</th>
+            <th>Detalles</th>
+            <th class="text-center">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let user of usuariosFiltrados">
+            <td class="user-cell">
+              <div class="avatar" [ngClass]="{'tech-avatar': vistaActual === 'tecnicos'}">
+                {{ user.nombre[0] | uppercase }}
+              </div>
+              <span>{{ user.nombre }}</span>
+            </td>
+            <td>
+              <div class="contact-info">
+                <span class="email">{{ user.correo }}</span>
+                <span class="phone">{{ user.telefono || 'Sin teléfono' }}</span>
+              </div>
+            </td>
+            <td>
+              <span *ngIf="vistaActual === 'admins'" class="status-badge">Activo</span>
+              <div *ngIf="vistaActual === 'tecnicos'" class="tech-details">
+                <span class="status-badge" [class.inactive]="!user.esta_activo">
+                  {{ user.esta_activo ? '🟢 Activo' : '🔴 Inactivo' }}
+                </span>
+                <div class="chip-container">
+                  <span class="chip" *ngFor="let esp of user.especialidades">{{ esp.nombre }}</span>
+                </div>
+              </div>
+            </td>
+            <td class="actions-cell">
+              <button (click)="prepararEdicion(user)" class="action-btn edit">✏️</button>
+              <button (click)="borrar(user.id)" class="action-btn delete">🗑️</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </ng-container>
+
+  <div *ngIf="vistaActual === 'especialidades'" class="catalog-view">
+    <div class="form-card">
+      <div class="card-header">
+        <h4>➕ Nueva Especialidad al Catálogo</h4>
+      </div>
+      <div class="form-grid">
+        <div class="input-group">
+          <label>Nombre de la Especialidad</label>
+          <input [(ngModel)]="nuevaEspecialidad.nombre" placeholder="Ej. Inyección Electrónica" type="text">
+        </div>
+        <div class="input-group full-width">
+          <label>Descripción (Opcional)</label>
+          <input [(ngModel)]="nuevaEspecialidad.descripcion" placeholder="Breve detalle de la capacidad..." type="text">
+        </div>
+      </div>
+      <div class="form-actions">
+        <button (click)="guardarEspecialidad()" class="btn-save">Registrar en Catálogo</button>
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="modern-table">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Descripción</th>
+            <th class="text-center">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let esp of especialidades">
+            <td><strong>{{ esp.nombre }}</strong></td>
+            <td>{{ esp.descripcion || 'Sin descripción' }}</td>
+            <td class="actions-cell">
+              <button (click)="borrarEspecialidad(esp.id)" class="action-btn delete">🗑️</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>

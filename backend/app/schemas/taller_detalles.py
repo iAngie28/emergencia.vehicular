@@ -29,12 +29,3 @@ class Especialidad(EspecialidadBase):
     id: int
     class Config:
         from_attributes = True
-
-# --- RELACIÓN TALLER-ESPECIALIDAD (Tabla Intermedia) ---
-class TallerEspecialidadBase(BaseModel):
-    taller_id: int
-    especialidad_id: int
-    nivel_experiencia: str # 'basico', 'experto'
-
-class TallerEspecialidadCreate(TallerEspecialidadBase):
-    pass

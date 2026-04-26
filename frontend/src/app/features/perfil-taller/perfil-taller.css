@@ -70,3 +70,62 @@ input[type="text"], input[type="number"] {
   background: #f8fafc;
   border-radius: 8px;
 }
+
+/* --- ESTILOS DEL SWITCH --- */
+.switch { position: relative; display: inline-block; width: 50px; height: 24px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .4s; }
+.slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; }
+input:checked + .slider { background-color: #16a34a; }
+input:focus + .slider { box-shadow: 0 0 1px #16a34a; }
+input:checked + .slider:before { transform: translateX(26px); }
+.slider.round { border-radius: 24px; }
+.slider.round:before { border-radius: 50%; }
+
+/* --- ESTILOS DEL BUSCADOR DE ESPECIALIDADES --- */
+.custom-select-container { position: relative; width: 100%; }
+.selected-chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 8px; border: 1px solid #ddd; border-radius: 6px; background: white; min-height: 45px; align-items: center; }
+.chip-item { background: #2563eb; color: white; padding: 4px 10px; border-radius: 16px; font-size: 0.85rem; display: flex; align-items: center; gap: 6px; font-weight: 500; }
+.btn-remove-chip { background: rgba(255,255,255,0.2); border: none; color: white; border-radius: 50%; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 14px; }
+.btn-remove-chip:hover { background: rgba(255,255,255,0.4); }
+.search-input { border: none !important; outline: none !important; box-shadow: none !important; flex: 1; min-width: 150px; font-size: 0.9rem; padding: 0 !important; }
+.dropdown-list { position: absolute; top: 105%; left: 0; right: 0; background: white; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); z-index: 1000; max-height: 200px; overflow-y: auto; }
+.dropdown-item { padding: 10px 15px; cursor: pointer; font-size: 0.9rem; color: #334155; transition: background 0.2s; display: flex; align-items: center; gap: 10px; }
+.dropdown-item span { color: #16a34a; font-weight: bold; }
+.dropdown-item:hover { background: #f1f5f9; }
+.dropdown-no-results { padding: 10px; color: #94a3b8; font-size: 0.85rem; text-align: center; }
+.overlay-hidden { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 900; background: transparent; }
+
+.info-text {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin-bottom: 0.5rem;
+}
+
+.chip-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  background: #f8fafc;
+  padding: 0.8rem;
+  border-radius: 8px;
+  border: 1px dashed #cbd5e1;
+}
+
+.chip-info {
+  background: #dbeafe;
+  color: #1e40af;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: 1px solid #bfdbfe;
+}
+
+.empty-msg {
+  font-size: 0.85rem;
+  color: #ef4444;
+  background: #fef2f2;
+  padding: 0.5rem;
+  border-radius: 4px;
+}

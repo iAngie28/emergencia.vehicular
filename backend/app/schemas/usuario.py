@@ -1,22 +1,23 @@
 from pydantic import BaseModel, EmailStr, Field
-from typing import Optional
+from typing import Optional, List
 from .taller import Taller
 from app.schemas.taller import TallerCreate
+from app.schemas.taller_detalles import Especialidad # 👈 Importamos el schema de especialidad
 
-# Base común: Lo que todos los estados del usuario comparten
+# Base común
 class UsuarioBase(BaseModel):
     nombre: str = Field(..., min_length=3, max_length=100)
     correo: EmailStr
     rol_id: Optional[int] = None
     telefono: Optional[str] = None
     taller_id: Optional[int] = None
-    taller: Optional[Taller] = None
+    esta_activo: Optional[bool] = True # 👈 NUEVO: Controla si el técnico aporta especialidades
 
-# Registro: Incluye la clave (obligatoria y min 8 caracteres)
+# Registro
 class UsuarioCreate(UsuarioBase):
     clave: str = Field(..., min_length=8)
 
-# Actualización: Todo es Opcional para cambios parciales (PATCH)
+# Actualización
 class UsuarioUpdate(BaseModel):
     nombre: Optional[str] = Field(None, min_length=3, max_length=100)
     correo: Optional[EmailStr] = None
@@ -24,24 +25,23 @@ class UsuarioUpdate(BaseModel):
     taller_id: Optional[int] = None
     clave: Optional[str] = Field(None, min_length=8)
     telefono: Optional[str] = None
+    esta_activo: Optional[bool] = None # 👈 NUEVO
 
-# Respuesta: Lo que enviamos al Frontend (Angular/Flutter)
+# Respuesta (Lo que va al Frontend)
 class Usuario(UsuarioBase):
     id: int
+    taller: Optional[Taller] = None
+    especialidades: List[Especialidad] = [] # 👈 NUEVO: Retorna las especialidades del técnico
 
     class Config:
         from_attributes = True
 
 # Para el registro de "Dueño + Taller"
 class RegistroSaaS(BaseModel):
-    # Datos del Usuario
     nombre: str
     correo: EmailStr
     password: str
-    # Datos de su nuevo Taller
     taller: TallerCreate
-
-from pydantic import BaseModel, EmailStr
 
 class RecuperarClaveRequest(BaseModel):
     correo: EmailStr
@@ -49,3 +49,11 @@ class RecuperarClaveRequest(BaseModel):
 class RestablecerClaveInput(BaseModel):
     token: str
     nueva_clave: str
+
+# --- ESQUEMAS PARA TÉCNICOS ---
+class TecnicoCreate(UsuarioCreate):
+    especialidades_ids: List[int] = []
+
+class TecnicoUpdate(UsuarioUpdate):
+    especialidades_ids: Optional[List[int]] = None
+    esta_activo: Optional[bool] = None

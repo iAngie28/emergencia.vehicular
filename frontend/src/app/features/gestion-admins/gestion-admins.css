@@ -1,3 +1,4 @@
+/* Contenedor Principal */
 .admin-container {
   padding: 2rem;
   max-width: 1200px;
@@ -14,11 +15,38 @@
   margin-bottom: 2rem;
 }
 
-/* Estilos de la Tarjeta de Formulario */
+/* Pestañas (Tabs) */
+.tabs {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.tabs button {
+  background: none;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px; 
+  font-size: 1rem;
+  transition: all 0.2s;
+}
+
+.tabs button:hover { color: #334155; }
+.tabs button.active { 
+  color: #2563eb; 
+  border-bottom-color: #2563eb; 
+}
+
+/* Tarjeta de Formulario */
 .form-card {
   background: white;
   border-radius: 12px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   padding: 1.5rem;
   margin-bottom: 2.5rem;
   border: 1px solid #e2e8f0;
@@ -38,6 +66,8 @@
   gap: 1.5rem;
   margin-bottom: 1.5rem;
 }
+
+.full-width { grid-column: 1 / -1; }
 
 .input-group label {
   display: block;
@@ -61,12 +91,12 @@
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
+/* Botones de Acción */
 .form-actions {
   display: flex;
   gap: 1rem;
 }
 
-/* Botones */
 .btn-save, .btn-update, .btn-cancel {
   padding: 0.75rem 1.5rem;
   border: none;
@@ -114,27 +144,24 @@ button:hover { filter: brightness(1.1); }
   display: flex;
   align-items: center;
   gap: 12px;
-  font-weight: 500;
 }
 
 .avatar {
-  width: 32px;
-  height: 32px;
+  width: 35px;
+  height: 35px;
   background: #e2e8f0;
   color: #475569;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.8rem;
+  font-weight: bold;
 }
 
-.contact-info {
-  display: flex;
-  flex-direction: column;
-}
+.tech-avatar { background: #dbeafe; color: #1e40af; }
 
-.email { font-size: 0.9rem; }
+.contact-info { display: flex; flex-direction: column; }
+.email { font-size: 0.9rem; font-weight: 500; }
 .phone { font-size: 0.8rem; color: #94a3b8; }
 
 .status-badge {
@@ -146,20 +173,102 @@ button:hover { filter: brightness(1.1); }
   font-weight: 600;
 }
 
+.status-badge.inactive { background: #fee2e2; color: #991b1b; }
+
 .actions-cell {
   display: flex;
   justify-content: center;
-  gap: 1rem;
+  gap: 0.5rem;
 }
 
 .action-btn {
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 1.1rem;
-  padding: 4px;
+  padding: 6px;
   border-radius: 4px;
   transition: background 0.2s;
 }
 
 .action-btn:hover { background: #f1f5f9; }
+
+/* Switch Toggle (iOS Style) */
+.status-toggle {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background: #f8fafc;
+  padding: 1rem;
+  border-radius: 8px;
+}
+
+.switch { position: relative; display: inline-block; width: 46px; height: 22px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider {
+  position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #cbd5e1; transition: .4s; border-radius: 22px;
+}
+.slider:before {
+  position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px;
+  background-color: white; transition: .4s; border-radius: 50%;
+}
+input:checked + .slider { background-color: #16a34a; }
+input:checked + .slider:before { transform: translateX(24px); }
+
+.status-text { font-size: 0.85rem; font-weight: 500; color: #64748b; }
+.active-text { color: #166534; }
+
+/* Chips de Especialidades */
+.chip-container { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
+.chip {
+  background: #eff6ff; color: #1e40af; padding: 2px 8px;
+  border-radius: 4px; font-size: 0.7rem; font-weight: 500; border: 1px solid #bfdbfe;
+}
+
+/* Selector Personalizado (Buscador con Chips) */
+.custom-select-container { position: relative; width: 100%; }
+.selected-chips {
+  display: flex; flex-wrap: wrap; gap: 6px; padding: 6px;
+  border: 1px solid #cbd5e1; border-radius: 6px; background: white;
+  min-height: 42px; align-items: center;
+}
+
+.chip-item {
+  background: #2563eb; color: white; padding: 3px 8px;
+  border-radius: 12px; font-size: 0.8rem; display: flex; align-items: center; gap: 4px;
+}
+
+.btn-remove-chip {
+  background: none; border: none; color: white; cursor: pointer; font-size: 14px;
+}
+
+.search-input { border: none !important; flex: 1; min-width: 120px; outline: none; }
+
+.dropdown-list {
+  position: absolute; top: 105%; left: 0; right: 0; background: white;
+  border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+  z-index: 100; max-height: 180px; overflow-y: auto;
+}
+
+.dropdown-item {
+  padding: 8px 12px; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; gap: 8px;
+}
+.dropdown-item:hover { background: #f1f5f9; }
+.dropdown-item span { color: #16a34a; font-weight: bold; }
+.dropdown-no-results { padding: 10px; color: #94a3b8; font-size: 0.8rem; text-align: center; }
+
+.overlay-hidden { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 90; }
+
+/* Vista de Catálogo (Animación) */
+.catalog-view {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.catalog-view .modern-table td strong {
+  color: #2563eb;
+}

@@ -1,7 +1,7 @@
 <div class="perfil-container">
   <div class="header">
     <h2>🏢 Gestión de Perfil del Taller</h2>
-    <p>Ubica tu taller en el mapa para que los clientes te encuentren en emergencias.</p>
+    <p>Actualiza la información básica y ubicación de tu taller.</p>
   </div>
 
   <div class="perfil-grid">
@@ -19,7 +19,20 @@
 
         <div class="form-group">
             <label>Teléfono de contacto</label>
-            <input type="text" [(ngModel)]="taller.telefono" name="telefono" placeholder="Ej: +591 70000000">
+            <input type="text" [(ngModel)]="taller.telefono" name="telefono">
+        </div>
+
+        <div class="form-group">
+          <label>Servicios Ofrecidos (Automático)</label>
+          <p class="info-text">Estas especialidades se activan según tus técnicos activos:</p>
+          <div class="chip-container" *ngIf="taller.especialidades_activas?.length > 0; else noEsp">
+            <span class="chip-info" *ngFor="let esp of taller.especialidades_activas">
+              {{ esp }}
+            </span>
+          </div>
+          <ng-template #noEsp>
+            <p class="empty-msg">⚠️ No hay especialidades activas. Registra técnicos con especialidades en "Gestión de Admins".</p>
+          </ng-template>
         </div>
 
         <div class="coords">
@@ -36,7 +49,7 @@
         <div class="status-box">
           <label class="switch">
             <input type="checkbox" [(ngModel)]="taller.estado" name="estado">
-            <span class="slider"></span>
+            <span class="slider round"></span>
           </label>
           <span>{{ taller.estado ? 'Disponible para Emergencias' : 'Fuera de Línea' }}</span>
         </div>
@@ -45,12 +58,12 @@
           {{ cargando ? 'Guardando...' : '💾 Guardar Cambios' }}
         </button>
 
-        <div *ngIf="mensaje" class="alert success">{{ mensaje }}</div>
+        <div *ngIf="mensaje" class="alert-success">{{ mensaje }}</div>
       </form>
     </div>
 
     <div class="map-section">
-      <label>Selecciona tu ubicación exacta:</label>
+      <label>Ubicación en el Mapa:</label>
       <div id="map"></div>
     </div>
   </div>

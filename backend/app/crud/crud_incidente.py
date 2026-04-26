@@ -25,5 +25,17 @@ class CRUDIncidente(CRUDBase[Incidente, IncidenteCreate, IncidenteUpdate]):
     def obtener_por_usuario(self, db: Session, *, usuario_id: int):
         return db.query(self.model).filter(self.model.usuario_id == usuario_id).all()
     
+    def asignar_tecnico(self, db: Session, *, db_obj: Incidente, tecnico_id: int) -> Incidente:
+        """Asigna un técnico específico del taller al incidente."""
+        return self.update(db, db_obj=db_obj, obj_in={"tecnico_id": tecnico_id})
 
+    def rechazar_incidente(self, db: Session, *, db_obj: Incidente, motivo: str) -> Incidente:
+        """Marca el incidente como rechazado por el taller."""
+        update_data = {
+            "estado": "rechazado",
+            "motivo_cancelacion": motivo,
+            "taller_id": None # Lo liberamos para que otros talleres NO lo vean o se sepa que fue devuelto
+        }
+        return self.update(db, db_obj=db_obj, obj_in=update_data)
+    
 incidente_crud = CRUDIncidente(Incidente)

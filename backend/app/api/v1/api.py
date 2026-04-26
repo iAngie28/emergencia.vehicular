@@ -17,4 +17,3 @@ api_router.include_router(notificaciones.router, prefix="/notificaciones", tags=
 api_router.include_router(pagos.router, prefix="/pagos", tags=["Pagos"])
 api_router.include_router(roles.router, prefix="/roles", tags=["Roles"])
 api_router.include_router(bitacora.router, prefix="/bitacora", tags=["Auditoría"])
-api_router.include_router(vehiculos.router, prefix="/vehiculos", tags=["Vehículos"])

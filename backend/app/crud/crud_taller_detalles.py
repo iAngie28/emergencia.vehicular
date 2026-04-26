@@ -1,9 +1,10 @@
 from sqlalchemy.orm import Session
 from app.crud.base import CRUDBase
-from app.models.taller_detalle import HorarioTaller, Especialidad, TallerEspecialidad
+from app.models.taller_detalle import HorarioTaller
+from app.models.usuario import Especialidad
 from app.schemas.taller_detalles import (
-    HorarioTallerCreate, EspecialidadCreate, TallerEspecialidadCreate
-)
+    HorarioTallerCreate, EspecialidadCreate
+) # ❌ Quitamos TallerEspecialidadCreate del import
 
 # CRUD Horarios
 class CRUDHorario(CRUDBase[HorarioTaller, HorarioTallerCreate, HorarioTallerCreate]):
@@ -19,9 +20,4 @@ class CRUDEspecialidad(CRUDBase[Especialidad, EspecialidadCreate, EspecialidadCr
 
 especialidad_crud = CRUDEspecialidad(Especialidad)
 
-# CRUD Intermedia (Taller <-> Especialidad)
-class CRUDTallerEspecialidad(CRUDBase[TallerEspecialidad, TallerEspecialidadCreate, TallerEspecialidadCreate]):
-    def obtener_especialidades_de_taller(self, db: Session, *, taller_id: int):
-        return db.query(self.model).filter(self.model.taller_id == taller_id).all()
-
-taller_especialidad_crud = CRUDTallerEspecialidad(TallerEspecialidad)
+# ❌ Se eliminó CRUDTallerEspecialidad por completo

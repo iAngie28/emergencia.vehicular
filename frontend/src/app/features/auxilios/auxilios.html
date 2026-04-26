@@ -1,7 +1,7 @@
 <div class="auxilios-page" [class.panel-open]="incidenteSeleccionado">
   <div class="header">
-    <h1>🚨 Gestión de Auxilios y Emergencias</h1>
-    <p class="subtitle">Visualiza y atiende las solicitudes de asistencia vehicular en tiempo real.</p>
+    <h1>🚨 Gestión de Auxilios</h1>
+    <p class="subtitle">Atiende las solicitudes de asistencia vehicular en tiempo real.</p>
   </div>
 
   <div class="tabs">
@@ -14,94 +14,153 @@
   </div>
 
   <div class="content-wrapper">
-    @if (tabActiva === 'pendientes') {
+    <ng-container *ngIf="tabActiva === 'pendientes'">
       <div *ngIf="incidentesPendientes.length === 0" class="empty-state">📭 No hay solicitudes pendientes.</div>
       <table *ngIf="incidentesPendientes.length > 0" class="modern-table">
         <thead>
           <tr>
             <th>ID</th>
             <th>Prioridad</th>
-            <th>Detalle del Incidente</th>
-            <th>Acción</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let inc of incidentesPendientes" (click)="verDetalle(inc)" class="clickable-row">
-            <td><strong>#{{ inc.id }}</strong></td>
-            <td><span class="badge" [ngClass]="'badge-' + inc.prioridad">{{ inc.prioridad | uppercase }}</span></td>
-            <td><p class="diagnostico">{{ inc.resumen_ia }}</p></td>
-            <td><button class="btn-primary" (click)="aceptarAuxilio(inc.id); $event.stopPropagation()">Aceptar Auxilio</button></td>
-          </tr>
-        </tbody>
-      </table>
-    }
-
-    @if (tabActiva === 'mis-atenciones') {
-      <div *ngIf="misAtenciones.length === 0" class="empty-state">🚧 No tienes auxilios activos.</div>
-      <table *ngIf="misAtenciones.length > 0" class="modern-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Estado Operativo</th>
-            <th>Detalle del Incidente</th>
+            <th>Diagnóstico IA</th>
             <th>Acciones</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let inc of misAtenciones" (click)="verDetalle(inc)" class="clickable-row">
+          <tr *ngFor="let inc of incidentesPendientes" (click)="seleccionarIncidente(inc)" class="clickable-row">
             <td><strong>#{{ inc.id }}</strong></td>
-            <td><span class="status-dot" [ngClass]="inc.estado"></span> <span class="status-text">{{ inc.estado }}</span></td>
-            <td><p class="diagnostico">{{ inc.resumen_ia }}</p></td>
-            <td class="action-cell">
-              <button *ngIf="inc.estado !== 'atendido'" class="btn-success" (click)="finalizarAuxilio(inc.id); $event.stopPropagation()">✅ Finalizar Servicio</button>
-              
-              <button *ngIf="inc.estado === 'atendido' && inc.pago_estado === 'pendiente'" class="btn-pay" (click)="abrirModalCobro(inc); $event.stopPropagation()">💵 Emitir Cobro</button>
-              
-              <span *ngIf="inc.pago_estado === 'por_cobrar'" style="color: #d97706; font-weight: bold;">⏳ Cobro Emitido</span>
-              <span *ngIf="inc.pago_estado === 'pagado'" style="color: #10b981; font-weight: bold; background: #dcfce7; padding: 4px 8px; border-radius: 6px;">Pagado ✅</span>
+            <td><span class="badge" [ngClass]="'badge-' + inc.prioridad">{{ inc.prioridad | uppercase }}</span></td>
+            <td>
+              <p class="diagnostico"><strong>{{ inc.clasificacion_ia }}</strong><br>
+              <small>{{ inc.resumen_ia }}</small></p>
+            </td>
+            <td>
+              <div class="action-cell">
+                <button class="btn-primary" (click)="aceptarIncidente(inc.id); $event.stopPropagation()">Aceptar</button>
+                <button class="btn-reject" (click)="abrirModalRechazo(inc); $event.stopPropagation()">Rechazar</button>
+              </div>
             </td>
           </tr>
         </tbody>
       </table>
-    }
+    </ng-container>
+
+    <ng-container *ngIf="tabActiva === 'mis-atenciones'">
+      <div *ngIf="misAtenciones.length === 0" class="empty-state">🚧 No tienes auxilios en curso.</div>
+      <table *ngIf="misAtenciones.length > 0" class="modern-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Estado</th>
+            <th>Personal</th>
+            <th>Gestión</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let inc of misAtenciones" (click)="seleccionarIncidente(inc)" class="clickable-row">
+            <td><strong>#{{ inc.id }}</strong></td>
+            <td>
+              <span class="status-dot" [ngClass]="inc.estado"></span> 
+              <span class="status-text">{{ inc.estado | titlecase }}</span>
+            </td>
+            <td>
+              <div *ngIf="inc.tecnico" class="tec-tag">🔧 {{ inc.tecnico.nombre }}</div>
+              <small *ngIf="!inc.tecnico" style="color: #94a3b8;">Sin asignar</small>
+            </td>
+            <td>
+              <div class="action-cell">
+                <button *ngIf="inc.estado !== 'atendido'" 
+                        class="btn-success" 
+                        (click)="finalizarAyuda(inc.id); $event.stopPropagation()">✅ Finalizar</button>
+                
+                <button *ngIf="inc.estado === 'atendido' && inc.pago_estado === 'pendiente'" 
+                        class="btn-pay" 
+                        (click)="abrirModalCobro(inc); $event.stopPropagation()">💵 Cobrar</button>
+
+                <button *ngIf="inc.estado !== 'atendido' && inc.pago_estado === 'pendiente'" 
+                        class="btn-reject" 
+                        (click)="abrirModalRechazo(inc); $event.stopPropagation()">Rechazar</button>
+
+                <span *ngIf="inc.pago_estado === 'por_cobrar'" style="color: #d97706; font-weight: bold;">⏳ Cobro Emitido</span>
+                <span *ngIf="inc.pago_estado === 'pagado'" style="color: #10b981; font-weight: bold; background: #dcfce7; padding: 4px 8px; border-radius: 6px;">Pagado ✅</span>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </ng-container>
   </div>
 
   <aside class="side-panel" [class.open]="incidenteSeleccionado">
     <div class="panel-header" *ngIf="incidenteSeleccionado">
-      <h2>Incidente #{{ incidenteSeleccionado.id }}</h2>
-      <button class="close-btn" (click)="cerrarDetalle()">✕</button>
+      <h2>Detalle Auxilio #{{ incidenteSeleccionado.id }}</h2>
+      <button class="close-btn" (click)="incidenteSeleccionado = null">✕</button>
     </div>
     <div class="panel-body" *ngIf="incidenteSeleccionado">
       <div class="info-card">
-        <label style="font-weight: bold; color: #475569;">🎙️ Audio Original:</label>
+        <label>🎙️ Audio del Problema:</label>
         <p class="voice-text">"{{ incidenteSeleccionado.transcripcion_audio }}"</p>
       </div>
       <div class="info-grid">
-        <label style="font-weight: bold; color: #475569; margin-top: 15px; display: block;">👤 Cliente:</label>
+        <label>👤 Cliente:</label>
         <p>{{ incidenteSeleccionado.cliente_nombre || 'Usuario' }}</p>
-        
-        <label style="font-weight: bold; color: #475569; margin-top: 15px; display: block;">📞 Teléfono:</label>
+        <label>📞 Contacto:</label>
         <p>{{ incidenteSeleccionado.telefono_cliente || 'No disponible' }}</p>
+        
+        <label>🔧 Técnico Asignado:</label>
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+          <p style="margin: 0;"><strong>{{ incidenteSeleccionado.tecnico?.nombre || 'Sin asignar' }}</strong></p>
+          <button *ngIf="incidenteSeleccionado.estado !== 'atendido'" (click)="abrirReasignacion()" class="btn-link-action" style="color: #2563eb; background: none; border: none; cursor: pointer; text-decoration: underline; font-size: 0.8rem;">🔄 Reasignar</button>
+        </div>
+        
+        <label>🚗 Vehículo:</label>
+        <p>{{ incidenteSeleccionado.vehiculo?.marca }} {{ incidenteSeleccionado.vehiculo?.modelo }}</p>
       </div>
-      <div class="panel-footer" style="margin-top: 30px;">
+      <div class="panel-footer">
         <a [href]="'tel:' + incidenteSeleccionado.telefono_cliente" class="btn-call">📞 Llamar al Cliente</a>
       </div>
     </div>
   </aside>
 
+  <div class="modal-overlay" *ngIf="mostrarModalAsignar">
+    <div class="modal-card">
+      <div class="modal-header"><h3>🔧 Asignación de Personal</h3></div>
+      <div class="modal-body">
+        <p>Selecciona quién atenderá este servicio:</p>
+        <select [(ngModel)]="idTecnicoSeleccionado" class="modern-input">
+          <option [value]="0" disabled>-- Elegir Técnico --</option>
+          <option *ngFor="let t of tecnicosDisponibles" [value]="t.id">{{ t.nombre }}</option>
+        </select>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-outline" (click)="cerrarModalAsignar()">Omitir</button>
+        <button class="btn-primary" [disabled]="!idTecnicoSeleccionado" (click)="confirmarAsignacion()">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" *ngIf="mostrarModalRechazo">
+    <div class="modal-card">
+      <div class="modal-header"><h3>🚫 Rechazar Servicio</h3></div>
+      <div class="modal-body">
+        <label>Escribe el motivo del rechazo:</label>
+        <textarea [(ngModel)]="motivoRechazo" class="modern-input" rows="3"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-outline" (click)="mostrarModalRechazo = false">Cancelar</button>
+        <button class="btn-primary" style="background: #e11d48;" (click)="confirmarRechazo()">Rechazar</button>
+      </div>
+    </div>
+  </div>
+
   <div class="modal-overlay" *ngIf="mostrarModalCobro">
     <div class="modal-card">
-      <div class="modal-header">
-        <h3>💵 Emitir Cobro #{{ incidenteACobrar?.id }}</h3>
-      </div>
-      
+      <div class="modal-header"><h3>💵 Generar Cobro</h3></div>
       <div class="modal-body">
-        <label style="display: block; text-align: left; margin-bottom: 10px; font-weight: 600; color: #334155;">Monto Total del Servicio (Bs.):</label>
-        <input type="number" class="modern-input" [(ngModel)]="montoCobro" placeholder="Ej: 150.00">
+        <label>Monto a cobrar (Bs.):</label>
+        <input type="number" class="modern-input" [(ngModel)]="montoCobro" placeholder="0.00">
       </div>
-
       <div class="modal-footer">
-        <button class="btn-outline" (click)="cerrarModalCobro()">Cancelar</button>
+        <button class="btn-outline" (click)="cerrarModalCobro()">Cerrar</button>
         <button class="btn-primary" (click)="generarCobro()">Emitir Cobro</button>
       </div>
     </div>

@@ -1,18 +1,27 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from typing import List
-from app.schemas.usuario import UsuarioUpdate
+from typing import List, Optional
+from pydantic import BaseModel
 
 from app.api import deps
 from app.crud.crud_usuario import usuario_crud
-from app.crud.crud_bitacora import bitacora_crud # 🚩 Tu CRUD
-from app.models.usuario import Usuario as UsuarioModel
-from app.schemas.usuario import Usuario as UsuarioSchema, UsuarioCreate
+from app.crud.crud_bitacora import bitacora_crud
+from app.models.usuario import Usuario as UsuarioModel, Especialidad
+from app.schemas.usuario import (
+    Usuario as UsuarioSchema, 
+    UsuarioCreate, 
+    UsuarioUpdate,
+    TecnicoCreate,
+    TecnicoUpdate
+)
 
 router = APIRouter()
 
+# --- PERFIL Y ADMINISTRADORES (Existente) ---
+
 @router.get("/me", response_model=UsuarioSchema)
 def leer_usuario_actual(current_user = Depends(deps.get_current_user)):
+    """Retorna los datos del usuario autenticado."""
     return current_user
 
 @router.get("/mis-administradores", response_model=List[UsuarioSchema])
@@ -20,10 +29,12 @@ def listar_admins_de_mi_taller(
     db: Session = Depends(deps.get_db),
     current_user = Depends(deps.get_current_admin_taller)
 ):
+    """Lista otros administradores (Rol 1) del mismo taller."""
     return db.query(UsuarioModel).filter(
         UsuarioModel.taller_id == current_user.taller_id,
         UsuarioModel.rol_id == 1
     ).all()
+
 @router.post("/nuevo-colega", response_model=UsuarioSchema)
 def crear_administrador_adicional(
     *,
@@ -31,73 +42,128 @@ def crear_administrador_adicional(
     user_in: UsuarioCreate,
     current_user = Depends(deps.get_current_admin_taller)
 ):
-    if usuario_crud.get_by_email(db, email=user_in.correo):
+    """Permite a un admin crear otro administrador para su taller."""
+    user = usuario_crud.get_by_email(db, email=user_in.correo)
+    if user:
         raise HTTPException(status_code=400, detail="El correo ya existe.")
     
     user_in.rol_id = 1
     user_in.taller_id = current_user.taller_id
-    nuevo_usuario = usuario_crud.create(db, obj_in=user_in)
+    
+    nuevo_admin = usuario_crud.create(db, obj_in=user_in, usuario_id=current_user.id)
+    return nuevo_admin
 
-    # 🚩 BITÁCORA (Actualizada con teléfono)
-    bitacora_crud.registrar(
-        db,
-        usuario_id=current_user.id,
-        taller_id=current_user.taller_id,
-        tabla="usuario",
-        tabla_id=nuevo_usuario.id,
-        accion="Crear_USUARIO",
-        nuevo={
-            "nombre": nuevo_usuario.nombre, 
-            "correo": nuevo_usuario.correo,
-            "telefono": nuevo_usuario.telefono # 🚩 Ahora lo guardamos
-        }
-    )
-    return nuevo_usuario
+# --- GESTIÓN DE TÉCNICOS (NUEVO) ---
 
-@router.put("/{usuario_id}", response_model=UsuarioSchema)
-def actualizar_administrador(
-    usuario_id: int,
+@router.get("/mis-tecnicos", response_model=List[UsuarioSchema])
+def listar_tecnicos_de_mi_taller(
+    db: Session = Depends(deps.get_db),
+    current_user = Depends(deps.get_current_admin_taller)
+):
+    """Obtiene todos los técnicos (rol_id = 3) del taller actual."""
+    return db.query(UsuarioModel).filter(
+        UsuarioModel.taller_id == current_user.taller_id,
+        UsuarioModel.rol_id == 3
+    ).all()
+
+@router.post("/nuevo-tecnico", response_model=UsuarioSchema)
+def crear_tecnico(
     *,
     db: Session = Depends(deps.get_db),
-    user_in: UsuarioUpdate,
+    user_in: TecnicoCreate,
     current_user = Depends(deps.get_current_admin_taller)
 ):
-    # QA: Solo puedes editar admins de TU taller
-    usuario_db = db.query(UsuarioModel).filter(
-        UsuarioModel.id == usuario_id,
-        UsuarioModel.taller_id == current_user.taller_id
-    ).first()
+    """Crea un nuevo técnico asignándole especialidades desde el inicio."""
+    if usuario_crud.get_by_email(db, email=user_in.correo):
+        raise HTTPException(status_code=400, detail="El correo ya existe.")
+    
+    # 1. Extraer IDs de especialidades y preparar datos de usuario
+    esp_ids = user_in.especialidades_ids
+    user_data = user_in.dict(exclude={"especialidades_ids"})
+    
+    # 2. Forzar Rol 3 (Técnico) y el Taller del Admin
+    obj_in_user = UsuarioCreate(**user_data)
+    obj_in_user.rol_id = 3
+    obj_in_user.taller_id = current_user.taller_id
+    
+    # 3. Crear usuario base
+    nuevo_tecnico = usuario_crud.create(db, obj_in=obj_in_user, usuario_id=current_user.id)
 
-    if not usuario_db:
-        raise HTTPException(status_code=404, detail="Administrador no encontrado")
+    # 4. Vincular especialidades
+    if esp_ids:
+        especialidades_db = db.query(Especialidad).filter(Especialidad.id.in_(esp_ids)).all()
+        nuevo_tecnico.especialidades = especialidades_db
+        db.commit()
+        db.refresh(nuevo_tecnico)
 
-    anterior_datos = {
-        "nombre": usuario_db.nombre, 
-        "correo": usuario_db.correo, 
-        "telefono": usuario_db.telefono
-    }
-
-    usuario_actualizado = usuario_crud.update(db, db_obj=usuario_db, obj_in=user_in)
-
-    # 🚩 BITÁCORA
     bitacora_crud.registrar(
         db,
         usuario_id=current_user.id,
         taller_id=current_user.taller_id,
         tabla="usuario",
-        tabla_id=usuario_id,
-        accion="ACTUALIZAR_USUARIO",
-        anterior=anterior_datos,
-        nuevo=user_in.dict(exclude_unset=True)
+        tabla_id=nuevo_tecnico.id,
+        accion="CREAR_TECNICO",
+        nuevo={"nombre": nuevo_tecnico.nombre, "especialidades": esp_ids}
     )
-    return usuario_actualizado
+    return nuevo_tecnico
+
+@router.put("/tecnico/{tecnico_id}", response_model=UsuarioSchema)
+def actualizar_tecnico(
+    tecnico_id: int,
+    *,
+    db: Session = Depends(deps.get_db),
+    user_in: TecnicoUpdate,
+    current_user = Depends(deps.get_current_admin_taller)
+):
+    """Actualiza datos, estado activo/inactivo y especialidades de un técnico."""
+    tecnico_db = db.query(UsuarioModel).filter(
+        UsuarioModel.id == tecnico_id,
+        UsuarioModel.taller_id == current_user.taller_id,
+        UsuarioModel.rol_id == 3
+    ).first()
+
+    if not tecnico_db:
+        raise HTTPException(status_code=404, detail="Técnico no encontrado")
+
+    anterior_datos = {"nombre": tecnico_db.nombre, "activo": tecnico_db.esta_activo}
+
+    # 1. Actualizar campos base (incluyendo esta_activo)
+    update_data = user_in.dict(exclude={"especialidades_ids"}, exclude_unset=True)
+    obj_in_update = UsuarioUpdate(**update_data)
+    tecnico_actualizado = usuario_crud.update(
+        db, db_obj=tecnico_db, obj_in=obj_in_update, usuario_id=current_user.id
+    )
+
+    # 2. Actualizar relación de especialidades si se proveen IDs
+    if user_in.especialidades_ids is not None:
+        especialidades_db = db.query(Especialidad).filter(
+            Especialidad.id.in_(user_in.especialidades_ids)
+        ).all()
+        tecnico_actualizado.especialidades = especialidades_db
+        db.commit()
+        db.refresh(tecnico_actualizado)
+
+    bitacora_crud.registrar(
+        db,
+        usuario_id=current_user.id,
+        taller_id=current_user.taller_id,
+        tabla="usuario",
+        tabla_id=tecnico_id,
+        accion="ACTUALIZAR_TECNICO",
+        anterior=anterior_datos,
+        nuevo=update_data
+    )
+    return tecnico_actualizado
+
+# --- OPERACIONES GENERALES ---
 
 @router.delete("/{usuario_id}", status_code=status.HTTP_204_NO_CONTENT)
-def eliminar_administrador(
+def eliminar_usuario(
     usuario_id: int,
     db: Session = Depends(deps.get_db),
     current_user = Depends(deps.get_current_admin_taller)
 ):
+    """Elimina un usuario del taller (Admin o Técnico)."""
     usuario = db.query(UsuarioModel).filter(
         UsuarioModel.id == usuario_id, 
         UsuarioModel.taller_id == current_user.taller_id
@@ -108,22 +174,18 @@ def eliminar_administrador(
     if usuario.id == current_user.id:
         raise HTTPException(status_code=400, detail="No puedes eliminarte a ti mismo.")
 
-    # Guardamos datos para la bitácora antes de borrar
     datos_borrado = {"nombre": usuario.nombre, "correo": usuario.correo}
-    id_borrado = usuario.id
-
+    
     db.delete(usuario)
     db.commit()
 
-    # 🚩 BITÁCORA
     bitacora_crud.registrar(
         db,
         usuario_id=current_user.id,
         taller_id=current_user.taller_id,
         tabla="usuario",
-        tabla_id=id_borrado,
+        tabla_id=usuario_id,
         accion="ELIMINAR_USUARIO",
         anterior=datos_borrado
     )
-    
     return None
