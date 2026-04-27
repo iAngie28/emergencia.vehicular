@@ -13,7 +13,9 @@
         <tr>
           <th>ID Cobro</th>
           <th>Incidente</th>
-          <th>Monto</th>
+          <th>Monto Bruto</th>
+          <th>Comisión (10%)</th>
+          <th>Monto Neto</th>
           <th>Método</th>
           <th>Estado</th>
           <th>Acciones Rápidas</th>
@@ -24,6 +26,8 @@
           <td><strong>#{{ pago.id }}</strong></td>
           <td class="incidente-text">Incidente #{{ pago.incidente_id }}</td>
           <td class="monto-text">{{ pago.monto }} Bs.</td>
+          <td class="comision-text" style="color: #ff6b6b; font-weight: 500;">-{{ pago.comision_plataforma | number:'1.2-2' }} Bs.</td>
+          <td class="neto-text" style="color: #51cf66; font-weight: 600;"><strong>{{ pago.monto - pago.comision_plataforma | number:'1.2-2' }} Bs.</strong></td>
           <td class="metodo-text">{{ pago.metodo_pago }}</td>
           <td>
             <span class="badge" [ngClass]="{
@@ -68,13 +72,38 @@
           <option value="qr">Transferencia QR</option>
           <option value="tarjeta">Tarjeta</option>
         </select>
+        
+        <div class="financial-breakdown" style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 15px; border-left: 4px solid #ff9800;">
+          <div class="breakdown-row" style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+            <label>Monto Bruto:</label>
+            <p class="breakdown-value" style="font-weight: 600;">{{ pagoEditado.monto | number:'1.2-2' }} Bs.</p>
+          </div>
+          <div class="breakdown-row" style="display: flex; justify-content: space-between; margin-bottom: 10px; color: #ff6b6b;">
+            <label>Comisión (10%):</label>
+            <p class="breakdown-value" style="font-weight: 600;">-{{ (pagoEditado.monto * 0.10) | number:'1.2-2' }} Bs.</p>
+          </div>
+          <div class="breakdown-row" style="display: flex; justify-content: space-between; border-top: 1px solid #dee2e6; padding-top: 10px; color: #51cf66;">
+            <label><strong>Monto a Recibir:</strong></label>
+            <p class="breakdown-value" style="font-weight: 700; font-size: 1.1em;"><strong>{{ (pagoEditado.monto * 0.90) | number:'1.2-2' }} Bs.</strong></p>
+          </div>
+        </div>
       </div>
 
       <div class="readonly-view" *ngIf="pagoSeleccionado.estado !== 'pendiente'">
         
-        <div class="data-group">
-          <label>Monto Facturado:</label>
-          <p class="data-value">{{ pagoSeleccionado.monto }} Bs.</p>
+        <div class="financial-breakdown" style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #1976d2;">
+          <div class="breakdown-row" style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+            <label>Monto Bruto:</label>
+            <p class="breakdown-value" style="font-weight: 600;">{{ pagoSeleccionado.monto | number:'1.2-2' }} Bs.</p>
+          </div>
+          <div class="breakdown-row" style="display: flex; justify-content: space-between; margin-bottom: 10px; color: #ff6b6b;">
+            <label>Comisión Plataforma (10%):</label>
+            <p class="breakdown-value" style="font-weight: 600;">-{{ pagoSeleccionado.comision_plataforma | number:'1.2-2' }} Bs.</p>
+          </div>
+          <div class="breakdown-row" style="display: flex; justify-content: space-between; border-top: 1px solid #dee2e6; padding-top: 10px; color: #51cf66;">
+            <label><strong>Monto a Recibir:</strong></label>
+            <p class="breakdown-value" style="font-weight: 700; font-size: 1.1em;"><strong>{{ pagoSeleccionado.monto - pagoSeleccionado.comision_plataforma | number:'1.2-2' }} Bs.</strong></p>
+          </div>
         </div>
         
         <div class="data-group">
@@ -92,6 +121,10 @@
               'badge-alta': pagoSeleccionado.estado === 'cancelado'
             }">{{ pagoSeleccionado.estado | uppercase }}</span>
           </p>
+        </div>
+
+        <div class="info-box" style="background: #e3f2fd; border-left: 4px solid #1976d2; padding: 12px; border-radius: 4px; margin-top: 15px; font-size: 0.9em; color: #1565c0;">
+          💡 La comisión del 10% se cobra por los servicios de gestión, auditoría y mantenimiento de la plataforma.
         </div>
 
       </div>

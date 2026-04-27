@@ -156,8 +156,27 @@
     <div class="modal-card">
       <div class="modal-header"><h3>💵 Generar Cobro</h3></div>
       <div class="modal-body">
+        <div class="alert-info" style="background: #fff3cd; border-left: 4px solid #ff9800; padding: 12px; border-radius: 4px; margin-bottom: 15px; font-size: 0.9em; color: #856404;">
+          ⚠️ La plataforma retiene el 10% como comisión por servicios. Verás el desglose abajo.
+        </div>
+        
         <label>Monto a cobrar (Bs.):</label>
         <input type="number" class="modern-input" [(ngModel)]="montoCobro" placeholder="0.00">
+        
+        <div *ngIf="montoCobro && montoCobro > 0" class="financial-breakdown" style="background: #f8f9fa; padding: 12px; border-radius: 6px; margin-top: 15px; border-left: 4px solid #2563eb;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span>Monto Bruto:</span>
+            <strong>{{ montoCobro | number:'1.2-2' }} Bs.</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px; color: #ff6b6b;">
+            <span>Comisión Plataforma (10%):</span>
+            <strong>-{{ (montoCobro * 0.10) | number:'1.2-2' }} Bs.</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; border-top: 2px solid #dee2e6; padding-top: 8px; color: #51cf66; font-weight: 700;">
+            <span>Dinero a Recibir:</span>
+            <strong style="font-size: 1.1em;">{{ (montoCobro * 0.90) | number:'1.2-2' }} Bs.</strong>
+          </div>
+        </div>
       </div>
       <div class="modal-footer">
         <button class="btn-outline" (click)="cerrarModalCobro()">Cerrar</button>

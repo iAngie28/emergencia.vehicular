@@ -1,6 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-dashboard',
@@ -12,9 +13,19 @@ export class DashboardComponent implements OnInit {
   private http = inject(HttpClient);
   public tallerNombre: string = 'Cargando...';
   public usuarioNombre: string = 'Usuario';
+  
+  // KPIs Financieros
+  public estadisticasFinanzas: any = {
+    totalBruto: 0,
+    totalComision: 0,
+    totalNeto: 0,
+    cantidadPagos: 0,
+    cargando: true
+  };
 
   ngOnInit() {
     this.obtenerDatosPerfil();
+    this.cargarEstadisticasFinanzas();
   }
 
   obtenerDatosPerfil() {
@@ -22,7 +33,7 @@ export class DashboardComponent implements OnInit {
     const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
 
     // Llamamos al endpoint que devuelve el usuario logueado
-    this.http.get<any>('http://localhost:8000/api/v1/usuarios/me', { headers }).subscribe({
+    this.http.get<any>(`${environment.apiUrl}/usuarios/me`, { headers }).subscribe({
       next: (user) => {
         this.usuarioNombre = user.nombre;
         // Si tu backend devuelve el objeto taller dentro del usuario:
@@ -34,6 +45,26 @@ export class DashboardComponent implements OnInit {
       },
       error: () => {
         this.tallerNombre = "Taller Pro";
+      }
+    });
+  }
+
+  cargarEstadisticasFinanzas() {
+    const token = localStorage.getItem('token');
+    const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+    
+    this.http.get<any[]>(`${environment.apiUrl}/pagos/mi-historial`, { headers }).subscribe({
+      next: (pagos) => {
+        const pagosCompletados = pagos.filter(p => p.estado === 'completado');
+        
+        this.estadisticasFinanzas.totalBruto = pagosCompletados.reduce((sum: number, p: any) => sum + (p.monto || 0), 0);
+        this.estadisticasFinanzas.totalComision = pagosCompletados.reduce((sum: number, p: any) => sum + (p.comision_plataforma || 0), 0);
+        this.estadisticasFinanzas.totalNeto = this.estadisticasFinanzas.totalBruto - this.estadisticasFinanzas.totalComision;
+        this.estadisticasFinanzas.cantidadPagos = pagosCompletados.length;
+        this.estadisticasFinanzas.cargando = false;
+      },
+      error: () => {
+        this.estadisticasFinanzas.cargando = false;
       }
     });
   }

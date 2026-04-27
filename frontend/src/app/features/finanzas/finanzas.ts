@@ -21,10 +21,19 @@ export class FinanzasComponent implements OnInit {
   cargando: boolean = false;
 
   pagoSeleccionado: any = null;
-  pagoEditado: any = {}; 
+  pagoEditado: any = {};
+  
+  // KPIs Financieros
+  estadisticas: any = {
+    totalBruto: 0,
+    totalComision: 0,
+    totalNeto: 0,
+    cantidadPagos: 0
+  }; 
 
   ngOnInit() {
     this.cargarPagos();
+    this.calcularEstadisticas();
   }
 
   cargarPagos() {
@@ -36,10 +45,20 @@ export class FinanzasComponent implements OnInit {
     this.http.get<any[]>(`${this.apiUrl}/mi-historial`, { headers }).subscribe({
       next: (data) => {
         this.pagosHistorial = data.sort((a, b) => b.id - a.id);
+        this.calcularEstadisticas();
         this.cargando = false;
       },
       error: () => this.cargando = false
     });
+  }
+
+  calcularEstadisticas() {
+    const pagosCompletados = this.pagosHistorial.filter(p => p.estado === 'completado');
+    
+    this.estadisticas.totalBruto = pagosCompletados.reduce((sum: number, p: any) => sum + (p.monto || 0), 0);
+    this.estadisticas.totalComision = pagosCompletados.reduce((sum: number, p: any) => sum + (p.comision_plataforma || 0), 0);
+    this.estadisticas.totalNeto = this.estadisticas.totalBruto - this.estadisticas.totalComision;
+    this.estadisticas.cantidadPagos = pagosCompletados.length;
   }
 
   verDetalle(pago: any) {
