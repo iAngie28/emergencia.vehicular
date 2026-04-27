@@ -174,6 +174,36 @@ def seed_db(db: Session) -> None:
         logger.info("✅ Incidentes y Pagos de historial creados exitosamente.")
         logger.info("📍 Incluye incidentes con UBICACIONES GPS variadas para pruebas de distancia.")
 
+    # ---------------------------------------------------------
+    # 6. HORARIOS DE TALLERES
+    # ---------------------------------------------------------
+    horarios_taller = [
+        # Taller 1: Lunes a Viernes 8:00 - 18:00, Sábado 9:00 - 14:00
+        {"taller_id": 1, "dia": "lunes", "hora_apertura": "08:00", "hora_cierre": "18:00"},
+        {"taller_id": 1, "dia": "martes", "hora_apertura": "08:00", "hora_cierre": "18:00"},
+        {"taller_id": 1, "dia": "miércoles", "hora_apertura": "08:00", "hora_cierre": "18:00"},
+        {"taller_id": 1, "dia": "jueves", "hora_apertura": "08:00", "hora_cierre": "18:00"},
+        {"taller_id": 1, "dia": "viernes", "hora_apertura": "08:00", "hora_cierre": "18:00"},
+        {"taller_id": 1, "dia": "sábado", "hora_apertura": "09:00", "hora_cierre": "14:00"},
+        # Taller 2: Lunes a Viernes 7:00 - 19:00, Sábado 8:00 - 15:00
+        {"taller_id": 2, "dia": "lunes", "hora_apertura": "07:00", "hora_cierre": "19:00"},
+        {"taller_id": 2, "dia": "martes", "hora_apertura": "07:00", "hora_cierre": "19:00"},
+        {"taller_id": 2, "dia": "miércoles", "hora_apertura": "07:00", "hora_cierre": "19:00"},
+        {"taller_id": 2, "dia": "jueves", "hora_apertura": "07:00", "hora_cierre": "19:00"},
+        {"taller_id": 2, "dia": "viernes", "hora_apertura": "07:00", "hora_cierre": "19:00"},
+        {"taller_id": 2, "dia": "sábado", "hora_apertura": "08:00", "hora_cierre": "15:00"},
+    ]
+    
+    for h in horarios_taller:
+        if not db.query(HorarioTaller).filter(
+            HorarioTaller.taller_id == h["taller_id"],
+            HorarioTaller.dia == h["dia"]
+        ).first():
+            horario = HorarioTaller(**h)
+            db.add(horario)
+    db.commit()
+    logger.info("✅ Horarios de talleres creados exitosamente.")
+
 if __name__ == "__main__":
     # Permite ejecutar `python seeder.py` directamente
     db = SessionLocal()

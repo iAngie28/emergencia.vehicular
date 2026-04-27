@@ -53,6 +53,24 @@ def obtener_mi_taller(
         raise HTTPException(status_code=404, detail="Taller no encontrado")
     return taller
 
+# 3.5. Estado actual del taller (Abierto/Cerrado)
+@router.get("/me/status", response_model=dict)
+def obtener_status_taller(
+    db: Session = Depends(deps.get_db),
+    current_user = Depends(deps.get_current_active_user)
+):
+    """Obtiene si el taller está abierto AHORA"""
+    taller = taller_crud.get(db, id=current_user.taller_id)
+    if not taller:
+        raise HTTPException(status_code=404, detail="Taller no encontrado")
+    
+    return {
+        "taller_id": taller.id,
+        "nombre": taller.nombre,
+        "esta_abierto_ahora": taller.esta_abierto_ahora,
+        "estado": "🟢 ABIERTO" if taller.esta_abierto_ahora else "🔴 CERRADO"
+    }
+
 @router.put("/me", response_model=Taller)
 def actualizar_mi_taller(
     obj_in: TallerUpdate,

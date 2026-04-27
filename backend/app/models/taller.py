@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, Float, Boolean, Numeric
 from sqlalchemy.orm import relationship
 from app.db.base_class import Base
 from app.models.usuario import Especialidad
+from datetime import datetime
 class Taller(Base):
     __tablename__ = "taller"
     id = Column(Integer, primary_key=True, index=True)
@@ -30,3 +31,30 @@ class Taller(Base):
                 for esp in u.especialidades:
                     servicios.add(esp.nombre)
         return sorted(list(servicios))
+
+    @property
+    def esta_abierto_ahora(self) -> bool:
+        """Verifica si el taller está abierto en este momento."""
+        ahora = datetime.now()
+        hora_actual = ahora.time()
+        
+        # Mapeo de día en inglés a español
+        dias_semana = {
+            0: 'lunes', 1: 'martes', 2: 'miércoles', 3: 'jueves',
+            4: 'viernes', 5: 'sábado', 6: 'domingo'
+        }
+        dia_hoy = dias_semana[ahora.weekday()]
+        
+        # Buscar horario para hoy
+        horario_hoy = None
+        for horario in self.horarios:
+            if horario.dia.lower() == dia_hoy:
+                horario_hoy = horario
+                break
+        
+        # Si no hay horario definido para hoy, está cerrado
+        if not horario_hoy:
+            return False
+        
+        # Verificar que esté dentro del rango horario
+        return horario_hoy.hora_apertura <= hora_actual <= horario_hoy.hora_cierre

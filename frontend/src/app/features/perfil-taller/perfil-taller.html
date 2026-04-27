@@ -35,6 +35,38 @@
           </ng-template>
         </div>
 
+        <!-- 🕐 HORARIOS DEL TALLER -->
+        <div class="horarios-section">
+          <label>📅 Horarios de Atención:</label>
+          <div class="horarios-indicator" [ngClass]="taller.esta_abierto_ahora ? 'abierto' : 'cerrado'">
+            <span class="badge-status">
+              {{ taller.esta_abierto_ahora ? '🟢 ABIERTO AHORA' : '🔴 CERRADO' }}
+            </span>
+          </div>
+          
+          <div *ngIf="taller.horarios && taller.horarios.length > 0; else noHorarios" class="horarios-tabla">
+            <table>
+              <thead>
+                <tr>
+                  <th>Día</th>
+                  <th>Apertura</th>
+                  <th>Cierre</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let h of taller.horarios">
+                  <td><strong>{{ h.dia | titlecase }}</strong></td>
+                  <td>{{ formatTime(h.hora_apertura) }}</td>
+                  <td>{{ formatTime(h.hora_cierre) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <ng-template #noHorarios>
+            <p class="empty-msg">⚠️ No hay horarios definidos. Contacta al administrador.</p>
+          </ng-template>
+        </div>
+
         <div class="coords">
           <div class="form-group">
             <label>Latitud</label>

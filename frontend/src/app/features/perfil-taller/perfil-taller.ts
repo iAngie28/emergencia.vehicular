@@ -24,7 +24,9 @@ export class PerfilTallerComponent implements OnInit {
     latitud: -17.7833,
     longitud: -63.1821,
     estado: true,
-    especialidades_activas: [] // 👈 Lista de strings que envía el backend
+    especialidades_activas: [],
+    horarios: [],
+    esta_abierto_ahora: false
   };
 
   cargando: boolean = false;
@@ -38,6 +40,10 @@ export class PerfilTallerComponent implements OnInit {
     this.talleresService.getMiTaller().subscribe({
       next: (data) => {
         this.taller = data;
+        // Ordenar horarios por día
+        if (this.taller.horarios) {
+          this.taller.horarios = this.ordenarHorarios(this.taller.horarios);
+        }
         this.initMap();
       },
       error: (err) => {
@@ -94,6 +100,26 @@ export class PerfilTallerComponent implements OnInit {
         this.mensaje = 'Error al actualizar los datos ❌';
         this.cargando = false;
       }
+    });
+  }
+
+  // Formato de hora (convierte "08:00:00" a "08:00")
+  formatTime(time: string | any): string {
+    if (!time) return '';
+    if (typeof time === 'string') {
+      return time.substring(0, 5); // "HH:MM"
+    }
+    return time;
+  }
+
+  // Ordenar horarios por día de la semana
+  private ordenarHorarios(horarios: any[]): any[] {
+    const diasOrden = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
+    
+    return horarios.sort((a, b) => {
+      const indexA = diasOrden.indexOf(a.dia.toLowerCase());
+      const indexB = diasOrden.indexOf(b.dia.toLowerCase());
+      return indexA - indexB;
     });
   }
 }

@@ -1,6 +1,17 @@
 from pydantic import BaseModel, Field
 from typing import Optional, List
 from decimal import Decimal
+from datetime import time
+
+# Importar schema de horarios para reutilización
+class HorarioTallerInfo(BaseModel):
+    id: int
+    dia: str
+    hora_apertura: time
+    hora_cierre: time
+    
+    class Config:
+        from_attributes = True
 
 class TallerBase(BaseModel):
     nombre: str = Field(..., min_length=3, max_length=100)
@@ -26,14 +37,9 @@ class TallerUpdate(BaseModel):
 
 class Taller(TallerBase):
     id: int
+    especialidades_activas: List[str] = []
+    horarios: List[HorarioTallerInfo] = []
+    esta_abierto_ahora: bool = False
 
     class Config:
         from_attributes = True
-
-class Taller(TallerBase):
-    id: int
-    # 👈 AGREGA ESTA LÍNEA PARA QUE SE ENVÍE AL FRONTEND
-    especialidades_activas: List[str] = [] 
-
-    class Config:
-        from_attributes = True # O orm_mode = True si usas Pydantic v1
