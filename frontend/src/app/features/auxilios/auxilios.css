@@ -1,8 +1,5 @@
 /* auxilios.css */
 
-/* 🗺️ Importar estilos de Leaflet */
-@import 'leaflet/dist/leaflet.css';
-
 /* --- Modern CSS Reset --- */
 *, *::before, *::after {
   box-sizing: border-box;
@@ -283,9 +280,6 @@ body, h1, p, table, th, td, input, button {
   padding: 20px;
   flex: 1;
   overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  max-width: 100%;
 }
 
 .info-card {
@@ -322,10 +316,21 @@ body, h1, p, table, th, td, input, button {
   color: #0f172a;
 }
 
-/* Contenedor de mapa restringido */
-.info-grid .mapa-contenedor {
-  margin-left: auto !important;
-  margin-right: auto !important;
+/* Link a Google Maps */
+.mapa-link {
+  display: inline-block;
+  background: #2563eb;
+  color: white;
+  padding: 10px 16px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: background 0.2s;
+  margin-top: 10px;
+}
+
+.mapa-link:hover {
+  background: #1d4ed8;
 }
 
 .panel-footer {
@@ -485,49 +490,7 @@ body, h1, p, table, th, td, input, button {
     color: #475569;
 }
 
-/* 🗺️ Estilos del Mapa Leaflet */
-.mapa-contenedor {
-  width: calc(100% - 4px) !important;
-  max-width: 360px !important;
-  height: 200px !important;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
-  margin: 10px auto 15px auto !important;
-  z-index: 1;
-  background: #f8fafc;
-  overflow: hidden !important;
-  flex-shrink: 0;
-  box-sizing: border-box;
-  display: block;
-}
-
-#mapa-incidente {
-  width: 100% !important;
-  height: 100% !important;
-  border-radius: 8px;
-  display: block;
-}
-
 /* Estilos para los controles de Leaflet dentro del panel */
-.side-panel .leaflet-container {
-  width: 100% !important;
-  height: 100% !important;
-  overflow: hidden !important;
-  z-index: 1;
-}
-
-.side-panel .leaflet-control-zoom {
-  border: 1px solid #cbd5e1;
-  border-radius: 6px;
-}
-
-.side-panel .leaflet-control-zoom-in,
-.side-panel .leaflet-control-zoom-out {
-  background: white;
-  color: #0f172a;
-  font-weight: bold;
-}
-
 .side-panel .leaflet-marker-icon {
   border-radius: 50%;
 }

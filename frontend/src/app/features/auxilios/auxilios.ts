@@ -69,7 +69,6 @@ export class AuxiliosComponent implements OnInit {
   seleccionarIncidente(inc: any) { 
     this.incidenteSeleccionado = inc;
   }
-  }
 
   // --- LÓGICA DE ASIGNACIÓN Y REASIGNACIÓN ---
 
