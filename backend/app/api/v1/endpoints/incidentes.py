@@ -4,7 +4,8 @@ from typing import List
 from app.api import deps
 from app.crud.crud_incidente import incidente_crud
 from app.crud.crud_bitacora import bitacora_crud # 👈 Importante para la Regla de Oro
-from app.schemas.incidente import Incidente, IncidenteCreate, IncidenteUpdate
+from app.schemas.incidente import Incidente as IncidenteSchema, IncidenteCreate, IncidenteUpdate
+from app.models.incidente import Incidente  # 👈 Modelo ORM
 from fastapi.encoders import jsonable_encoder
 from app.models.usuario import Usuario
 from typing import Optional
@@ -17,54 +18,99 @@ from app.models.bitacora import Bitacora # 👈 Agrega esta importación
 router = APIRouter()
 
 # 1. Reportar incidente (IA) - Mantenemos igual
-@router.post("/", response_model=Incidente)
+@router.post("/", response_model=IncidenteSchema)
 def crear_nuevo_incidente(*, db: Session = Depends(deps.get_db), obj_in: IncidenteCreate):
     return incidente_crud.create(db, obj_in=obj_in, usuario_id=obj_in.usuario_id)
 
 # 2. Pendientes: Solo los que no tienen taller asignado
 # Reemplaza tu función leer_incidentes_pendientes por esta:
 
-@router.get("/pendientes", response_model=List[Incidente])
+@router.get("/pendientes", response_model=List[IncidenteSchema])
 def leer_incidentes_pendientes(
     db: Session = Depends(deps.get_db),
     current_user = Depends(deps.get_current_active_user)
 ):
     """Visualizar auxilios disponibles, filtrando los que este taller ya rechazó."""
-    # 1. Traemos todos los incidentes sin taller (taller_id is None)
-    incidentes = incidente_crud.obtener_pendientes(db)
+    from sqlalchemy.orm import joinedload
+    from app.models.taller import Taller
+    
+    # 1. Traemos todos los incidentes sin taller (taller_id is None) y cargamos taller
+    incidentes = db.query(Incidente).filter(
+        Incidente.estado == "pendiente"
+    ).options(joinedload(Incidente.taller), joinedload(Incidente.vehiculo)).all()
     
     if not current_user.taller_id:
         return incidentes
 
-    # 2. Consultamos la Bitácora para ver qué incidentes rechazó este taller
-    # Buscamos acciones de 'RECHAZAR_INCIDENTE' o 'RECHAZAR_Y_LIBERAR'
+    # 2. Obtener datos del taller del usuario actual
+    taller_actual = db.query(Taller).filter(Taller.id == current_user.taller_id).first()
+    
+    # 3. Consultamos la Bitácora para ver qué incidentes rechazó este taller
     rechazados_ids = db.query(Bitacora.tabla_id).filter(
         Bitacora.taller_id == current_user.taller_id,
         Bitacora.tabla == "incidente",
         Bitacora.accion.like("RECHAZAR%")
     ).all()
     
-    # Convertimos la lista de tuplas en una lista simple de IDs
     lista_negra = [r[0] for r in rechazados_ids]
 
-    # 3. Filtramos: solo devolvemos los que NO están en tu lista negra
-    return [i for i in incidentes if i.id not in lista_negra]
+    # 4. Filtramos y calculamos distancia
+    resultado = []
+    for incidente in incidentes:
+        if incidente.id not in lista_negra:
+            # 📏 Calcular distancia si taller actual existe
+            if taller_actual and taller_actual.latitud and taller_actual.longitud:
+                distancia = incidente_crud.calcular_distancia_haversine(
+                    float(taller_actual.latitud),
+                    float(taller_actual.longitud),
+                    float(incidente.latitud),
+                    float(incidente.longitud)
+                )
+                incidente.distancia_metros = distancia
+            resultado.append(incidente)
+    
+    # Ordenar por distancia (cercanos primero)
+    resultado.sort(key=lambda x: x.distancia_metros if x.distancia_metros else float('inf'))
+    return resultado
 
 # 3. MI PANEL: Emergencias que YO (como taller) estoy atendiendo
-@router.get("/mis-atenciones", response_model=List[Incidente])
+@router.get("/mis-atenciones", response_model=List[IncidenteSchema])
 def leer_mis_atenciones(
     db: Session = Depends(deps.get_db),
     current_user = Depends(deps.get_current_active_user)
 ):
     """Filtra incidentes por el taller_id del usuario logueado"""
+    from sqlalchemy.orm import joinedload
+    from app.models.taller import Taller
+    
     if not current_user.taller_id:
         raise HTTPException(status_code=400, detail="El usuario no pertenece a un taller")
     
-    # Usamos una nueva función que filtra por taller_id
-    return incidente_crud.obtener_por_taller(db, taller_id=current_user.taller_id)
+    # Cargar incidentes con taller
+    incidentes = db.query(Incidente).filter(
+        Incidente.taller_id == current_user.taller_id
+    ).options(joinedload(Incidente.taller), joinedload(Incidente.vehiculo)).all()
+    
+    # Obtener datos del taller actual
+    taller_actual = db.query(Taller).filter(Taller.id == current_user.taller_id).first()
+    
+    # 📏 Calcular distancia para cada incidente
+    for incidente in incidentes:
+        if taller_actual and taller_actual.latitud and taller_actual.longitud:
+            distancia = incidente_crud.calcular_distancia_haversine(
+                float(taller_actual.latitud),
+                float(taller_actual.longitud),
+                float(incidente.latitud),
+                float(incidente.longitud)
+            )
+            incidente.distancia_metros = distancia
+    
+    # Ordenar por distancia (cercanos primero)
+    incidentes.sort(key=lambda x: x.distancia_metros if x.distancia_metros else float('inf'))
+    return incidentes
 
 # 4. ACEPTAR: El taller toma el incidente
-@router.patch("/{id}/aceptar", response_model=Incidente)
+@router.patch("/{id}/aceptar", response_model=IncidenteSchema)
 def aceptar_incidente(
     *,
     db: Session = Depends(deps.get_db),
@@ -102,7 +148,7 @@ def aceptar_incidente(
     )
     
     return actualizado
-@router.patch("/{id}/asignar-tecnico", response_model=Incidente)
+@router.patch("/{id}/asignar-tecnico", response_model=IncidenteSchema)
 def asignar_tecnico_a_incidente(
     *,
     db: Session = Depends(deps.get_db),
@@ -128,7 +174,7 @@ def asignar_tecnico_a_incidente(
                             anterior=anterior, nuevo=jsonable_encoder(actualizado))
     return actualizado
 
-@router.patch("/{id}/rechazar", response_model=Incidente)
+@router.patch("/{id}/rechazar", response_model=IncidenteSchema)
 def rechazar_pedido_auxilio(
     *,
     db: Session = Depends(deps.get_db),
@@ -173,7 +219,7 @@ def rechazar_pedido_auxilio(
     return incidente_db
 
 # 5. FINALIZAR: Cambiar el estado a "atendido"
-@router.put("/{id}", response_model=Incidente)
+@router.put("/{id}", response_model=IncidenteSchema)
 def actualizar_estado_incidente(
     *,
     db: Session = Depends(deps.get_db),
@@ -216,7 +262,7 @@ def actualizar_estado_incidente(
 # ==========================================
 # 📊 NUEVO: HISTORIAL Y MÉTRICAS
 # ==========================================
-@router.get("/historial/lista", response_model=List[Incidente])
+@router.get("/historial/lista", response_model=List[IncidenteSchema])
 def obtener_historial(
     fecha_inicio: Optional[datetime] = None,
     fecha_fin: Optional[datetime] = None,

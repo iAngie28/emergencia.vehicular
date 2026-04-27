@@ -7,8 +7,29 @@ from datetime import datetime
 from sqlalchemy import func, and_
 from app.models.usuario import Usuario
 from app.models.pago import Pago
+from math import radians, cos, sin, asin, sqrt
 
 class CRUDIncidente(CRUDBase[Incidente, IncidenteCreate, IncidenteUpdate]):
+    
+    @staticmethod
+    def calcular_distancia_haversine(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+        """
+        Calcula la distancia en metros entre dos puntos usando la fórmula de Haversine.
+        Parámetros: lat1, lon1, lat2, lon2 (en grados decimales)
+        Retorna: distancia en metros
+        """
+        # Convertir grados a radianes
+        lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
+        
+        # Fórmula de Haversine
+        dlon = lon2 - lon1
+        dlat = lat2 - lat1
+        a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+        c = 2 * asin(sqrt(a))
+        
+        # Radio de la Tierra en metros
+        r = 6371000  # Radio en metros
+        return c * r
     
     # Función para que un taller "tome" el incidente
     def asignar_taller(self, db: Session, *, db_obj: Incidente, taller_id: int) -> Incidente:

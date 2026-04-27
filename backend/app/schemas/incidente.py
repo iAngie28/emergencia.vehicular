@@ -10,12 +10,29 @@ class TecnicoInfo(BaseModel):
     class Config:
         from_attributes = True
 
+# Esquema para mostrar info del vehículo
+class VehiculoInfo(BaseModel):
+    id: int
+    placa: str
+    marca: str
+    modelo: str
+    class Config:
+        from_attributes = True
+
 # Esquema para mostrar info del pago asociado
 class PagoInfo(BaseModel):
     id: int
     monto: Decimal
     comision_plataforma: Decimal
     estado: str
+    class Config:
+        from_attributes = True
+
+# Esquema para mostrar info básica del taller
+class TallerInfo(BaseModel):
+    id: int
+    latitud: Decimal
+    longitud: Decimal
     class Config:
         from_attributes = True
 
@@ -58,7 +75,10 @@ class Incidente(IncidenteBase):
     
     # 🚩 Pydantic se encargará de mapear la relación 'tecnico' a este esquema
     tecnico: Optional[TecnicoInfo] = None 
-    pagos: Optional[PagoInfo] = None  # Relación con el pago asociado 
+    vehiculo: Optional[VehiculoInfo] = None  # 🚗 Relación con el vehículo
+    pagos: Optional[PagoInfo] = None  # Relación con el pago asociado
+    taller: Optional[TallerInfo] = None  # Relación con el taller
+    distancia_metros: Optional[float] = None  # 📏 Distancia al taller en metros 
 
     @root_validator(pre=True)
     def extraer_datos_virtuales(cls, obj):
@@ -86,6 +106,9 @@ class Incidente(IncidenteBase):
                 "resumen_ia": obj.resumen_ia,
                 "fecha_creacion": obj.fecha_creacion,
                 "tecnico": obj.tecnico,
-                "pagos": obj.pagos  # 🆕 Incluir relación con pagos
+                "vehiculo": obj.vehiculo,  # 🚗 Incluir relación con vehículo
+                "pagos": obj.pagos,  # 🆕 Incluir relación con pagos
+                "taller": obj.taller,  # 🆕 Incluir relación con taller
+                "distancia_metros": getattr(obj, "distancia_metros", None)  # 📏 Incluir distancia
             }
         return obj

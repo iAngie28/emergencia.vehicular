@@ -1,5 +1,8 @@
 /* auxilios.css */
 
+/* 🗺️ Importar estilos de Leaflet */
+@import 'leaflet/dist/leaflet.css';
+
 /* --- Modern CSS Reset --- */
 *, *::before, *::after {
   box-sizing: border-box;
@@ -175,6 +178,27 @@ body, h1, p, table, th, td, input, button {
 .status-text {
   text-transform: capitalize;
   font-weight: 500;
+}
+
+/* 📏 Distancia - Cerca vs Lejos */
+.distancia-cerca {
+  padding: 6px 12px;
+  border-radius: 6px;
+  background: #dcfce7;
+  color: #166534;
+  font-weight: 600;
+  font-size: 0.85rem;
+  display: inline-block;
+}
+
+.distancia-lejos {
+  padding: 6px 12px;
+  border-radius: 6px;
+  background: #fee2e2;
+  color: #991b1b;
+  font-weight: 600;
+  font-size: 0.85rem;
+  display: inline-block;
 }
 
 /* --- Buttons --- */
@@ -450,4 +474,31 @@ body, h1, p, table, th, td, input, button {
     font-weight: 600;
     font-size: 0.9rem;
     color: #475569;
+}
+
+/* 🗺️ Estilos del Mapa Leaflet */
+#mapa-incidente {
+  width: 100%;
+  height: 200px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 15px;
+  z-index: 1;
+}
+
+/* Estilos para los controles de Leaflet dentro del panel */
+.side-panel .leaflet-control-zoom {
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+}
+
+.side-panel .leaflet-control-zoom-in,
+.side-panel .leaflet-control-zoom-out {
+  background: white;
+  color: #0f172a;
+  font-weight: bold;
+}
+
+.side-panel .leaflet-marker-icon {
+  border-radius: 50%;
 }

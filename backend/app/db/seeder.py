@@ -55,11 +55,15 @@ def seed_db(db: Session) -> None:
     db.commit()
 
     # ---------------------------------------------------------
-    # 3. TALLERES (Multi-Tenant)
+    # 3. TALLERES (Multi-Tenant) con UBICACIONES GPS
     # ---------------------------------------------------------
     talleres = [
-        {"id": 1, "nombre": "Taller Central Santa Cruz", "direccion": "Av. Banzer 4to Anillo", "comision_porcentaje": 10.0},
-        {"id": 2, "nombre": "Súper Mecánica Warnes", "direccion": "Ruta al Norte Km 20", "comision_porcentaje": 15.0}
+        # Taller Central: Av. Banzer 4to Anillo, Santa Cruz
+        {"id": 1, "nombre": "Taller Central Santa Cruz", "direccion": "Av. Banzer 4to Anillo", 
+         "comision_porcentaje": 10.0, "latitud": -17.78, "longitud": -63.18},
+        # Taller Warnes: Zona norte, hacia Warnes
+        {"id": 2, "nombre": "Súper Mecánica Warnes", "direccion": "Ruta al Norte Km 20", 
+         "comision_porcentaje": 15.0, "latitud": -17.82, "longitud": -63.22}
     ]
     for t in talleres:
         if not db.query(Taller).filter(Taller.id == t["id"]).first():
@@ -106,24 +110,28 @@ def seed_db(db: Session) -> None:
     # ---------------------------------------------------------
     # 6. INCIDENTES Y PAGOS (Generación de Historial y Métricas)
     # ---------------------------------------------------------
-    # Tupla: (taller_id, tecnico_id, dias_atras, clasificacion, monto, estado)
+    # Tupla: (taller_id, tecnico_id, dias_atras, clasificacion, monto, estado, latitud, longitud)
+    # 📍 Coordenadas GPS en Santa Cruz de la Sierra, Bolivia
+    # Taller 1: -17.78, -63.18 (Centro - Av. Banzer)
+    # Taller 2: -17.82, -63.22 (Warnes)
     datos_historial = [
-        # Taller 1 - Historial (Atendidos)
-        (1, 4, 15, "Falla de Motor", 850, "atendido"),
-        (1, 4, 8, "Mantenimiento", 300, "atendido"),
-        (1, 5, 5, "Problema Batería", 450, "atendido"),
-        (1, 5, 2, "Falla Eléctrica", 600, "atendido"),
-        (1, 4, 1, "Cancelado por cliente", 0, "cancelado"), # Para probar un servicio cancelado
-        # Taller 1 - Activo (Para que salga en la pestaña "Disponibles" o "Mis Atenciones")
-        (1, 5, 0, "Falla Eléctrica", 0, "en_proceso"), 
+        # Taller 1 - Historial (Atendidos) con distancias variadas
+        (1, 4, 15, "Falla de Motor", 850, "atendido", -17.75, -63.18),      # 📍 Muy cerca (3.3 km)
+        (1, 4, 8, "Mantenimiento", 300, "atendido", -17.80, -63.15),        # 📍 Cerca (3.7 km)
+        (1, 5, 5, "Problema Batería", 450, "atendido", -17.82, -63.22),     # 📍 Lejos (4.8 km)
+        (1, 5, 2, "Falla Eléctrica", 600, "atendido", -17.70, -63.10),      # 📍 Muy lejos (11 km)
+        (1, 4, 1, "Cancelado por cliente", 0, "cancelado", -17.77, -63.19), # 📍 Cancelado (1.1 km)
+        # Taller 1 - Activos (Disponibles y En proceso)
+        (1, None, 0, "Falla Eléctrica (Pendiente)", 0, "pendiente", -17.76, -63.17),     # 📍 Sin asignar (2.2 km)
+        (1, 5, 0, "Falla en Transmisión", 0, "en_proceso", -17.79, -63.20),  # 📍 En curso (2.2 km)
         
         # Taller 2 - Historial (No debe verse en Taller 1)
-        (2, 6, 3, "Llanta pinchada", 150, "atendido"),
+        (2, 6, 3, "Llanta pinchada", 150, "atendido", -17.85, -63.25),      # 📍 Taller 2 (4.2 km)
     ]
 
     # Contar si ya hay incidentes para no duplicar si corres el seeder varias veces
     if db.query(Incidente).count() < len(datos_historial):
-        for idx, (taller_id, tec_id, dias, clase, monto, estado) in enumerate(datos_historial, start=1):
+        for idx, (taller_id, tec_id, dias, clase, monto, estado, lat, lon) in enumerate(datos_historial, start=1):
             fecha = hoy - timedelta(days=dias)
             
             # Si está cancelado o en proceso, el pago_estado es diferente
@@ -135,12 +143,13 @@ def seed_db(db: Session) -> None:
                 usuario_id=3,
                 taller_id=taller_id,
                 tecnico_id=tec_id if estado != "pendiente" else None,
-                latitud=-17.78 + (0.01 * idx), # Variar un poco el mapa
-                longitud=-63.18 - (0.01 * idx),
-                prioridad="media" if dias > 5 else "alta",
+                latitud=lat,
+                longitud=lon,
+                prioridad="alta" if dias >= 5 else ("media" if dias >= 2 else "baja"),
                 estado=estado, 
                 pago_estado=pago_estado,
                 clasificacion_ia=clase,
+                resumen_ia=f"Problema detectado hace {dias} días",
                 fecha_creacion=fecha
             )
             db.merge(inc)
@@ -163,6 +172,7 @@ def seed_db(db: Session) -> None:
         
         db.commit()
         logger.info("✅ Incidentes y Pagos de historial creados exitosamente.")
+        logger.info("📍 Incluye incidentes con UBICACIONES GPS variadas para pruebas de distancia.")
 
 if __name__ == "__main__":
     # Permite ejecutar `python seeder.py` directamente
