@@ -113,7 +113,7 @@
   <aside class="side-panel" [class.open]="incidenteSeleccionado">
     <div class="panel-header" *ngIf="incidenteSeleccionado">
       <h2>Detalle Auxilio #{{ incidenteSeleccionado.id }}</h2>
-      <button class="close-btn" (click)="incidenteSeleccionado = null">✕</button>
+      <button class="close-btn" (click)="cerrarPanel()">✕</button>
     </div>
     <div class="panel-body" *ngIf="incidenteSeleccionado">
       <div class="info-card">
@@ -142,10 +142,10 @@
           <p style="color: #94a3b8;">No especificado</p>
         </ng-template>
 
-        <label>📍 Ubicación del Incidente:</label>
-        <div id="mapa-incidente" style="height: 200px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 15px;"></div>
+        <label style="display: block; margin-top: 15px; margin-bottom: 8px;">📍 Ubicación del Incidente:</label>
+        <div id="mapa-incidente" class="mapa-contenedor"></div>
         
-        <label style="font-size: 0.85rem; color: #64748b;">
+        <label style="font-size: 0.85rem; color: #64748b; display: block; margin-top: 10px;">
           📏 Coordenadas: {{ incidenteSeleccionado.latitud | number:'1.4-4' }}, 
           {{ incidenteSeleccionado.longitud | number:'1.4-4' }}
         </label>

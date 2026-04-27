@@ -60,13 +60,40 @@ export class AuxiliosComponent implements OnInit {
 
   cambiarTab(tab: 'pendientes' | 'mis-atenciones') { 
     this.tabActiva = tab; 
-    this.incidenteSeleccionado = null; 
+    this.cerrarPanel();
+  }
+
+  cerrarPanel() {
+    this.incidenteSeleccionado = null;
+    this.limpiarMapa();
+  }
+
+  private limpiarMapa() {
+    if (this.mapa) {
+      this.mapa.off();
+      this.mapa.remove();
+      this.mapa = null;
+    }
   }
 
   seleccionarIncidente(inc: any) { 
     this.incidenteSeleccionado = inc; 
-    // Inicializar mapa después de que se renderice el template
-    setTimeout(() => this.inicializarMapa(), 300);
+    // Inicializar mapa después de que se renderice el panel
+    setTimeout(() => {
+      this.inicializarMapa();
+      // Forzar múltiples veces que Leaflet recalcule el tamaño
+      setTimeout(() => {
+        if (this.mapa) {
+          this.mapa.invalidateSize(false);
+          this.mapa.invalidateSize(true);
+        }
+      }, 150);
+      setTimeout(() => {
+        if (this.mapa) {
+          this.mapa.invalidateSize();
+        }
+      }, 300);
+    }, 400);
   }
 
   private mapa: L.Map | null = null;
@@ -85,36 +112,53 @@ export class AuxiliosComponent implements OnInit {
 
     // Destruir mapa anterior si existe
     if (this.mapa) {
+      this.mapa.off();
       this.mapa.remove();
       this.mapa = null;
     }
 
-    // Crear nuevo mapa
+    // Verificar que el contenedor exista en el DOM
     const mapContainer = document.getElementById('mapa-incidente');
-    if (!mapContainer) return;
+    if (!mapContainer) {
+      console.error('Contenedor del mapa no encontrado');
+      return;
+    }
 
-    this.mapa = L.map('mapa-incidente').setView([lat, lon], 15);
+    // Limpiar el contenedor
+    mapContainer.innerHTML = '';
 
-    // Agregar tile layer de OpenStreetMap
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors',
-      maxZoom: 19
-    }).addTo(this.mapa);
+    try {
+      // Crear nuevo mapa
+      this.mapa = L.map('mapa-incidente', {
+        zoomControl: true,
+        attributionControl: false
+      }).setView([lat, lon], 15);
 
-    // 📍 Marcador del incidente
-    L.marker([lat, lon], {
-      icon: L.icon({
-        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-        iconSize: [25, 41],
-        iconAnchor: [12, 41],
-        popupAnchor: [1, -34],
-        shadowSize: [41, 41]
+      // Agregar tile layer de OpenStreetMap
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19
+      }).addTo(this.mapa);
+
+      // 📍 Marcador del incidente
+      L.marker([lat, lon], {
+        icon: L.icon({
+          iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+          shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+          iconSize: [25, 41],
+          iconAnchor: [12, 41],
+          popupAnchor: [1, -34],
+          shadowSize: [41, 41]
+        })
       })
-    })
-    .bindPopup(`<strong>Incidente #${this.incidenteSeleccionado.id}</strong><br>📍 ${lat.toFixed(4)}, ${lon.toFixed(4)}`)
-    .addTo(this.mapa)
-    .openPopup();
+      .bindPopup(`<strong>Incidente #${this.incidenteSeleccionado.id}</strong><br>📍 ${lat.toFixed(4)}, ${lon.toFixed(4)}`)
+      .addTo(this.mapa)
+      .openPopup();
+
+      // Forzar recálculo de tamaño
+      this.mapa.invalidateSize();
+    } catch (error) {
+      console.error('Error al inicializar mapa:', error);
+    }
   }
 
   // --- LÓGICA DE ASIGNACIÓN Y REASIGNACIÓN ---
@@ -184,7 +228,7 @@ export class AuxiliosComponent implements OnInit {
         alert('Pedido rechazado con éxito.');
         this.mostrarModalRechazo = false;
         if (this.incidenteSeleccionado?.id === this.incidenteAccion.id) {
-          this.incidenteSeleccionado = null;
+          this.cerrarPanel();
         }
         this.cargarDatos();
       },

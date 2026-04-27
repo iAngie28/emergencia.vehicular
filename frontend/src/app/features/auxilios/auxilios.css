@@ -283,6 +283,9 @@ body, h1, p, table, th, td, input, button {
   padding: 20px;
   flex: 1;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  max-width: 100%;
 }
 
 .info-card {
@@ -317,6 +320,12 @@ body, h1, p, table, th, td, input, button {
   margin: 5px 0 0 0;
   font-weight: 500;
   color: #0f172a;
+}
+
+/* Contenedor de mapa restringido */
+.info-grid .mapa-contenedor {
+  margin-left: auto !important;
+  margin-right: auto !important;
 }
 
 .panel-footer {
@@ -477,16 +486,36 @@ body, h1, p, table, th, td, input, button {
 }
 
 /* 🗺️ Estilos del Mapa Leaflet */
-#mapa-incidente {
-  width: 100%;
-  height: 200px;
+.mapa-contenedor {
+  width: calc(100% - 4px) !important;
+  max-width: 360px !important;
+  height: 200px !important;
   border-radius: 8px;
   border: 1px solid #e2e8f0;
-  margin-bottom: 15px;
+  margin: 10px auto 15px auto !important;
   z-index: 1;
+  background: #f8fafc;
+  overflow: hidden !important;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  display: block;
+}
+
+#mapa-incidente {
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 8px;
+  display: block;
 }
 
 /* Estilos para los controles de Leaflet dentro del panel */
+.side-panel .leaflet-container {
+  width: 100% !important;
+  height: 100% !important;
+  overflow: hidden !important;
+  z-index: 1;
+}
+
 .side-panel .leaflet-control-zoom {
   border: 1px solid #cbd5e1;
   border-radius: 6px;
@@ -501,4 +530,9 @@ body, h1, p, table, th, td, input, button {
 
 .side-panel .leaflet-marker-icon {
   border-radius: 50%;
+}
+
+/* Asegurar que Leaflet no se desborde */
+.side-panel .leaflet-container {
+  z-index: 2 !important;
 }
