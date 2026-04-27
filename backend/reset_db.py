@@ -1,95 +1,91 @@
 import os
+import sys
 import subprocess
 from sqlalchemy import create_engine, text
-from app.db.session import SessionLocal 
-from app.db.seeder import seed_db  # <--- Tu archivo de semillas
+# Asegurar que encuentre el módulo 'app'
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from app.db.base import Base  # Asegúrate de que este archivo importe todos tus modelos
+from app.db.session import SessionLocal, engine
+from app.db.seeder import seed_db 
 from app.core.config import settings
 
 def run_command(command):
-    """Ejecuta comandos de terminal (Alembic)"""
+    """Ejecuta comandos de terminal"""
     print(f"Executing: {command}")
     result = subprocess.run(command, shell=True, capture_output=True, text=True)
     if result.returncode != 0:
-        print(f"❌ Error: {result.stderr}")
+        print(f"⚠️ Nota/Error: {result.stderr}")
     else:
         print(f"✅ Éxito: {result.stdout}")
 
 def reset_database():
-    # 1. Obtener URL de Render o Local automáticamente
     DATABASE_URL = settings.DATABASE_URL
-    print(f"🚀 --- INICIANDO PROCESO EN: {DATABASE_URL.split('@')[-1]} ---")
+    print(f"🚀 --- INICIANDO RESET TOTAL EN: {DATABASE_URL.split('@')[-1]} ---")
 
-    # 2. Limpiar Base de Datos (Bomba Atómica)
+    # 1. Limpieza de Esquema (Bomba Atómica)
     try:
-        engine = create_engine(DATABASE_URL)
         with engine.connect() as conn:
-            print("🧹 Borrando esquema público...")
-            # Cortar conexiones para que Postgres nos deje borrar
-            conn.execute(text("""
-                SELECT pg_terminate_backend(pg_stat_activity.pid)
-                FROM pg_stat_activity
-                WHERE pg_stat_activity.datname = current_database()
-                  AND pid <> pg_backend_pid();
-            """))
+            print("🧹 Borrando y recreando esquema público...")
             conn.execute(text("DROP SCHEMA IF EXISTS public CASCADE;"))
             conn.execute(text("CREATE SCHEMA public;"))
             conn.execute(text("GRANT ALL ON SCHEMA public TO public;"))
             conn.commit()
-        print("✅ Base de datos vaciada.")
+        print("✅ Esquema limpio.")
     except Exception as e:
         print(f"❌ Error al limpiar DB: {e}")
         return
 
-    # 3. Limpiar archivos de Alembic locales
-    # Esto evita el error de "Can't locate revision"
-    versions_dir = "app/alembic/versions" if os.path.exists("app/alembic") else "alembic/versions"
-    if os.path.exists(versions_dir):
-        print(f"📂 Limpiando carpeta de versiones: {versions_dir}")
-        for filename in os.listdir(versions_dir):
-            if filename.endswith(".py") and filename != "__init__.py":
-                os.remove(os.path.join(versions_dir, filename))
+    # 2. Reconstruir Tablas mediante SQLAlchemy
+    print("🏗️ Creando tablas desde modelos de SQLAlchemy...")
+    try:
+        Base.metadata.create_all(bind=engine)
+        print("✅ Tablas creadas exitosamente.")
+    except Exception as e:
+        print(f"❌ Error al crear tablas: {e}")
+        return
 
-    # 4. Reconstruir Tablas (Alembic)
-    print("⚙️ Generando nueva migración inicial...")
-    run_command("python -m alembic revision --autogenerate -m 'Initial_Reset'")
-    print("📈 Aplicando tablas a la DB...")
-    run_command("python -m alembic upgrade head")
+    # 3. Sincronizar Alembic (Stamp)
+    # Esto le dice a Alembic que la DB ya está en la última versión y no intente crear tablas de nuevo
+    print("🔖 Marcando versión en Alembic (Stamp)...")
+    run_command("alembic stamp head")
 
-    # 5. LLAMADA AL SEEDER 🌱
-    print("🌱 Ejecutando Seeder para poblar datos...")
+    # 4. Ejecutar Seeder 🌱
+    print("🌱 Poblando base de datos...")
     db = SessionLocal()
     try:
-        seed_db(db) # <--- Aquí es donde ocurre la magia de insertar talleres/usuarios
-        print("✅ Datos de prueba insertados con éxito.")
+        seed_db(db)
+        print("✅ Datos de prueba insertados.")
 
-        # 6. Sincronizar Secuencias
-        # (Esto es vital para que no falle el próximo registro manual)
-        print("🔄 Sincronizando contadores (Sequences)...")
+        # 5. Sincronizar Secuencias de IDs (PostgreSQL)
+        print("🔄 Sincronizando secuencias...")
         with engine.connect() as conn:
-            tablas = ['rol', 'usuario', 'taller', 'incidente', 'pago'] # Ajusta según tus tablas
+            # Lista de tablas a sincronizar
+            tablas = ['rol', 'usuario', 'taller', 'incidente', 'pago', 'especialidad', 'evidencia', 'bitacora']
             for tabla in tablas:
                 try:
-                    conn.execute(text(f"SELECT setval('{tabla}_id_seq', (SELECT MAX(id) FROM {tabla}));"))
-                except:
+                    # Intenta sincronizar la secuencia de la tabla
+                    conn.execute(text(f"SELECT setval(pg_get_serial_sequence('{tabla}', 'id'), coalesce(max(id), 1), max(id) IS NOT null) FROM {tabla};"))
+                except Exception:
                     continue
             conn.commit()
         print("✅ Secuencias alineadas.")
-
     except Exception as e:
         print(f"❌ Error en el Seeder: {e}")
     finally:
         db.close()
 
-    print("\n✨ ¡SISTEMA RESETEADO Y POBLADO! ✨")
-    print("Ya puedes usar tus credenciales del seeder para entrar.")
+    print("\n✨ ¡SISTEMA LISTO Y DESPLEGADO! ✨")
 
 if __name__ == "__main__":
-    # Seguridad: Si no es localhost, pedir confirmación
-    if "localhost" not in settings.DATABASE_URL and "127.0.0.1" not in settings.DATABASE_URL:
-        confirm = input("⚠️ ¡ESTÁS APUNTANDO A RENDER! ¿Borrar todo? (s/n): ")
+    # Si detecta RENDER o entorno no interactivo, procede sin preguntar
+    IS_RENDER = os.environ.get("RENDER") or os.environ.get("DATABASE_URL")
+    
+    if IS_RENDER:
+        reset_database()
+    else:
+        confirm = input("⚠️ ¿Borrar TODA la base de datos local? (s/n): ")
         if confirm.lower() == 's':
             reset_database()
         else:
             print("❌ Abortado.")
-    else:
-        reset_database()
