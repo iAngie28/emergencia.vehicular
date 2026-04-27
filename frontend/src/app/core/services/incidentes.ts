@@ -70,4 +70,13 @@ export class IncidentesService {
       headers: this.getHeaders() 
     });
   }
+
+  descargarReporte(id: number): Observable<Blob> {
+    const headers = new HttpHeaders().set('Authorization', `Bearer ${localStorage.getItem('token')}`);
+    return this.http.get(`${environment.apiUrl}/incidentes/${id}/reporte-pdf`, {
+      headers,
+      responseType: 'blob'
+    });
+  }
+  
 }

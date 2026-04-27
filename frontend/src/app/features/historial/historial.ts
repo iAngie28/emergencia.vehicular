@@ -52,4 +52,25 @@ export class HistorialComponent implements OnInit {
   aplicarFiltros() {
     this.cargarDatos();
   }
+  
+  descargarPDF(id: number) {
+    const index = this.historial.findIndex(i => i.id === id);
+    if (index !== -1) (this.historial[index] as any).descargando = true;
+
+    this.incidentesService.descargarReporte(id).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `Reporte_Tecnico_${id}.pdf`;
+        link.click();
+        if (index !== -1) (this.historial[index] as any).descargando = false;
+      },
+      error: () => {
+        alert('Error al generar el reporte');
+        if (index !== -1) (this.historial[index] as any).descargando = false;
+      }
+    });
+  }
+
 }

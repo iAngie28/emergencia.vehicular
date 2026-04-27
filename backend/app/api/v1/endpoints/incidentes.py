@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException,  Response
 from sqlalchemy.orm import Session
 from typing import List
 from app.api import deps
@@ -7,8 +7,10 @@ from app.crud.crud_bitacora import bitacora_crud # 👈 Importante para la Regla
 from app.schemas.incidente import Incidente, IncidenteCreate, IncidenteUpdate
 from fastapi.encoders import jsonable_encoder
 from app.models.usuario import Usuario
-from typing import Optional, Any
+from typing import Optional
 from datetime import datetime
+from fpdf import FPDF
+from app.models.pago import Pago
 
 from app.models.bitacora import Bitacora # 👈 Agrega esta importación
 
@@ -211,12 +213,15 @@ def actualizar_estado_incidente(
     
     return actualizado
 
+# ==========================================
+# 📊 NUEVO: HISTORIAL Y MÉTRICAS
+# ==========================================
 @router.get("/historial/lista", response_model=List[Incidente])
 def obtener_historial(
     fecha_inicio: Optional[datetime] = None,
     fecha_fin: Optional[datetime] = None,
     db: Session = Depends(deps.get_db),
-    current_user = Depends(deps.get_current_active_user) # 🔐 MULTI-TENANT
+    current_user = Depends(deps.get_current_active_user)
 ):
     """Retorna el historial de auxilios finalizados de este taller."""
     if not current_user.taller_id:
@@ -232,10 +237,76 @@ def obtener_historial(
 @router.get("/historial/metricas")
 def obtener_kpis(
     db: Session = Depends(deps.get_db),
-    current_user = Depends(deps.get_current_active_user) # 🔐 MULTI-TENANT
+    current_user = Depends(deps.get_current_active_user)
 ):
     """Retorna las estadísticas del dashboard de historial."""
     if not current_user.taller_id:
         raise HTTPException(status_code=403, detail="El usuario no pertenece a un taller")
         
     return incidente_crud.obtener_metricas_taller(db=db, taller_id=current_user.taller_id)
+
+# ==========================================
+# 📄 NUEVO: GENERACIÓN DE PDF
+# ==========================================
+@router.get("/{id}/reporte-pdf")
+def descargar_reporte_tecnico(
+    id: int, 
+    db: Session = Depends(deps.get_db),
+    current_user = Depends(deps.get_current_active_user)
+):
+    inc = incidente_crud.get(db, id=id)
+    if not inc or inc.taller_id != current_user.taller_id:
+        raise HTTPException(status_code=403, detail="No autorizado")
+
+    pago = db.query(Pago).filter(Pago.incidente_id == id).first()
+    monto_pago = pago.monto if pago else "No registrado"
+    tecnico_nombre = inc.tecnico.nombre if inc.tecnico else "Sin asignar"
+
+    pdf = FPDF()
+    pdf.add_page()
+
+    # Cabecera
+    pdf.set_font("helvetica", style="B", size=16)
+    pdf.set_text_color(59, 130, 246)
+    pdf.cell(0, 10, "REPORTE TECNICO DE AUXILIO", new_x="LMARGIN", new_y="NEXT", align="C")
+
+    pdf.set_font("helvetica", size=11)
+    pdf.set_text_color(100, 116, 139)
+    pdf.cell(0, 8, f"Taller: {inc.taller.nombre}", new_x="LMARGIN", new_y="NEXT", align="C")
+    pdf.cell(0, 8, f"ID Incidente: #{inc.id}  |  Fecha: {inc.fecha_creacion.strftime('%d/%m/%Y')}", new_x="LMARGIN", new_y="NEXT", align="C")
+    pdf.ln(10)
+
+    # Cuerpo
+    pdf.set_font("helvetica", style="B", size=12)
+    pdf.set_text_color(15, 23, 42)
+    pdf.cell(0, 10, "Resumen del Servicio", new_x="LMARGIN", new_y="NEXT")
+
+    pdf.set_font("helvetica", size=11)
+    pdf.cell(45, 8, "Estado:")
+    pdf.cell(0, 8, f"{inc.estado.upper()}", new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(45, 8, "Prioridad:")
+    pdf.cell(0, 8, f"{inc.prioridad.upper()}", new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(45, 8, "Tecnico:")
+    pdf.cell(0, 8, f"{tecnico_nombre}", new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(45, 8, "Monto Cobrado:")
+    pdf.cell(0, 8, f"Bs. {monto_pago}", new_x="LMARGIN", new_y="NEXT")
+    pdf.ln(8)
+
+    pdf.set_font("helvetica", style="B", size=12)
+    pdf.cell(0, 10, "Diagnostico de IA", new_x="LMARGIN", new_y="NEXT")
+    pdf.set_font("helvetica", size=11)
+    
+    # 👇 Corrección aplicada aquí con new_x y new_y
+    pdf.multi_cell(0, 8, f"Clasificacion: {inc.clasificacion_ia or 'Sin clasificar'}", new_x="LMARGIN", new_y="NEXT")
+    pdf.multi_cell(0, 8, f"Resumen IA: {inc.resumen_ia or 'No se genero resumen automatico.'}", new_x="LMARGIN", new_y="NEXT")
+    
+    pdf.ln(20)
+    pdf.set_font("helvetica", style="I", size=9)
+    pdf.set_text_color(148, 163, 184)
+    pdf.cell(0, 10, "Este documento es un reporte generado automaticamente por Taller Pro SaaS.", new_x="LMARGIN", new_y="NEXT", align="C")
+
+    return Response(
+        content=bytes(pdf.output()),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename=reporte_tecnico_{id}.pdf"}
+    )

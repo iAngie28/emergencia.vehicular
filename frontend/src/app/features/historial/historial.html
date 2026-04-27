@@ -35,11 +35,12 @@
           <th>Estado</th>
           <th>Prioridad</th>
           <th>Técnico Asignado</th>
+          <th>Acciones</th>
         </tr>
       </thead>
       <tbody>
         <tr *ngIf="cargando">
-          <td colspan="5" style="text-align: center;">Cargando historial...</td>
+          <td colspan="6" style="text-align: center;">Cargando historial...</td>
         </tr>
         <tr *ngFor="let item of historial">
           <td><strong>#{{ item.id }}</strong></td>
@@ -54,9 +55,18 @@
           </td>
           <td>{{ item.prioridad }}</td>
           <td>{{ item.tecnico?.nombre || 'Sin asignar' }}</td>
+          <td>
+            <button 
+              *ngIf="item.estado === 'atendido'" 
+              class="btn-reporte" 
+              (click)="descargarPDF(item.id)"
+              [disabled]="item.descargando">
+              <span>📄</span> {{ item.descargando ? 'Generando...' : 'Reporte' }}
+            </button>
+          </td>
         </tr>
         <tr *ngIf="!cargando && historial.length === 0">
-          <td colspan="5" style="text-align: center;">No hay registros para este periodo.</td>
+          <td colspan="6" style="text-align: center;">No hay registros para este periodo.</td>
         </tr>
       </tbody>
     </table>
