@@ -53,17 +53,26 @@ export class IncidentesService {
   actualizarEstado(id: number, datos: any): Observable<any> {
     return this.http.put(`${this.apiUrl}/${id}`, datos, { headers: this.getHeaders() });
   }
-  obtenerHistorial(fechaInicio?: string, fechaFin?: string): Observable<Incidente[]> {
+  
+  obtenerHistorial(fechaInicio?: string, fechaFin?: string, estados?: string[], tecnicoId?: number): Observable<Incidente[]> {
     let params = new HttpParams();
     if (fechaInicio) params = params.set('fecha_inicio', fechaInicio);
     if (fechaFin) params = params.set('fecha_fin', fechaFin);
+    if (tecnicoId) params = params.set('tecnico_id', tecnicoId.toString());
     
-    // Asumo que tu getHeaders() inyecta el Bearer token como dictan las reglas
-    return this.http.get<Incidente[]>(`${this.apiUrl}/historial/lista`, { 
-      headers: this.getHeaders(), 
+    // Para enviar la lista de estados: ?estados=atendido&estados=cancelado
+    if (estados && estados.length > 0) {
+      estados.forEach(estado => {
+        params = params.append('estados', estado);
+      });
+    }
+    
+    return this.http.get<Incidente[]>(`${environment.apiUrl}/incidentes/historial/lista`, { 
+      headers: new HttpHeaders().set('Authorization', `Bearer ${localStorage.getItem('token')}`), 
       params 
     });
   }
+
 
   obtenerMetricas(): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/historial/metricas`, { 

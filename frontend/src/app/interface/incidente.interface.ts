@@ -1,3 +1,5 @@
+
+
 export interface TecnicoInfo {
   id: number;
   nombre: string;
@@ -21,4 +23,5 @@ export interface Incidente {
   resumen_ia?: string;
   fecha_creacion?: string; // Campo vital para el historial
   tecnico?: TecnicoInfo;    // Relación para mostrar quién atendió
+  descargando?: boolean;
 }

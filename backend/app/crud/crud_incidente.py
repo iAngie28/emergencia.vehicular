@@ -44,13 +44,27 @@ class CRUDIncidente(CRUDBase[Incidente, IncidenteCreate, IncidenteUpdate]):
         return self.update(db, db_obj=db_obj, obj_in=update_data)
     
     def obtener_historial_taller(
-        self, db: Session, *, taller_id: int, fecha_inicio: Optional[datetime] = None, fecha_fin: Optional[datetime] = None
+        self, 
+        db: Session, 
+        *, 
+        taller_id: int, 
+        fecha_inicio: Optional[datetime] = None, 
+        fecha_fin: Optional[datetime] = None,
+        estados: Optional[List[str]] = None, # 👈 Lista de estados
+        tecnico_id: Optional[int] = None      # 👈 ID de técnico
     ) -> List[Incidente]:
-        """Obtiene servicios finalizados o cancelados de un taller."""
-        query = db.query(self.model).filter(
-            self.model.taller_id == taller_id,
-            self.model.estado.in_(["atendido", "cancelado"])
-        )
+        query = db.query(self.model).filter(self.model.taller_id == taller_id)
+        
+        # Filtrado por múltiples estados
+        if estados and len(estados) > 0:
+            query = query.filter(self.model.estado.in_(estados))
+        else:
+            # Comportamiento por defecto si no hay nada seleccionado
+            query = query.filter(self.model.estado.in_(["atendido", "cancelado"]))
+
+        # Filtrado por técnico
+        if tecnico_id:
+            query = query.filter(self.model.tecnico_id == tecnico_id)
 
         if fecha_inicio:
             query = query.filter(self.model.fecha_creacion >= fecha_inicio)
@@ -58,6 +72,7 @@ class CRUDIncidente(CRUDBase[Incidente, IncidenteCreate, IncidenteUpdate]):
             query = query.filter(self.model.fecha_creacion <= fecha_fin)
             
         return query.order_by(self.model.fecha_creacion.desc()).all()
+    
 
     def obtener_metricas_taller(self, db: Session, *, taller_id: int) -> Dict[str, Any]:
         """Calcula los KPIs para la pestaña de historial."""

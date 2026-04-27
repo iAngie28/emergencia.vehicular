@@ -49,3 +49,40 @@
     opacity: 0.6;
     cursor: not-allowed;
 }
+
+/* Estilos para los nuevos filtros */
+.checkbox-group {
+  display: flex;
+  gap: 12px;
+  background: white;
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  height: 38px; /* Para que alinee con los inputs de fecha */
+  align-items: center;
+}
+
+.checkbox-item {
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  color: #374151;
+}
+
+select {
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: white;
+  height: 38px; /* Para que alinee con los inputs de fecha */
+  min-width: 150px;
+  font-family: inherit;
+}
+
+/* Color para el estado en_proceso si decides mostrarlo */
+.badge-warning {
+  background: #fef3c7;
+  color: #d97706;
+}

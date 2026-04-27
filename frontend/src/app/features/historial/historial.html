@@ -6,10 +6,32 @@
       <label>Desde:</label>
       <input type="date" [(ngModel)]="fechaInicio">
     </div>
+    
     <div class="form-group">
       <label>Hasta:</label>
       <input type="date" [(ngModel)]="fechaFin">
     </div>
+
+    <div class="form-group">
+      <label>Técnico:</label>
+      <select [(ngModel)]="tecnicoSeleccionado">
+        <option [ngValue]="null">Todos los técnicos</option>
+        <option *ngFor="let tec of tecnicos" [ngValue]="tec.id">{{ tec.nombre }}</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Estados:</label>
+      <div class="checkbox-group">
+        <label *ngFor="let est of estadosDisponibles" class="checkbox-item">
+          <input type="checkbox" 
+                 [checked]="estadosSeleccionados.includes(est.value)" 
+                 (change)="toggleEstado(est.value)">
+          {{ est.label }}
+        </label>
+      </div>
+    </div>
+
     <button class="btn-primary" (click)="aplicarFiltros()">Filtrar</button>
   </div>
 
@@ -48,7 +70,8 @@
           <td>
             <span class="badge" [ngClass]="{
               'badge-success': item.estado === 'atendido',
-              'badge-danger': item.estado === 'cancelado'
+              'badge-danger': item.estado === 'cancelado',
+              'badge-warning': item.estado === 'en_proceso'
             }">
               {{ item.estado | uppercase }}
             </span>
@@ -60,13 +83,13 @@
               *ngIf="item.estado === 'atendido'" 
               class="btn-reporte" 
               (click)="descargarPDF(item.id)"
-              [disabled]="item.descargando">
-              <span>📄</span> {{ item.descargando ? 'Generando...' : 'Reporte' }}
+              [disabled]="descargas[item.id]">
+              <span>📄</span> {{ descargas[item.id] ? 'Generando...' : 'Reporte' }}
             </button>
           </td>
         </tr>
         <tr *ngIf="!cargando && historial.length === 0">
-          <td colspan="6" style="text-align: center;">No hay registros para este periodo.</td>
+          <td colspan="6" style="text-align: center;">No hay registros para estos filtros.</td>
         </tr>
       </tbody>
     </table>

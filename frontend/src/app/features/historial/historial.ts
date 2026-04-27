@@ -1,6 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpClient, HttpHeaders } from '@angular/common/http'; // 👈 Importamos esto
 import { IncidentesService } from '../../core/services/incidentes';
 import { Incidente } from '../../interface/incidente.interface';
 
@@ -8,41 +9,79 @@ import { Incidente } from '../../interface/incidente.interface';
   selector: 'app-historial',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  templateUrl: './historial.html',  // 👈 Corregido el nombre del archivo
-  styleUrl: './historial.css'       // 👈 Corregido el nombre del archivo
+  templateUrl: './historial.html',
+  styleUrl: './historial.css'
 })
 export class HistorialComponent implements OnInit {
-  // 👈 Corregido el nombre a IncidentesService
   private incidentesService = inject(IncidentesService);
+  private http = inject(HttpClient); // 👈 Inyectamos HttpClient
 
   historial: Incidente[] = [];
   metricas: any = null;
   cargando = false;
+  tecnicos: any[] = []; // 👈 Lista de técnicos
 
-  // Filtros de fecha
+  // 🚩 Diccionario para el estado de carga del PDF (Soluciona el error TS2339)
+  descargas: { [id: number]: boolean } = {};
+
+  // Filtros
   fechaInicio: string = '';
   fechaFin: string = '';
+  tecnicoSeleccionado: number | null = null;
+  
+  estadosDisponibles = [
+    { value: 'atendido', label: 'Atendido' },
+    { value: 'cancelado', label: 'Cancelado' },
+    { value: 'en_proceso', label: 'En Proceso' }
+  ];
+  estadosSeleccionados: string[] = ['atendido', 'cancelado'];
 
   ngOnInit() {
+    this.cargarTecnicos(); // 👈 Cargamos los técnicos reales
     this.cargarDatos();
+  }
+
+  cargarTecnicos() {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+    
+    // 🚩 Usamos tu ruta real del backend: /usuarios/mis-tecnicos
+    this.http.get<any[]>('http://localhost:8000/api/v1/usuarios/mis-tecnicos', { headers }).subscribe({
+      next: (data) => this.tecnicos = data,
+      error: (err) => console.error('Error cargando técnicos:', err)
+    });
+  }
+
+  toggleEstado(estado: string) {
+    const index = this.estadosSeleccionados.indexOf(estado);
+    if (index > -1) {
+      this.estadosSeleccionados.splice(index, 1);
+    } else {
+      this.estadosSeleccionados.push(estado);
+    }
   }
 
   cargarDatos() {
     this.cargando = true;
     
-    // 1. Cargar las tarjetas de métricas
     this.incidentesService.obtenerMetricas().subscribe({
-      next: (data: any) => this.metricas = data, // 👈 Se agregó ": any"
-      error: (err: any) => console.error('Error cargando métricas:', err) // 👈 Se agregó ": any"
+      next: (data: any) => this.metricas = data,
+      error: (err: any) => console.error('Error cargando métricas:', err)
     });
 
-    // 2. Cargar la tabla del historial
-    this.incidentesService.obtenerHistorial(this.fechaInicio, this.fechaFin).subscribe({
-      next: (data: Incidente[]) => { // 👈 Se agregó el tipo
+    // 🚩 Enviamos todos los filtros al servicio
+    this.incidentesService.obtenerHistorial(
+      this.fechaInicio, 
+      this.fechaFin,
+      this.estadosSeleccionados,
+      this.tecnicoSeleccionado || undefined
+    ).subscribe({
+      next: (data: Incidente[]) => {
         this.historial = data;
         this.cargando = false;
       },
-      error: (err: any) => { // 👈 Se agregó ": any"
+      error: (err: any) => {
         console.error('Error cargando historial:', err);
         this.cargando = false;
       }
@@ -54,8 +93,7 @@ export class HistorialComponent implements OnInit {
   }
   
   descargarPDF(id: number) {
-    const index = this.historial.findIndex(i => i.id === id);
-    if (index !== -1) (this.historial[index] as any).descargando = true;
+    this.descargas[id] = true; // 🚩 Marcamos carga en el diccionario
 
     this.incidentesService.descargarReporte(id).subscribe({
       next: (blob) => {
@@ -64,13 +102,12 @@ export class HistorialComponent implements OnInit {
         link.href = url;
         link.download = `Reporte_Tecnico_${id}.pdf`;
         link.click();
-        if (index !== -1) (this.historial[index] as any).descargando = false;
+        this.descargas[id] = false;
       },
       error: () => {
         alert('Error al generar el reporte');
-        if (index !== -1) (this.historial[index] as any).descargando = false;
+        this.descargas[id] = false;
       }
     });
   }
-
 }

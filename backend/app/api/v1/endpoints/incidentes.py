@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException,  Response
+from fastapi import APIRouter, Depends, HTTPException,  Response, Query
 from sqlalchemy.orm import Session
 from typing import List
 from app.api import deps
@@ -220,10 +220,11 @@ def actualizar_estado_incidente(
 def obtener_historial(
     fecha_inicio: Optional[datetime] = None,
     fecha_fin: Optional[datetime] = None,
+    estados: Optional[List[str]] = Query(None), # 👈 Recibe ?estados=atendido&estados=cancelado
+    tecnico_id: Optional[int] = None,
     db: Session = Depends(deps.get_db),
     current_user = Depends(deps.get_current_active_user)
 ):
-    """Retorna el historial de auxilios finalizados de este taller."""
     if not current_user.taller_id:
         raise HTTPException(status_code=403, detail="El usuario no pertenece a un taller")
         
@@ -231,7 +232,9 @@ def obtener_historial(
         db=db, 
         taller_id=current_user.taller_id,
         fecha_inicio=fecha_inicio,
-        fecha_fin=fecha_fin
+        fecha_fin=fecha_fin,
+        estados=estados,
+        tecnico_id=tecnico_id
     )
 
 @router.get("/historial/metricas")
