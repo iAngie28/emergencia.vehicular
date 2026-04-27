@@ -143,7 +143,15 @@
         </ng-template>
 
         <label style="display: block; margin-top: 15px; margin-bottom: 8px;">📍 Ubicación del Incidente:</label>
-        <div id="mapa-incidente" class="mapa-contenedor"></div>
+        <a *ngIf="incidenteSeleccionado.latitud && incidenteSeleccionado.longitud" 
+           [href]="'https://www.google.com/maps/?q=' + incidenteSeleccionado.latitud + ',' + incidenteSeleccionado.longitud"
+           target="_blank"
+           class="mapa-link">
+          📍 Ver en Google Maps
+        </a>
+        <p *ngIf="!incidenteSeleccionado.latitud || !incidenteSeleccionado.longitud" style="color: #94a3b8;">
+          Coordenadas no disponibles
+        </p>
         
         <label style="font-size: 0.85rem; color: #64748b; display: block; margin-top: 10px;">
           📏 Coordenadas: {{ incidenteSeleccionado.latitud | number:'1.4-4' }}, 

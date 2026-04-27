@@ -5,7 +5,6 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { IncidentesService } from '../../core/services/incidentes';
 import { UsuariosService } from '../../core/services/usuarios'; 
 import { environment } from '../../../environments/environment';
-import * as L from 'leaflet';
 
 @Component({
   selector: 'app-auxilios',
@@ -65,100 +64,11 @@ export class AuxiliosComponent implements OnInit {
 
   cerrarPanel() {
     this.incidenteSeleccionado = null;
-    this.limpiarMapa();
-  }
-
-  private limpiarMapa() {
-    if (this.mapa) {
-      this.mapa.off();
-      this.mapa.remove();
-      this.mapa = null;
-    }
   }
 
   seleccionarIncidente(inc: any) { 
-    this.incidenteSeleccionado = inc; 
-    // Inicializar mapa después de que se renderice el panel
-    setTimeout(() => {
-      this.inicializarMapa();
-      // Forzar múltiples veces que Leaflet recalcule el tamaño
-      setTimeout(() => {
-        if (this.mapa) {
-          this.mapa.invalidateSize(false);
-          this.mapa.invalidateSize(true);
-        }
-      }, 150);
-      setTimeout(() => {
-        if (this.mapa) {
-          this.mapa.invalidateSize();
-        }
-      }, 300);
-    }, 400);
+    this.incidenteSeleccionado = inc;
   }
-
-  private mapa: L.Map | null = null;
-
-  inicializarMapa() {
-    if (!this.incidenteSeleccionado) return;
-    
-    const lat = Number(this.incidenteSeleccionado.latitud);
-    const lon = Number(this.incidenteSeleccionado.longitud);
-    
-    // Validar coordenadas
-    if (!lat || !lon || lat < -90 || lat > 90 || lon < -180 || lon > 180) {
-      console.error('Coordenadas inválidas:', lat, lon);
-      return;
-    }
-
-    // Destruir mapa anterior si existe
-    if (this.mapa) {
-      this.mapa.off();
-      this.mapa.remove();
-      this.mapa = null;
-    }
-
-    // Verificar que el contenedor exista en el DOM
-    const mapContainer = document.getElementById('mapa-incidente');
-    if (!mapContainer) {
-      console.error('Contenedor del mapa no encontrado');
-      return;
-    }
-
-    // Limpiar el contenedor
-    mapContainer.innerHTML = '';
-
-    try {
-      // Crear nuevo mapa
-      this.mapa = L.map('mapa-incidente', {
-        zoomControl: true,
-        attributionControl: false
-      }).setView([lat, lon], 15);
-
-      // Agregar tile layer de OpenStreetMap
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19
-      }).addTo(this.mapa);
-
-      // 📍 Marcador del incidente
-      L.marker([lat, lon], {
-        icon: L.icon({
-          iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-          shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-          iconSize: [25, 41],
-          iconAnchor: [12, 41],
-          popupAnchor: [1, -34],
-          shadowSize: [41, 41]
-        })
-      })
-      .bindPopup(`<strong>Incidente #${this.incidenteSeleccionado.id}</strong><br>📍 ${lat.toFixed(4)}, ${lon.toFixed(4)}`)
-      .addTo(this.mapa)
-      .openPopup();
-
-      // Forzar recálculo de tamaño
-      this.mapa.invalidateSize();
-    } catch (error) {
-      console.error('Error al inicializar mapa:', error);
-    }
   }
 
   // --- LÓGICA DE ASIGNACIÓN Y REASIGNACIÓN ---
