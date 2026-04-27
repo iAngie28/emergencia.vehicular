@@ -239,14 +239,25 @@ def obtener_historial(
 
 @router.get("/historial/metricas")
 def obtener_kpis(
+    fecha_inicio: Optional[datetime] = None,
+    fecha_fin: Optional[datetime] = None,
+    estados: Optional[List[str]] = Query(None),
+    tecnico_id: Optional[int] = None,
     db: Session = Depends(deps.get_db),
     current_user = Depends(deps.get_current_active_user)
 ):
-    """Retorna las estadísticas del dashboard de historial."""
+    """Retorna las estadísticas del dashboard de historial, con filtros aplicados."""
     if not current_user.taller_id:
         raise HTTPException(status_code=403, detail="El usuario no pertenece a un taller")
         
-    return incidente_crud.obtener_metricas_taller(db=db, taller_id=current_user.taller_id)
+    return incidente_crud.obtener_metricas_taller(
+        db=db, 
+        taller_id=current_user.taller_id,
+        fecha_inicio=fecha_inicio,
+        fecha_fin=fecha_fin,
+        estados=estados,
+        tecnico_id=tecnico_id
+    )
 
 # ==========================================
 # 📄 NUEVO: GENERACIÓN DE PDF

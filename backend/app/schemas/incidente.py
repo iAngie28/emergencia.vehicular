@@ -10,6 +10,15 @@ class TecnicoInfo(BaseModel):
     class Config:
         from_attributes = True
 
+# Esquema para mostrar info del pago asociado
+class PagoInfo(BaseModel):
+    id: int
+    monto: Decimal
+    comision_plataforma: Decimal
+    estado: str
+    class Config:
+        from_attributes = True
+
 class IncidenteBase(BaseModel):
     vehiculo_id: int
     usuario_id: int
@@ -49,6 +58,7 @@ class Incidente(IncidenteBase):
     
     # 🚩 Pydantic se encargará de mapear la relación 'tecnico' a este esquema
     tecnico: Optional[TecnicoInfo] = None 
+    pagos: Optional[PagoInfo] = None  # Relación con el pago asociado 
 
     @root_validator(pre=True)
     def extraer_datos_virtuales(cls, obj):
@@ -67,7 +77,7 @@ class Incidente(IncidenteBase):
                 "latitud": obj.latitud,
                 "longitud": obj.longitud,
                 "prioridad": obj.prioridad,
-                "estado": obj.estado,  # 👈 ¡ESTA LÍNEA ES LA QUE FALTA!
+                "estado": obj.estado,
                 "pago_estado": obj.pago_estado,
                 "telefono_cliente": tel,
                 "motivo_cancelacion": obj.motivo_cancelacion,
@@ -75,6 +85,7 @@ class Incidente(IncidenteBase):
                 "clasificacion_ia": obj.clasificacion_ia,
                 "resumen_ia": obj.resumen_ia,
                 "fecha_creacion": obj.fecha_creacion,
-                "tecnico": obj.tecnico
+                "tecnico": obj.tecnico,
+                "pagos": obj.pagos  # 🆕 Incluir relación con pagos
             }
         return obj

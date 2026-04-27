@@ -23,5 +23,6 @@ export interface Incidente {
   resumen_ia?: string;
   fecha_creacion?: string; // Campo vital para el historial
   tecnico?: TecnicoInfo;    // Relación para mostrar quién atendió
+  pagos?: any;              // Relación con pagos (monto cobrado)
   descargando?: boolean;
 }

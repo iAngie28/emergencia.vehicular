@@ -65,7 +65,12 @@ export class HistorialComponent implements OnInit {
   cargarDatos() {
     this.cargando = true;
     
-    this.incidentesService.obtenerMetricas().subscribe({
+    this.incidentesService.obtenerMetricas(
+      this.fechaInicio,
+      this.fechaFin,
+      this.estadosSeleccionados,
+      this.tecnicoSeleccionado || undefined
+    ).subscribe({
       next: (data: any) => this.metricas = data,
       error: (err: any) => console.error('Error cargando métricas:', err)
     });

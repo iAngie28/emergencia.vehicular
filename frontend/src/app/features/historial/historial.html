@@ -57,12 +57,13 @@
           <th>Estado</th>
           <th>Prioridad</th>
           <th>Técnico Asignado</th>
+          <th>Monto Cobrado</th>
           <th>Acciones</th>
         </tr>
       </thead>
       <tbody>
         <tr *ngIf="cargando">
-          <td colspan="6" style="text-align: center;">Cargando historial...</td>
+          <td colspan="7" style="text-align: center;">Cargando historial...</td>
         </tr>
         <tr *ngFor="let item of historial">
           <td><strong>#{{ item.id }}</strong></td>
@@ -78,6 +79,9 @@
           </td>
           <td>{{ item.prioridad }}</td>
           <td>{{ item.tecnico?.nombre || 'Sin asignar' }}</td>
+          <td class="monto-text" style="color: #51cf66; font-weight: 600;">
+            {{ item.pagos?.monto | number:'1.2-2' }} Bs. | <span style="color: #999; font-size: 0.85em;">-{{ item.pagos?.comision_plataforma | number:'1.2-2' }} Bs.</span>
+          </td>
           <td>
             <button 
               *ngIf="item.estado === 'atendido'" 
@@ -89,7 +93,7 @@
           </td>
         </tr>
         <tr *ngIf="!cargando && historial.length === 0">
-          <td colspan="6" style="text-align: center;">No hay registros para estos filtros.</td>
+          <td colspan="7" style="text-align: center;">No hay registros para estos filtros.</td>
         </tr>
       </tbody>
     </table>

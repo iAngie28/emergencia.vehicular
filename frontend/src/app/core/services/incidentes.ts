@@ -74,9 +74,21 @@ export class IncidentesService {
   }
 
 
-  obtenerMetricas(): Observable<any> {
+  obtenerMetricas(fechaInicio?: string, fechaFin?: string, estados?: string[], tecnicoId?: number): Observable<any> {
+    let params = new HttpParams();
+    if (fechaInicio) params = params.set('fecha_inicio', fechaInicio);
+    if (fechaFin) params = params.set('fecha_fin', fechaFin);
+    if (tecnicoId) params = params.set('tecnico_id', tecnicoId.toString());
+    
+    if (estados && estados.length > 0) {
+      estados.forEach(estado => {
+        params = params.append('estados', estado);
+      });
+    }
+    
     return this.http.get<any>(`${this.apiUrl}/historial/metricas`, { 
-      headers: this.getHeaders() 
+      headers: this.getHeaders(),
+      params
     });
   }
 
