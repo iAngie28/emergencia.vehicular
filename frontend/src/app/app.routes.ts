@@ -11,6 +11,9 @@ import { ResetPasswordComponent } from './features/auth/reset-password/reset-pas
 import { PerfilTallerComponent } from './features/perfil-taller/perfil-taller';
 import { AuxiliosComponent } from './features/auxilios/auxilios';
 import { FinanzasComponent } from './features/finanzas/finanzas';
+import { HistorialComponent } from './features/historial/historial';
+
+
 export const routes: Routes = [
   // 1. AGREGA ESTO: pathMatch: 'full' es obligatorio para la ruta raíz
   { path: '', component: LandingComponent, pathMatch: 'full' }, 
@@ -30,7 +33,8 @@ export const routes: Routes = [
       { path: 'incidentes', component: AuxiliosComponent },
       { path: 'perfil-taller', component: PerfilTallerComponent }, // 👈 Revisa que el nombre sea IDÉNTICO al routerLink
       { path: 'administradores', component: GestionAdminsComponent },
-      { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
+      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+      { path: 'historial', component: HistorialComponent },
     ]
   },
   // Este es el que te está mandando al login si algo falla arriba

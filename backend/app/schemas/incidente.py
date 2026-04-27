@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field, root_validator
 from typing import Optional, Dict, Any
 from decimal import Decimal
+from datetime import datetime
 
 # Esquema para mostrar info básica del técnico
 class TecnicoInfo(BaseModel):
@@ -21,6 +22,7 @@ class IncidenteBase(BaseModel):
     pago_estado: str = "pendiente"
     telefono_cliente: str = "No disponible"
     motivo_cancelacion: Optional[str] = None
+    fecha_creacion: Optional[datetime] = None
 
     class Config:
         from_attributes = True
@@ -50,16 +52,29 @@ class Incidente(IncidenteBase):
 
     @root_validator(pre=True)
     def extraer_datos_virtuales(cls, obj):
-        # Si es un objeto de SQLAlchemy, lo convertimos a dict para no romper nada
         if not isinstance(obj, dict):
             usuario = getattr(obj, "usuario", None)
             tel = "No disponible"
             if usuario:
                 tel = getattr(usuario, "telefono", "No disponible") or "No disponible"
             
-            # Creamos un diccionario con la data real de la tabla
-            data = {c.name: getattr(obj, c.name) for c in obj.__table__.columns}
-            data["telefono_cliente"] = tel
-            data["tecnico"] = getattr(obj, "tecnico", None)
-            return data
+            return {
+                "id": obj.id,
+                "vehiculo_id": obj.vehiculo_id,
+                "usuario_id": obj.usuario_id,
+                "taller_id": obj.taller_id,
+                "tecnico_id": obj.tecnico_id,
+                "latitud": obj.latitud,
+                "longitud": obj.longitud,
+                "prioridad": obj.prioridad,
+                "estado": obj.estado,  # 👈 ¡ESTA LÍNEA ES LA QUE FALTA!
+                "pago_estado": obj.pago_estado,
+                "telefono_cliente": tel,
+                "motivo_cancelacion": obj.motivo_cancelacion,
+                "transcripcion_audio": obj.transcripcion_audio,
+                "clasificacion_ia": obj.clasificacion_ia,
+                "resumen_ia": obj.resumen_ia,
+                "fecha_creacion": obj.fecha_creacion,
+                "tecnico": obj.tecnico
+            }
         return obj

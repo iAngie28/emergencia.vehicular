@@ -1,10 +1,11 @@
 import logging
+from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
+from decimal import Decimal
 from app.db.session import SessionLocal
 
 # =================================================================
 # 🚩 BLOQUE DE IMPORTACIONES DE SEGURIDAD (No tocar)
-# Importamos todos los modelos para que SQLAlchemy registre las relaciones
 # =================================================================
 from app.models.rol import Rol
 from app.models.taller import Taller
@@ -17,14 +18,19 @@ from app.models.notificacion import Notificacion
 from app.models.evidencia import Evidencia
 from app.models.taller_detalle import HorarioTaller
 
-
 from app.core.security import obtener_hash_clave as get_password_hash
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 def seed_db(db: Session) -> None:
+    logger.info("🌱 Iniciando el sembrado de base de datos (Seeder)...")
+    hash_clave = get_password_hash("password123")
+    hoy = datetime.now()
+
+    # ---------------------------------------------------------
     # 1. ROLES
+    # ---------------------------------------------------------
     roles_base = [
         {"id": 1, "nombre": "Administrador de Taller"},
         {"id": 2, "nombre": "Cliente"},
@@ -35,66 +41,137 @@ def seed_db(db: Session) -> None:
             db.add(Rol(**r))
     db.commit()
 
+    # ---------------------------------------------------------
     # 2. ESPECIALIDADES
-    especialidades_base = [
-        {"id": 1, "nombre": "Mecánica General"},
-        {"id": 2, "nombre": "Electromecánica"},
-        {"id": 3, "nombre": "Chapería y Pintura"},
-        {"id": 4, "nombre": "Frenos"}
+    # ---------------------------------------------------------
+    especialidades = [
+        {"id": 1, "nombre": "Mecánica General", "descripcion": "Reparación de motores y transmisión"},
+        {"id": 2, "nombre": "Electricidad Automotriz", "descripcion": "Baterías, alternadores, cableado"},
+        {"id": 3, "nombre": "Llantería", "descripcion": "Cambio y parchado de llantas"}
     ]
-    for e in especialidades_base:
+    for e in especialidades:
         if not db.query(Especialidad).filter(Especialidad.id == e["id"]).first():
             db.add(Especialidad(**e))
     db.commit()
 
-    # 3. TALLERES
-    if not db.query(Taller).filter(Taller.id == 1).first():
-        db.add(Taller(
-            id=1, nombre="Mecánica Central 2do Anillo", 
-            latitud=-17.7761, longitud=-63.1782, estado=True,
-            direccion="Av. Cristóbal de Mendoza", telefono="70011111"
-        ))
+    # ---------------------------------------------------------
+    # 3. TALLERES (Multi-Tenant)
+    # ---------------------------------------------------------
+    talleres = [
+        {"id": 1, "nombre": "Taller Central Santa Cruz", "direccion": "Av. Banzer 4to Anillo", "comision_porcentaje": 10.0},
+        {"id": 2, "nombre": "Súper Mecánica Warnes", "direccion": "Ruta al Norte Km 20", "comision_porcentaje": 15.0}
+    ]
+    for t in talleres:
+        if not db.query(Taller).filter(Taller.id == t["id"]).first():
+            db.add(Taller(**t))
     db.commit()
 
-    # 4. USUARIOS
-    hash_clave = get_password_hash("pas12345")
+    # ---------------------------------------------------------
+    # 4. USUARIOS (Admins, Clientes y Técnicos)
+    # ---------------------------------------------------------
     usuarios = [
-        {"id": 1, "nombre": "Admin T1", "correo": "adm1@taller.com", "clave_hash": hash_clave, "rol_id": 1, "taller_id": 1},
-        {"id": 2, "nombre": "Carlos Cliente", "correo": "carlos@cliente.com", "clave_hash": hash_clave, "rol_id": 2},
-        {"id": 3, "nombre": "Juan Mecánico", "correo": "tec1@taller.com", "clave_hash": hash_clave, "rol_id": 3, "taller_id": 1, "esta_activo": True},
+        # Admins de Taller
+        {"id": 1, "nombre": "Admin Central", "correo": "admin1@taller.com", "clave_hash": hash_clave, "rol_id": 1, "taller_id": 1},
+        {"id": 2, "nombre": "Admin Warnes", "correo": "admin2@taller.com", "clave_hash": hash_clave, "rol_id": 1, "taller_id": 2},
+        # Cliente
+        {"id": 3, "nombre": "Carlos Cliente", "correo": "carlos@cliente.com", "clave_hash": hash_clave, "rol_id": 2},
+        # Técnicos Taller 1
+        {"id": 4, "nombre": "Juan Mecánico", "correo": "tec1@taller.com", "clave_hash": hash_clave, "rol_id": 3, "taller_id": 1, "esta_activo": True},
+        {"id": 5, "nombre": "Pedro Eléctrico", "correo": "tec2@taller.com", "clave_hash": hash_clave, "rol_id": 3, "taller_id": 1, "esta_activo": True},
+        # Técnico Taller 2
+        {"id": 6, "nombre": "Roberto Llantas", "correo": "tec3@taller.com", "clave_hash": hash_clave, "rol_id": 3, "taller_id": 2, "esta_activo": True},
     ]
-
     for u in usuarios:
         if not db.query(Usuario).filter(Usuario.correo == u["correo"]).first():
             db.add(Usuario(**u))
     db.commit()
 
-    # Vincular Especialidad al técnico
-    tec = db.query(Usuario).get(3)
-    esp = db.query(Especialidad).get(1)
-    if tec and esp and esp not in tec.especialidades:
-        tec.especialidades.append(esp)
+    # Asignar especialidades a técnicos
+    tec1 = db.query(Usuario).get(4) # Juan
+    esp1 = db.query(Especialidad).get(1)
+    if tec1 and esp1 and esp1 not in tec1.especialidades: tec1.especialidades.append(esp1)
+
+    tec2 = db.query(Usuario).get(5) # Pedro
+    esp2 = db.query(Especialidad).get(2)
+    if tec2 and esp2 and esp2 not in tec2.especialidades: tec2.especialidades.append(esp2)
     db.commit()
 
+    # ---------------------------------------------------------
     # 5. VEHÍCULO
+    # ---------------------------------------------------------
     if not db.query(Vehiculo).filter(Vehiculo.placa == "1234-ABC").first():
-        db.add(Vehiculo(id=1, placa="1234-ABC", marca="Toyota", modelo="Corolla", usuario_id=2))
+        db.add(Vehiculo(id=1, placa="1234-ABC", marca="Toyota", modelo="Corolla", usuario_id=3))
     db.commit()
 
-    # 6. INCIDENTE
-    if not db.query(Incidente).filter(Incidente.id == 1).first():
-        db.add(Incidente(
-            id=1, vehiculo_id=1, usuario_id=2, 
-            latitud=-17.7833, longitud=-63.1821, prioridad="alta", 
-            estado="pendiente", transcripcion_audio="Ruido en el motor",
-            clasificacion_ia="Mecánica", resumen_ia="Falla en motor"
-        ))
-    db.commit()
-    logger.info("🚀 Seeder finalizado con éxito.")
+    # ---------------------------------------------------------
+    # 6. INCIDENTES Y PAGOS (Generación de Historial y Métricas)
+    # ---------------------------------------------------------
+    # Tupla: (taller_id, tecnico_id, dias_atras, clasificacion, monto, estado)
+    datos_historial = [
+        # Taller 1 - Historial (Atendidos)
+        (1, 4, 15, "Falla de Motor", 850, "atendido"),
+        (1, 4, 8, "Mantenimiento", 300, "atendido"),
+        (1, 5, 5, "Problema Batería", 450, "atendido"),
+        (1, 5, 2, "Falla Eléctrica", 600, "atendido"),
+        (1, 4, 1, "Cancelado por cliente", 0, "cancelado"), # Para probar un servicio cancelado
+        # Taller 1 - Activo (Para que salga en la pestaña "Disponibles" o "Mis Atenciones")
+        (1, 5, 0, "Falla Eléctrica", 0, "en_proceso"), 
+        
+        # Taller 2 - Historial (No debe verse en Taller 1)
+        (2, 6, 3, "Llanta pinchada", 150, "atendido"),
+    ]
+
+    # Contar si ya hay incidentes para no duplicar si corres el seeder varias veces
+    if db.query(Incidente).count() < len(datos_historial):
+        for idx, (taller_id, tec_id, dias, clase, monto, estado) in enumerate(datos_historial, start=1):
+            fecha = hoy - timedelta(days=dias)
+            
+            # Si está cancelado o en proceso, el pago_estado es diferente
+            pago_estado = "pagado" if estado == "atendido" else "pendiente"
+
+            inc = Incidente(
+                id=idx,
+                vehiculo_id=1,
+                usuario_id=3,
+                taller_id=taller_id,
+                tecnico_id=tec_id if estado != "pendiente" else None,
+                latitud=-17.78 + (0.01 * idx), # Variar un poco el mapa
+                longitud=-63.18 - (0.01 * idx),
+                prioridad="media" if dias > 5 else "alta",
+                estado=estado, 
+                pago_estado=pago_estado,
+                clasificacion_ia=clase,
+                fecha_creacion=fecha
+            )
+            db.merge(inc)
+            db.commit()
+
+            # Generar pago solo para los atendidos (impacta en métricas financieras)
+            if estado == "atendido":
+                comision = Decimal(str(monto)) * Decimal(str(talleres[taller_id-1]["comision_porcentaje"] / 100.0))
+                pago = Pago(
+                    incidente_id=inc.id,
+                    usuario_id=3,
+                    taller_id=taller_id,
+                    monto=Decimal(str(monto)),
+                    comision_plataforma=comision,
+                    metodo_pago="qr",
+                    estado="completado",
+                    fecha=fecha
+                )
+                db.merge(pago)
+        
+        db.commit()
+        logger.info("✅ Incidentes y Pagos de historial creados exitosamente.")
 
 if __name__ == "__main__":
+    # Permite ejecutar `python seeder.py` directamente
     db = SessionLocal()
     try:
         seed_db(db)
+        print("🎉 ¡Seeder ejecutado con éxito!")
+    except Exception as e:
+        print(f"❌ Error al ejecutar el seeder: {e}")
+        db.rollback()
     finally:
         db.close()

@@ -1,6 +1,7 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Numeric, Text
+from sqlalchemy import Column, Integer, String, ForeignKey, Numeric, Text, DateTime
 from sqlalchemy.orm import relationship
 from app.db.base_class import Base
+from sqlalchemy.sql import func
 
 class Incidente(Base):
     __tablename__ = "incidente"
@@ -24,7 +25,8 @@ class Incidente(Base):
     estado = Column(String(20), default="pendiente") 
     pago_estado = Column(String(20), default="pendiente")
     motivo_cancelacion = Column(Text, nullable=True)
-    
+    fecha_creacion = Column(DateTime(timezone=True), server_default=func.now())
+
     # --- CAMPOS PARA LA IA ---
     transcripcion_audio = Column(Text)
     clasificacion_ia = Column(String(100))

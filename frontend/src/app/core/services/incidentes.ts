@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { Incidente } from '../../interface/incidente.interface';
 
 @Injectable({
   providedIn: 'root'
@@ -51,5 +52,22 @@ export class IncidentesService {
   // 4. Actualizar estado (Finalizar)
   actualizarEstado(id: number, datos: any): Observable<any> {
     return this.http.put(`${this.apiUrl}/${id}`, datos, { headers: this.getHeaders() });
+  }
+  obtenerHistorial(fechaInicio?: string, fechaFin?: string): Observable<Incidente[]> {
+    let params = new HttpParams();
+    if (fechaInicio) params = params.set('fecha_inicio', fechaInicio);
+    if (fechaFin) params = params.set('fecha_fin', fechaFin);
+    
+    // Asumo que tu getHeaders() inyecta el Bearer token como dictan las reglas
+    return this.http.get<Incidente[]>(`${this.apiUrl}/historial/lista`, { 
+      headers: this.getHeaders(), 
+      params 
+    });
+  }
+
+  obtenerMetricas(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/historial/metricas`, { 
+      headers: this.getHeaders() 
+    });
   }
 }

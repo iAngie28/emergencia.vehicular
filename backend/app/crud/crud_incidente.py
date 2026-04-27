@@ -2,6 +2,11 @@ from sqlalchemy.orm import Session
 from app.crud.base import CRUDBase
 from app.models.incidente import Incidente
 from app.schemas.incidente import IncidenteCreate, IncidenteUpdate
+from typing import List, Optional, Dict, Any
+from datetime import datetime
+from sqlalchemy import func, and_
+from app.models.usuario import Usuario
+from app.models.pago import Pago
 
 class CRUDIncidente(CRUDBase[Incidente, IncidenteCreate, IncidenteUpdate]):
     
@@ -37,5 +42,51 @@ class CRUDIncidente(CRUDBase[Incidente, IncidenteCreate, IncidenteUpdate]):
             "taller_id": None # Lo liberamos para que otros talleres NO lo vean o se sepa que fue devuelto
         }
         return self.update(db, db_obj=db_obj, obj_in=update_data)
+    
+    def obtener_historial_taller(
+        self, db: Session, *, taller_id: int, fecha_inicio: Optional[datetime] = None, fecha_fin: Optional[datetime] = None
+    ) -> List[Incidente]:
+        """Obtiene servicios finalizados o cancelados de un taller."""
+        query = db.query(self.model).filter(
+            self.model.taller_id == taller_id,
+            self.model.estado.in_(["atendido", "cancelado"])
+        )
+
+        if fecha_inicio:
+            query = query.filter(self.model.fecha_creacion >= fecha_inicio)
+        if fecha_fin:
+            query = query.filter(self.model.fecha_creacion <= fecha_fin)
+            
+        return query.order_by(self.model.fecha_creacion.desc()).all()
+
+    def obtener_metricas_taller(self, db: Session, *, taller_id: int) -> Dict[str, Any]:
+        """Calcula los KPIs para la pestaña de historial."""
+        
+        # 1. Atenciones por Técnico
+        por_tecnico = db.query(
+            Usuario.nombre, func.count(self.model.id).label("total")
+        ).join(Usuario, self.model.tecnico_id == Usuario.id)\
+         .filter(self.model.taller_id == taller_id, self.model.estado == "atendido")\
+         .group_by(Usuario.nombre).all()
+
+        # 2. Recaudación Total del Taller (Restando el 10% de la plataforma)
+        finanzas = db.query(
+            func.sum(Pago.monto).label("total_bruto"),
+            func.sum(Pago.comision_plataforma).label("comision")
+        ).filter(
+            Pago.taller_id == taller_id, 
+            Pago.estado == "completado"  # O el estado que uses para pagos exitosos
+        ).first()
+        
+        bruto = finanzas.total_bruto or 0
+        comision = finanzas.comision or 0
+
+        return {
+            "atenciones_por_tecnico": [{"tecnico": t[0], "cantidad": t[1]} for t in por_tecnico],
+            "finanzas": {
+                "recaudado_neto": float(bruto - comision),
+                "recaudado_bruto": float(bruto)
+            }
+        }
     
 incidente_crud = CRUDIncidente(Incidente)

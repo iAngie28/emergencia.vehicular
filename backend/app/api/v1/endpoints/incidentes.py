@@ -7,6 +7,8 @@ from app.crud.crud_bitacora import bitacora_crud # 👈 Importante para la Regla
 from app.schemas.incidente import Incidente, IncidenteCreate, IncidenteUpdate
 from fastapi.encoders import jsonable_encoder
 from app.models.usuario import Usuario
+from typing import Optional, Any
+from datetime import datetime
 
 from app.models.bitacora import Bitacora # 👈 Agrega esta importación
 
@@ -208,3 +210,32 @@ def actualizar_estado_incidente(
     )
     
     return actualizado
+
+@router.get("/historial/lista", response_model=List[Incidente])
+def obtener_historial(
+    fecha_inicio: Optional[datetime] = None,
+    fecha_fin: Optional[datetime] = None,
+    db: Session = Depends(deps.get_db),
+    current_user = Depends(deps.get_current_active_user) # 🔐 MULTI-TENANT
+):
+    """Retorna el historial de auxilios finalizados de este taller."""
+    if not current_user.taller_id:
+        raise HTTPException(status_code=403, detail="El usuario no pertenece a un taller")
+        
+    return incidente_crud.obtener_historial_taller(
+        db=db, 
+        taller_id=current_user.taller_id,
+        fecha_inicio=fecha_inicio,
+        fecha_fin=fecha_fin
+    )
+
+@router.get("/historial/metricas")
+def obtener_kpis(
+    db: Session = Depends(deps.get_db),
+    current_user = Depends(deps.get_current_active_user) # 🔐 MULTI-TENANT
+):
+    """Retorna las estadísticas del dashboard de historial."""
+    if not current_user.taller_id:
+        raise HTTPException(status_code=403, detail="El usuario no pertenece a un taller")
+        
+    return incidente_crud.obtener_metricas_taller(db=db, taller_id=current_user.taller_id)

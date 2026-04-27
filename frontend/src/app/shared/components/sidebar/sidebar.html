@@ -7,7 +7,7 @@
     <div class="avatar">{{ usuario[0] | uppercase }}</div>
     <div class="user-info">
       <p class="user-name">{{ usuario }}</p>
-      <span class="user-role">Administrador del Sistema</span>
+      <span class="user-role">Admin de Taller</span>
     </div>
   </div>
 
@@ -36,12 +36,15 @@
       <a routerLink="/bitacora" routerLinkActive="active" class="nav-link">
         <span>📜</span> Bitácora de Auditoría
       </a>
-    </div>
-
-    <div class="sidebar-footer">
-      <button class="logout-btn" (click)="onLogout()">
-        🚪 Cerrar Sesión
-      </button>
+      <a routerLink="/historial" routerLinkActive="active" class="nav-link">
+        <span>📈</span> Historial y Métricas
+      </a>
     </div>
   </nav>
+
+  <div class="sidebar-footer">
+    <button (click)="onLogout()" class="logout-btn">
+      <span>🚪</span> Cerrar Sesión
+    </button>
+  </div>
 </aside>

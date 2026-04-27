@@ -1,0 +1,64 @@
+<div class="historial-container">
+  <h2>Historial y Métricas</h2>
+
+  <div class="filtros-section">
+    <div class="form-group">
+      <label>Desde:</label>
+      <input type="date" [(ngModel)]="fechaInicio">
+    </div>
+    <div class="form-group">
+      <label>Hasta:</label>
+      <input type="date" [(ngModel)]="fechaFin">
+    </div>
+    <button class="btn-primary" (click)="aplicarFiltros()">Filtrar</button>
+  </div>
+
+  <div class="kpis-grid" *ngIf="metricas">
+    <div class="kpi-card">
+      <h3>Recaudado Neto (Taller)</h3>
+      <p class="kpi-value text-success">
+        Bs. {{ metricas.finanzas?.recaudado_neto | number:'1.2-2' }}
+      </p>
+    </div>
+    <div class="kpi-card">
+      <h3>Atenciones Finalizadas</h3>
+      <p class="kpi-value">{{ historial.length }}</p>
+    </div>
+  </div>
+
+  <div class="table-container">
+    <table class="modern-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Fecha</th>
+          <th>Estado</th>
+          <th>Prioridad</th>
+          <th>Técnico Asignado</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngIf="cargando">
+          <td colspan="5" style="text-align: center;">Cargando historial...</td>
+        </tr>
+        <tr *ngFor="let item of historial">
+          <td><strong>#{{ item.id }}</strong></td>
+          <td>{{ item.fecha_creacion | date:'dd/MM/yyyy HH:mm' }}</td>
+          <td>
+            <span class="badge" [ngClass]="{
+              'badge-success': item.estado === 'atendido',
+              'badge-danger': item.estado === 'cancelado'
+            }">
+              {{ item.estado | uppercase }}
+            </span>
+          </td>
+          <td>{{ item.prioridad }}</td>
+          <td>{{ item.tecnico?.nombre || 'Sin asignar' }}</td>
+        </tr>
+        <tr *ngIf="!cargando && historial.length === 0">
+          <td colspan="5" style="text-align: center;">No hay registros para este periodo.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
