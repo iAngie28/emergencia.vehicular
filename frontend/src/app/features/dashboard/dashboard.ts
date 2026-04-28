@@ -30,13 +30,12 @@ export class DashboardComponent implements OnInit {
 
   obtenerDatosPerfil() {
     const token = localStorage.getItem('token');
+    if (!token) return;
     const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
 
-    // Llamamos al endpoint que devuelve el usuario logueado
     this.http.get<any>(`${environment.apiUrl}/usuarios/me`, { headers }).subscribe({
       next: (user) => {
         this.usuarioNombre = user.nombre;
-        // Si tu backend devuelve el objeto taller dentro del usuario:
         if (user.taller) {
           this.tallerNombre = user.taller.nombre;
         } else {
@@ -51,15 +50,18 @@ export class DashboardComponent implements OnInit {
 
   cargarEstadisticasFinanzas() {
     const token = localStorage.getItem('token');
+    if (!token) return;
     const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
     
     this.http.get<any[]>(`${environment.apiUrl}/pagos/mi-historial`, { headers }).subscribe({
       next: (pagos) => {
         const pagosCompletados = pagos.filter(p => p.estado === 'completado');
         
-        this.estadisticasFinanzas.totalBruto = pagosCompletados.reduce((sum: number, p: any) => sum + (p.monto || 0), 0);
-        this.estadisticasFinanzas.totalComision = pagosCompletados.reduce((sum: number, p: any) => sum + (p.comision_plataforma || 0), 0);
+        // 🚩 SOLUCIÓN: Usamos limpiarNumero para evitar la concatenación de strings
+        this.estadisticasFinanzas.totalBruto = pagosCompletados.reduce((sum: number, p: any) => sum + this.limpiarNumero(p.monto), 0);
+        this.estadisticasFinanzas.totalComision = pagosCompletados.reduce((sum: number, p: any) => sum + this.limpiarNumero(p.comision_plataforma), 0);
         this.estadisticasFinanzas.totalNeto = this.estadisticasFinanzas.totalBruto - this.estadisticasFinanzas.totalComision;
+        
         this.estadisticasFinanzas.cantidadPagos = pagosCompletados.length;
         this.estadisticasFinanzas.cargando = false;
       },
@@ -67,5 +69,12 @@ export class DashboardComponent implements OnInit {
         this.estadisticasFinanzas.cargando = false;
       }
     });
+  }
+
+  // 🚩 FUNCIÓN SALVAVIDAS: Convierte textos corruptos en números reales
+  limpiarNumero(valor: any): number {
+    if (!valor) return 0;
+    const numero = parseFloat(valor);
+    return isNaN(numero) ? 0 : numero;
   }
 }

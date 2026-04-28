@@ -22,18 +22,8 @@ origins = [
     FRONTEND_URL,
     # Frontend Mobile (Ionic/Angular)
     "http://localhost:8100",
-    # Flutter Mobile - Android Emulator
-    "http://10.0.2.2:8000",
-    # Flutter Mobile - iOS Simulator
-    "http://localhost:8000",
-    # Flutter Mobile - Dispositivo Físico (IP local) ⭐ TU LAPTOP
-    "http://192.168.56.1:8000",
-    "http://192.168.56.1:4200",
-    # Otros rangos comunes en redes locales
-    "http://192.168.1.0:8000",
-    "http://10.0.0.0:8000",
-    # Variables de entorno para testing dinámico
-    os.getenv("LOCAL_IP_URL", ""),
+    "https://emergencia-vehicular-1.onrender.com",
+    FRONTEND_URL, # Dominio de producción
 ]
 
 # Filtrar URLs vacías

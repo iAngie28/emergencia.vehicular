@@ -6,11 +6,6 @@ from app.db.session import SessionLocal
 from faker import Faker
 import random
 
-# Funcion auxiliar para convertir string a time
-def parse_time(time_str: str) -> time:
-    """Convierte string 'HH:MM' a objeto time de Python"""
-    return datetime.strptime(time_str, "%H:%M").time()
-
 # =================================================================
 # 🚩 BLOQUE DE IMPORTACIONES DE SEGURIDAD (No tocar)
 # =================================================================
@@ -90,7 +85,7 @@ def generar_coords_en_zona(zona):
 
 
 def seed_db(db: Session) -> None:
-    logger.info("[INIT] Iniciando sembrado avanzado con FAKER (ultimos 365 dias - 1 ano)...")
+    logger.info("🌱 Iniciando sembrado avanzado con FAKER (3 meses de movimiento)...")
     
     hash_clave = get_password_hash("password123")
     hoy = datetime.now()
@@ -98,7 +93,7 @@ def seed_db(db: Session) -> None:
     # ---------------------------------------------------------
     # 1. ROLES
     # ---------------------------------------------------------
-    logger.info("[ROLES] Creando ROLES...")
+    logger.info("👥 Creando ROLES...")
     roles_base = [
         {"id": 1, "nombre": "Administrador de Taller"},
         {"id": 2, "nombre": "Cliente"},
@@ -112,7 +107,7 @@ def seed_db(db: Session) -> None:
     # ---------------------------------------------------------
     # 2. ESPECIALIDADES
     # ---------------------------------------------------------
-    logger.info("[SPECIALTIES] Creando ESPECIALIDADES...")
+    logger.info("🔧 Creando ESPECIALIDADES...")
     especialidades = []
     for idx, nombre in enumerate(ESPECIALIDADES_NOMBRE, start=1):
         esp = db.query(Especialidad).filter(Especialidad.id == idx).first()
@@ -127,7 +122,7 @@ def seed_db(db: Session) -> None:
     # ---------------------------------------------------------
     # 3. TALLERES (6 talleres en SC)
     # ---------------------------------------------------------
-    logger.info("[SHOPS] Creando TALLERES en Santa Cruz...")
+    logger.info("🏢 Creando TALLERES en Santa Cruz...")
     talleres_data = [
         {
             "nombre": "Taller Central SC",
@@ -192,7 +187,7 @@ def seed_db(db: Session) -> None:
     # ---------------------------------------------------------
     # 4. USUARIOS (Admins de taller, Técnicos, Clientes)
     # ---------------------------------------------------------
-    logger.info("[USERS] Creando USUARIOS (Admins, Tecnicos, Clientes)...")
+    logger.info("👨‍💼 Creando USUARIOS (Admins, Técnicos, Clientes)...")
     usuario_id_counter = 1
     usuarios = []
     tecnicos = []
@@ -266,12 +261,12 @@ def seed_db(db: Session) -> None:
             usuario_id_counter += 1
     db.commit()
     
-    logger.info(f"[OK] Creados {len(usuarios)} usuarios")
+    logger.info(f"✅ Creados {len(usuarios)} usuarios")
     
     # ---------------------------------------------------------
     # 5. VEHÍCULOS (2-3 por cliente)
     # ---------------------------------------------------------
-    logger.info("[VEHICLES] Creando VEHICULOS...")
+    logger.info("🚗 Creando VEHÍCULOS...")
     vehiculos = []
     marcas = ["Toyota", "Honda", "Ford", "Chevrolet", "Nissan", "Hyundai", "Kia", "BMW", "Mercedes"]
     modelos = ["Corolla", "Civic", "Focus", "Spark", "Versa", "Elantra", "Picanto", "320i", "C200"]
@@ -291,12 +286,12 @@ def seed_db(db: Session) -> None:
                 db.add(vehiculo)
                 vehiculos.append(vehiculo)
     db.commit()
-    logger.info(f"[OK] Creados {len(vehiculos)} vehiculos")
+    logger.info(f"✅ Creados {len(vehiculos)} vehículos")
     
     # ---------------------------------------------------------
     # 6. HORARIOS DE TALLERES
     # ---------------------------------------------------------
-    logger.info("[SCHEDULES] Creando HORARIOS...")
+    logger.info("⏰ Creando HORARIOS...")
     dias_semana = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]
     for taller in talleres:
         for dia in dias_semana:
@@ -311,24 +306,23 @@ def seed_db(db: Session) -> None:
                     horario = HorarioTaller(
                         taller_id=taller.id,
                         dia=dia,
-                        hora_apertura=parse_time("09:00"),
-                        hora_cierre=parse_time("14:00")
+                        hora_apertura="09:00",
+                        hora_cierre="14:00"
                     )
                 else:
                     horario = HorarioTaller(
                         taller_id=taller.id,
                         dia=dia,
-                        hora_apertura=parse_time("08:00"),
-                        hora_cierre=parse_time("18:00")
+                        hora_apertura="08:00",
+                        hora_cierre="18:00"
                     )
                 db.add(horario)
     db.commit()
-    logger.info("[OK] Horarios de talleres creados.")
     
     # ---------------------------------------------------------
     # 7. INCIDENTES (200-300 incidentes en 1 año)
     # ---------------------------------------------------------
-    logger.info("[INCIDENTS] Creando INCIDENTES (ultimos 365 dias - 1 ANO)...")
+    logger.info("🚨 Creando INCIDENTES (últimos 365 días - 1 AÑO)...")
     incidentes = []
     estados_incidente = ["pendiente", "en_proceso", "atendido", "cancelado"]
     prioridades = ["baja", "media", "alta"]
@@ -393,12 +387,12 @@ def seed_db(db: Session) -> None:
         incidentes.append(incidente)
     
     db.commit()
-    logger.info(f"[OK] Creados {len(incidentes)} incidentes (20 en_proceso)")
+    logger.info(f"✅ Creados {len(incidentes)} incidentes (20 en_proceso)")
     
     # ---------------------------------------------------------
     # 8. PAGOS (para incidentes atendidos)
     # ---------------------------------------------------------
-    logger.info("[PAYMENTS] Creando PAGOS...")
+    logger.info("💰 Creando PAGOS...")
     pagos = []
     for incidente in incidentes:
         if incidente.estado == "atendido" and incidente.taller_id:
@@ -420,12 +414,12 @@ def seed_db(db: Session) -> None:
             pagos.append(pago)
     
     db.commit()
-    logger.info(f"[OK] Creados {len(pagos)} pagos")
+    logger.info(f"✅ Creados {len(pagos)} pagos")
     
     # ---------------------------------------------------------
     # 9. BITÁCORA (registros de actividades)
     # ---------------------------------------------------------
-    logger.info("[AUDIT] Creando BITACORA...")
+    logger.info("📝 Creando BITÁCORA...")
     bitacoras = []
     acciones = ["crear", "editar", "atender", "cancelar", "aprobar", "rechazar"]
     
@@ -445,12 +439,12 @@ def seed_db(db: Session) -> None:
             bitacoras.append(bitacora)
     
     db.commit()
-    logger.info(f"[OK] Creados {len(bitacoras)} registros de bitacora")
+    logger.info(f"✅ Creados {len(bitacoras)} registros de bitácora")
     
     # ---------------------------------------------------------
     # 10. EVIDENCIAS (fotos de incidentes)
     # ---------------------------------------------------------
-    logger.info("[EVIDENCE] Creando EVIDENCIAS...")
+    logger.info("📷 Creando EVIDENCIAS...")
     evidencias = []
     
     for incidente in incidentes[:80]:  # 80 incidentes con evidencia (más con 1 año de datos)
@@ -467,12 +461,12 @@ def seed_db(db: Session) -> None:
                 evidencias.append(evidencia)
     
     db.commit()
-    logger.info(f"[OK] Creados {len(evidencias)} registros de evidencia")
+    logger.info(f"✅ Creados {len(evidencias)} registros de evidencia")
     
     # ---------------------------------------------------------
     # 11. NOTIFICACIONES (para incidentes cercanos)
     # ---------------------------------------------------------
-    logger.info("[NOTIFICATIONS] Creando NOTIFICACIONES...")
+    logger.info("🔔 Creando NOTIFICACIONES...")
     notificaciones = []
     
     for incidente in incidentes[:60]:  # 60 notificaciones (más con 1 año)
@@ -490,27 +484,27 @@ def seed_db(db: Session) -> None:
             notificaciones.append(notificacion)
     
     db.commit()
-    logger.info(f"[OK] Creados {len(notificaciones)} registros de notificacion")
+    logger.info(f"✅ Creados {len(notificaciones)} registros de notificación")
     
     # ---------------------------------------------------------
     # RESUMEN FINAL
     # ---------------------------------------------------------
     logger.info("\n" + "="*70)
-    logger.info("[SUCCESS] SEMBRADO COMPLETADO EXITOSAMENTE")
+    logger.info("✨ SEMBRADO COMPLETADO EXITOSAMENTE")
     logger.info("="*70)
-    logger.info(f"[ROLES] Roles: {db.query(Rol).count()}")
-    logger.info(f"[SPECIALTIES] Especialidades: {db.query(Especialidad).count()}")
-    logger.info(f"[SHOPS] Talleres: {db.query(Taller).count()}")
-    logger.info(f"[USERS] Usuarios: {db.query(Usuario).count()}")
-    logger.info(f"[VEHICLES] Vehiculos: {db.query(Vehiculo).count()}")
-    logger.info(f"[SCHEDULES] Horarios: {db.query(HorarioTaller).count()}")
-    logger.info(f"[INCIDENTS] Incidentes: {db.query(Incidente).count()}")
-    logger.info(f"[PAYMENTS] Pagos: {db.query(Pago).count()}")
-    logger.info(f"[AUDIT] Bitacora: {db.query(Bitacora).count()}")
-    logger.info(f"[EVIDENCE] Evidencias: {db.query(Evidencia).count()}")
-    logger.info(f"[NOTIFICATIONS] Notificaciones: {db.query(Notificacion).count()}")
+    logger.info(f"📍 Roles: {db.query(Rol).count()}")
+    logger.info(f"🔧 Especialidades: {db.query(Especialidad).count()}")
+    logger.info(f"🏢 Talleres: {db.query(Taller).count()}")
+    logger.info(f"👥 Usuarios: {db.query(Usuario).count()}")
+    logger.info(f"🚗 Vehículos: {db.query(Vehiculo).count()}")
+    logger.info(f"⏰ Horarios: {db.query(HorarioTaller).count()}")
+    logger.info(f"🚨 Incidentes: {db.query(Incidente).count()}")
+    logger.info(f"💰 Pagos: {db.query(Pago).count()}")
+    logger.info(f"📝 Bitácora: {db.query(Bitacora).count()}")
+    logger.info(f"📷 Evidencias: {db.query(Evidencia).count()}")
+    logger.info(f"🔔 Notificaciones: {db.query(Notificacion).count()}")
     logger.info("="*70)
-    logger.info("[DATA] Datos de 1 ANO COMPLETO de movimiento en Santa Cruz de la Sierra")
+    logger.info("📊 Datos de 1 AÑO COMPLETO de movimiento en Santa Cruz de la Sierra")
     logger.info("="*70 + "\n")
 
 
@@ -522,7 +516,7 @@ if __name__ == "__main__":
         seed_db(db)
         print("[OK] Seeder ejecutado con exito!")
     except Exception as e:
-        print(f"[ERROR] Error al ejecutar el seeder: {e}")
+        print(f"❌ Error al ejecutar el seeder: {e}")
         import traceback
         traceback.print_exc()
         db.rollback()

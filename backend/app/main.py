@@ -88,6 +88,7 @@ logger.info(f"CORS Origins: {cors_origins}")
 
 app.add_middleware(
     CORSMiddleware,
+    allow_origins=["*"],            # Permite Angular
     allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],  # Allow all HTTP methods (GET, POST, PUT, DELETE, etc.)
