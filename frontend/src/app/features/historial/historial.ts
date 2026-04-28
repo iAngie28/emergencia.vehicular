@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpHeaders } from '@angular/common/http'; // 👈 Importamos esto
 import { IncidentesService } from '../../core/services/incidentes';
 import { Incidente } from '../../interface/incidente.interface';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-historial',
@@ -47,7 +48,7 @@ export class HistorialComponent implements OnInit {
     const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
     
     // 🚩 Usamos tu ruta real del backend: /usuarios/mis-tecnicos
-    this.http.get<any[]>('http://localhost:8000/api/v1/usuarios/mis-tecnicos', { headers }).subscribe({
+    this.http.get<any[]>(`${environment.apiUrl}/usuarios/mis-tecnicos`, { headers }).subscribe({
       next: (data) => this.tecnicos = data,
       error: (err) => console.error('Error cargando técnicos:', err)
     });
