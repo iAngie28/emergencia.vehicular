@@ -1,0 +1,145 @@
+.page-container {
+  padding: 20px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.header {
+  margin-bottom: 30px;
+}
+
+.header h2 {
+  margin: 0;
+  color: #1e293b;
+  font-size: 1.8rem;
+}
+
+.header p {
+  color: #64748b;
+  margin-top: 5px;
+}
+
+/* ============================
+   ESTILOS DE LA LISTA
+============================ */
+.notificaciones-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.noti-card {
+  display: flex;
+  align-items: flex-start;
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+/* 🚩 DISEÑO PARA NOTIFICACIONES NO LEÍDAS */
+.noti-card.unread {
+  background: #f0f9ff; /* Fondo celeste claro */
+  border: 1px solid #bae6fd;
+}
+
+.noti-card.unread .noti-header h4 {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.noti-card.unread p {
+  color: #334155;
+  font-weight: 500;
+}
+
+/* Puntito azul flotante para las no leídas */
+.unread-dot {
+  position: absolute;
+  top: 25px;
+  left: -6px;
+  width: 12px;
+  height: 12px;
+  background-color: #3b82f6;
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px #eff6ff;
+}
+
+/* ============================ */
+
+.noti-icon {
+  font-size: 1.8rem;
+  background: #f1f5f9;
+  padding: 10px;
+  border-radius: 50%;
+  margin-right: 20px;
+}
+
+.noti-card.unread .noti-icon {
+  background: white;
+}
+
+.noti-content {
+  flex-grow: 1;
+}
+
+.noti-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.noti-header h4 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #475569;
+}
+
+.noti-date {
+  font-size: 0.85rem;
+  color: #94a3b8;
+}
+
+.noti-content p {
+  margin: 0;
+  color: #64748b;
+  line-height: 1.5;
+  font-size: 0.95rem;
+}
+
+.btn-read {
+  background: transparent;
+  color: #3b82f6;
+  border: 1px solid #3b82f6;
+  padding: 6px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.85rem;
+  margin-left: 20px;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.btn-read:hover {
+  background: #3b82f6;
+  color: white;
+}
+
+/* Estados Vacíos / Carga */
+.loading-state, .empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #64748b;
+}
+
+.empty-icon {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 10px;
+}
