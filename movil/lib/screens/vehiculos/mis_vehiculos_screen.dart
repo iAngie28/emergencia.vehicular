@@ -222,6 +222,13 @@ class _MisVehiculosScreenState extends State<MisVehiculosScreen> {
   }
 
   void _editarVehiculo(BuildContext context, Map<String, dynamic> vehiculo) {
+    final colorController = TextEditingController(
+      text: vehiculo['color']?.toString() ?? '',
+    );
+    final seguroController = TextEditingController(
+      text: _extractSeguro(vehiculo),
+    );
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -231,12 +238,12 @@ class _MisVehiculosScreenState extends State<MisVehiculosScreen> {
           children: [
             TextField(
               decoration: const InputDecoration(labelText: 'Color'),
-              controller: TextEditingController(text: vehiculo['color']),
+              controller: colorController,
             ),
             const SizedBox(height: 16),
             TextField(
               decoration: const InputDecoration(labelText: 'Seguro'),
-              controller: TextEditingController(text: vehiculo['seguro']),
+              controller: seguroController,
             ),
           ],
         ),
@@ -246,12 +253,70 @@ class _MisVehiculosScreenState extends State<MisVehiculosScreen> {
             child: const Text('Cancelar'),
           ),
           ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () async {
+              final vehiculoId = vehiculo['id'];
+              if (vehiculoId is! int) {
+                Navigator.of(context).pop();
+                return;
+              }
+
+              final usuarioId = context.read<AuthProvider>().userId;
+              if (usuarioId == null) {
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      'Sesion invalida. Inicia sesion nuevamente.',
+                    ),
+                  ),
+                );
+                return;
+              }
+
+              final vehiculoProvider = context.read<VehiculoProvider>();
+              final ok = await vehiculoProvider.actualizarVehiculo(
+                vehiculoId: vehiculoId,
+                usuarioId: usuarioId,
+                color: colorController.text.trim(),
+                seguro: seguroController.text.trim(),
+              );
+
+              if (!context.mounted) return;
+              Navigator.of(context).pop();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    ok
+                        ? 'Vehiculo actualizado'
+                        : (vehiculoProvider.errorMessage ??
+                            'No se pudo actualizar'),
+                  ),
+                ),
+              );
+            },
             child: const Text('Guardar'),
           ),
         ],
       ),
-    );
+    ).whenComplete(() {
+      colorController.dispose();
+      seguroController.dispose();
+    });
+  }
+
+  String _extractSeguro(Map<String, dynamic> vehiculo) {
+    final detalle = vehiculo['detalle']?.toString();
+    if (detalle == null || detalle.trim().isEmpty) return '';
+
+    // Expected format (from VehiculoProvider): "VIN: ... | Seguro: ..."
+    final parts = detalle.split('|').map((p) => p.trim()).toList();
+    for (final part in parts) {
+      final lower = part.toLowerCase();
+      if (lower.startsWith('seguro:')) {
+        return part.substring('seguro:'.length).trim();
+      }
+    }
+    return '';
   }
 
   void _eliminarVehiculo(BuildContext context, Map<String, dynamic> vehiculo) {

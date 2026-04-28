@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'backend_config.dart';
 import 'providers/auth_provider.dart';
 import 'providers/incidente_provider.dart';
 import 'providers/notificacion_provider.dart';
@@ -33,7 +34,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const backendUrl = 'http://localhost:8000';
+    final backendUrl = BackendConfig.baseUrl;
 
     return MultiProvider(
       providers: [

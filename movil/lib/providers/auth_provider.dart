@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
-import '../services/api_service.dart';
 
 /// Provider que maneja el estado de autenticación global
 class AuthProvider extends ChangeNotifier {
@@ -71,14 +69,3 @@ class AuthProvider extends ChangeNotifier {
 }
 
 /// Factory para crear el Provider
-ChangeNotifierProvider<AuthProvider> authProvider() {
-  return ChangeNotifierProvider<AuthProvider>(
-    create: (context) => AuthProvider(
-      authService: AuthService(
-        apiService: ApiService(
-          baseUrl: 'http://localhost:8000', // Backend corriendo en puerto 8000
-        ),
-      ),
-    ),
-  );
-}
