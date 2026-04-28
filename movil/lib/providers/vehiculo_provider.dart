@@ -24,7 +24,9 @@ class VehiculoProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _misVehiculos = await vehiculoService.obtenerMisVehiculos(usuarioId: usuarioId);
+      _misVehiculos = await vehiculoService.obtenerMisVehiculos(
+        usuarioId: usuarioId,
+      );
       _isLoading = false;
       notifyListeners();
     } catch (e) {
@@ -57,8 +59,10 @@ class VehiculoProvider extends ChangeNotifier {
         placa: placa,
         color: color,
         anio: anio,
-        vin: vin,
-        seguro: seguro,
+        detalle: [
+          if (vin != null && vin.trim().isNotEmpty) 'VIN: $vin',
+          if (seguro != null && seguro.trim().isNotEmpty) 'Seguro: $seguro',
+        ].join(' | '),
       );
 
       _misVehiculos.add(nuevoVehiculo);
@@ -106,7 +110,9 @@ class VehiculoProvider extends ChangeNotifier {
         vehiculoId: vehiculoId,
         usuarioId: usuarioId,
         color: color,
-        seguro: seguro,
+        detalle: (seguro != null && seguro.trim().isNotEmpty)
+            ? 'Seguro: $seguro'
+            : null,
       );
 
       final index = _misVehiculos.indexWhere((v) => v['id'] == vehiculoId);
@@ -132,11 +138,10 @@ class VehiculoProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await vehiculoService.eliminarVehiculo(id: vehiculoId);
-      _misVehiculos.removeWhere((v) => v['id'] == vehiculoId);
+      await vehiculoService.eliminarVehiculoNoDisponible();
       _isLoading = false;
       notifyListeners();
-      return true;
+      return false;
     } catch (e) {
       _errorMessage = e.toString();
       _isLoading = false;

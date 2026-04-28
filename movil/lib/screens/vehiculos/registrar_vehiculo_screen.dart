@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/vehiculo_provider.dart';
 import '../../theme/colors.dart';
 
@@ -7,7 +8,8 @@ class RegistrarVehiculoScreen extends StatefulWidget {
   const RegistrarVehiculoScreen({super.key});
 
   @override
-  State<RegistrarVehiculoScreen> createState() => _RegistrarVehiculoScreenState();
+  State<RegistrarVehiculoScreen> createState() =>
+      _RegistrarVehiculoScreenState();
 }
 
 class _RegistrarVehiculoScreenState extends State<RegistrarVehiculoScreen> {
@@ -85,17 +87,22 @@ class _RegistrarVehiculoScreenState extends State<RegistrarVehiculoScreen> {
                 return SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: vehiculoProvider.isLoading ? null : () => _registrarVehiculo(context, vehiculoProvider),
+                    onPressed: vehiculoProvider.isLoading
+                        ? null
+                        : () => _registrarVehiculo(context, vehiculoProvider),
                     child: vehiculoProvider.isLoading
                         ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation(Colors.white),
-                      ),
-                    )
-                        : const Text('Registrar Vehículo', style: TextStyle(fontSize: 16)),
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation(Colors.white),
+                            ),
+                          )
+                        : const Text(
+                            'Registrar Vehículo',
+                            style: TextStyle(fontSize: 16),
+                          ),
                   ),
                 );
               },
@@ -142,26 +149,45 @@ class _RegistrarVehiculoScreenState extends State<RegistrarVehiculoScreen> {
         labelText: label,
         hintText: hint,
         prefixIcon: Icon(icon, color: AppColors.secondaryColor),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );
   }
 
-  void _registrarVehiculo(BuildContext context, VehiculoProvider vehiculoProvider) async {
+  void _registrarVehiculo(
+    BuildContext context,
+    VehiculoProvider vehiculoProvider,
+  ) async {
     if (_marcaController.text.isEmpty ||
         _modeloController.text.isEmpty ||
         _placaController.text.isEmpty ||
         _colorController.text.isEmpty ||
         _anioController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor completa todos los campos requeridos')),
+        const SnackBar(
+          content: Text('Por favor completa todos los campos requeridos'),
+        ),
       );
       return;
     }
 
-    const usuarioId = 1;
+    final usuarioId = context.read<AuthProvider>().userId;
+    if (usuarioId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Sesion invalida. Inicia sesion nuevamente.'),
+        ),
+      );
+      return;
+    }
+
+    final anio = int.tryParse(_anioController.text);
+    if (anio == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('El año no es valido')));
+      return;
+    }
 
     final success = await vehiculoProvider.registrarVehiculo(
       usuarioId: usuarioId,
@@ -169,7 +195,7 @@ class _RegistrarVehiculoScreenState extends State<RegistrarVehiculoScreen> {
       modelo: _modeloController.text,
       placa: _placaController.text,
       color: _colorController.text,
-      anio: int.parse(_anioController.text),
+      anio: anio,
       vin: _vinController.text.isNotEmpty ? _vinController.text : null,
       seguro: _seguroController.text.isNotEmpty ? _seguroController.text : null,
     );

@@ -22,7 +22,10 @@ package "2. Gestión de Asistencia" #LightBlue {
     ' En Gestión de Asistencia
 
 
-CU11 ..> CU10 : <<extend>> 
+CU10 ..> CU9 : <<include>>
+
+CU18 ..> CU16 : <<include>>
+
 ' (Ver el tiempo estimado es opcional al visualizar el estado de la solicitud)
 
 ' Relaciones entre Paquetes (Inter-módulos)

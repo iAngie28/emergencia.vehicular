@@ -1,54 +1,103 @@
 @startuml
 left to right direction
-
-' --- MEJORAS DE DISEÑO DE FLECHAS Y ESPACIADO ---
-skinparam nodesep 40
-skinparam ranksep 80
-skinparam arrow {
-  Color #2c3e50
-  Thickness 1.5
-}
-' ------------------------------------------------
-
+skinparam actorStyle stickman
 skinparam packageStyle rectangle
+skinparam shadowing false
+
+' --- ESTILOS ---
 skinparam usecase {
   BackgroundColor LightCyan
   BorderColor DarkBlue
+  FontSize 12
 }
 
-actor "Cliente (Conductor)" as Cliente
-actor "Taller" as Taller
-actor "Técnico" as Tecnico
+' --- ACTORES ---
+actor "Cliente" as C
+actor "Taller" as T
+actor "Técnico" as Tech
 
-rectangle "Plataforma Inteligente de Emergencias Vehiculares" {
 
-    usecase "CU1: Iniciar Sesión" as CU1
-    usecase "CU2: Cerrar Sesión" as CU2
-    usecase "CU3: Registrar Usuario" as CU3
-    usecase "CU4: Visualizar Usuarios" as CU4
-    usecase "CU5: Visualizar Bitácora" as CU5
+    
+  rectangle "Diagrama General de Casos de Uso" {
+        usecase "CU-01: Iniciar sesión" as CU01
+        usecase "CU-02: Cerrar sesión" as CU02
+        usecase "CU-03: Registrar Usuario" as CU03
+        usecase "CU-04: Visualizar Listado de Usuarios" as CU04
+        usecase "CU-05: Visualizar Bitácora" as CU05
+  
 
+
+        usecase "CU-06: Recuperar contraseña" as CU06
+        usecase "CU-07: Gestionar perfil" as CU07
+        usecase "CU-08: Registrar vehículo" as CU08
+        usecase "CU-09: Reportar emergencia" as CU09
+        usecase "CU-10: Visualizar estado" as CU10
+        usecase "CU-11: Ver ETA" as CU11
+        usecase "CU-12: Redirección (WhatsApp/Tel)" as CU12
+        usecase "CU-13: Realizar pago" as CU13
+    
+
+        usecase "CU-14: Descargar reporte PDF" as CU14
+        usecase "CU-15: Registrar técnico" as CU15
+        usecase "CU-16: Ver solicitudes disponibles" as CU16
+        usecase "CU-17: Resumen estructurado (IA)" as CU17
+        usecase "CU-18: Aceptar / Rechazar Solicitud" as CU18
+        usecase "CU-19: Asignar técnico a incidente" as CU19
+        usecase "CU-20: Actualizar Estado del Servicio" as CU20
+        usecase "CU-21: Gestionar disponibilidad técnico" as CU21
+        usecase "CU-22: Historial y Métricas" as CU22
+    
+
+  
+        usecase "CU-23: Ficha técnica detallada" as CU23
+        usecase "CU-24: Recibir notificaciones Push" as CU24
+        usecase "CU-25: Gestionar cobro comisión (10%)" as CU25
+    
+
+    ' --- RELACIONES INCLUDES ---
+    CU06 ..> CU01 : <<include>>
+    CU10 ..> CU09 : <<include>>
+    CU18 ..> CU17 : <<include>>
+    CU20 ..> CU24 : <<include>>
+    CU14 ..> CU23 : <<include>>
 }
 
-' Relaciones del Cliente
-Cliente --> CU1
-Cliente --> CU2
-Cliente --> CU3
-Cliente --> CU4
+' --- VÍNCULOS CLIENTE ---
+C -- CU01
+C -- CU02
+C -- CU03
+C -- CU06
+C -- CU07
+C -- CU08
+C -- CU09
+C -- CU10
+C -- CU11
+C -- CU12
+C -- CU13
+C -- CU24
 
-' Relaciones del Taller
-Taller --> CU1
-Taller --> CU2
-Taller --> CU3
-Taller --> CU4
-Taller --> CU5
+' --- VÍNCULOS TALLER ---
+T -- CU01
+T -- CU02
+T -- CU04
+T -- CU05
+T -- CU07
+T -- CU14
+T -- CU15
+T -- CU16
+T -- CU17
+T -- CU18
+T -- CU19
+T -- CU21
+T -- CU22
+T -- CU25
 
-' Relaciones del tecnico
-Tecnico --> CU1
-Tecnico --> CU2
-Tecnico --> CU3
-
-' El include debe llevar flecha punteada en estándar UML
-CU4 ..> CU3 : <<include>>
+' --- VÍNCULOS TÉCNICO ---
+Tech -- CU01
+Tech -- CU02
+Tech -- CU07
+Tech -- CU20
+Tech -- CU23
+Tech -- CU24
 
 @enduml

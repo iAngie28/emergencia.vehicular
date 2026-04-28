@@ -9,7 +9,8 @@ class ReportarIncidenteScreen extends StatefulWidget {
   const ReportarIncidenteScreen({super.key});
 
   @override
-  State<ReportarIncidenteScreen> createState() => _ReportarIncidenteScreenState();
+  State<ReportarIncidenteScreen> createState() =>
+      _ReportarIncidenteScreenState();
 }
 
 class _ReportarIncidenteScreenState extends State<ReportarIncidenteScreen> {
@@ -19,8 +20,8 @@ class _ReportarIncidenteScreenState extends State<ReportarIncidenteScreen> {
 
   // TODO: Integrar servicios de geolocalización para obtener coordenadas automáticas
   // Por ahora usaremos coordenadas de prueba
-  double _latitud = -17.389277;
-  double _longitud = -66.163788;
+  final double _latitud = -17.389277;
+  final double _longitud = -66.163788;
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +38,9 @@ class _ReportarIncidenteScreenState extends State<ReportarIncidenteScreen> {
             // Seleccionar vehículo
             Text(
               'Vehículo',
-              style: Theme.of(context).textTheme.displayLarge?.copyWith(fontSize: 14),
+              style: Theme.of(
+                context,
+              ).textTheme.displayLarge?.copyWith(fontSize: 14),
             ),
             const SizedBox(height: 8),
             Consumer<VehiculoProvider>(
@@ -49,7 +52,9 @@ class _ReportarIncidenteScreenState extends State<ReportarIncidenteScreen> {
                       border: Border.all(color: Colors.grey),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Text('No tienes vehículos registrados. Registra uno primero.'),
+                    child: const Text(
+                      'No tienes vehículos registrados. Registra uno primero.',
+                    ),
                   );
                 }
 
@@ -78,7 +83,9 @@ class _ReportarIncidenteScreenState extends State<ReportarIncidenteScreen> {
             // Descripción del problema
             Text(
               'Descripción del Problema',
-              style: Theme.of(context).textTheme.displayLarge?.copyWith(fontSize: 14),
+              style: Theme.of(
+                context,
+              ).textTheme.displayLarge?.copyWith(fontSize: 14),
             ),
             const SizedBox(height: 8),
             TextField(
@@ -96,14 +103,19 @@ class _ReportarIncidenteScreenState extends State<ReportarIncidenteScreen> {
             // Ubicación
             Text(
               'Ubicación',
-              style: Theme.of(context).textTheme.displayLarge?.copyWith(fontSize: 14),
+              style: Theme.of(
+                context,
+              ).textTheme.displayLarge?.copyWith(fontSize: 14),
             ),
             const SizedBox(height: 8),
             TextField(
               controller: _ubicacionController,
               decoration: InputDecoration(
                 hintText: 'Dirección o punto de referencia',
-                prefixIcon: const Icon(Icons.location_on, color: AppColors.secondaryColor),
+                prefixIcon: const Icon(
+                  Icons.location_on,
+                  color: AppColors.secondaryColor,
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -124,17 +136,24 @@ class _ReportarIncidenteScreenState extends State<ReportarIncidenteScreen> {
                   child: ElevatedButton(
                     onPressed: incidenteProvider.isLoading
                         ? null
-                        : () => _reportarIncidente(context, incidenteProvider, authProvider),
+                        : () => _reportarIncidente(
+                            context,
+                            incidenteProvider,
+                            authProvider,
+                          ),
                     child: incidenteProvider.isLoading
                         ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation(Colors.white),
-                      ),
-                    )
-                        : const Text('Reportar Incidente', style: TextStyle(fontSize: 16)),
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation(Colors.white),
+                            ),
+                          )
+                        : const Text(
+                            'Reportar Incidente',
+                            style: TextStyle(fontSize: 16),
+                          ),
                   ),
                 );
               },
@@ -169,8 +188,11 @@ class _ReportarIncidenteScreenState extends State<ReportarIncidenteScreen> {
     );
   }
 
-  void _reportarIncidente(BuildContext context, IncidenteProvider incidenteProvider,
-      AuthProvider authProvider) async {
+  void _reportarIncidente(
+    BuildContext context,
+    IncidenteProvider incidenteProvider,
+    AuthProvider authProvider,
+  ) async {
     if (_vehiculoSeleccionado == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Por favor selecciona un vehículo')),
@@ -192,9 +214,15 @@ class _ReportarIncidenteScreenState extends State<ReportarIncidenteScreen> {
       return;
     }
 
-    // Obtener ID del usuario del token (necesitaría extraerlo del JWT)
-    // Por ahora usaremos un ID temporal para pruebas
-    const usuarioId = 1;
+    final usuarioId = authProvider.userId;
+    if (usuarioId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Sesion invalida. Inicia sesion nuevamente.'),
+        ),
+      );
+      return;
+    }
 
     final success = await incidenteProvider.reportarIncidente(
       usuarioId: usuarioId,

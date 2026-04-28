@@ -1,15 +1,11 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'api_service.dart';
 
-/// Servicio para gestionar vehículos del usuario
+/// Servicio para gestionar vehiculos del usuario.
 class VehiculoService {
   final ApiService apiService;
 
   VehiculoService({required this.apiService});
 
-  /// Registrar un nuevo vehículo
-  /// POST /api/v1/vehiculos/?usuario_id={id}
   Future<Map<String, dynamic>> registrarVehiculo({
     required int usuarioId,
     required String marca,
@@ -17,8 +13,8 @@ class VehiculoService {
     required String placa,
     required String color,
     required int anio,
-    String? vin,
-    String? seguro,
+    String? tipoCombustible,
+    String? detalle,
   }) async {
     try {
       final response = await apiService.post(
@@ -30,23 +26,21 @@ class VehiculoService {
           'placa': placa,
           'color': color,
           'anio': anio,
-          'vin': vin,
-          'seguro': seguro,
+          'tipo_combustible': tipoCombustible,
+          'detalle': detalle,
+          'usuario_id': usuarioId,
         },
       );
 
       if (response is Map<String, dynamic>) {
         return response;
-      } else {
-        throw Exception('Respuesta inesperada del servidor');
       }
+      throw Exception('Respuesta inesperada del servidor');
     } catch (e) {
-      throw Exception('Error al registrar vehículo: $e');
+      throw Exception('Error al registrar vehiculo: $e');
     }
   }
 
-  /// Obtener todos los vehículos del usuario
-  /// GET /api/v1/vehiculos/usuario/{propietario_id}
   Future<List<Map<String, dynamic>>> obtenerMisVehiculos({
     required int usuarioId,
   }) async {
@@ -57,68 +51,61 @@ class VehiculoService {
 
       if (response is List) {
         return List<Map<String, dynamic>>.from(
-          response.map((item) => item as Map<String, dynamic>)
+          response.map((item) => item as Map<String, dynamic>),
         );
-      } else if (response is Map<String, dynamic>) {
-        return [response];
-      } else {
-        throw Exception('Formato de respuesta inesperado');
       }
-    } catch (e) {
-      throw Exception('Error al obtener vehículos: $e');
-    }
-  }
-
-  /// Obtener un vehículo específico
-  /// GET /api/v1/vehiculos/{id}
-  Future<Map<String, dynamic>> obtenerVehiculo({required int id}) async {
-    try {
-      final response = await apiService.get('/api/v1/vehiculos/$id');
-
       if (response is Map<String, dynamic>) {
-        return response;
-      } else {
-        throw Exception('Respuesta inesperada del servidor');
+        return [response];
       }
+      throw Exception('Formato de respuesta inesperado');
     } catch (e) {
-      throw Exception('Error al obtener vehículo: $e');
+      throw Exception('Error al obtener vehiculos: $e');
     }
   }
 
-  /// Actualizar datos del vehículo
-  /// PUT /api/v1/vehiculos/{id}
   Future<Map<String, dynamic>> actualizarVehiculo({
     required int vehiculoId,
     required int usuarioId,
+    String? placa,
+    String? marca,
+    String? modelo,
     String? color,
-    String? seguro,
+    int? anio,
+    String? tipoCombustible,
+    String? detalle,
   }) async {
     try {
-      final body = {
-        if (color != null) 'color': color,
-        if (seguro != null) 'seguro': seguro,
+      final Map<String, dynamic> body = {
+        if (placa != null && placa.trim().isNotEmpty) 'placa': placa.trim(),
+        if (marca != null && marca.trim().isNotEmpty) 'marca': marca.trim(),
+        if (modelo != null && modelo.trim().isNotEmpty) 'modelo': modelo.trim(),
+        if (color != null && color.trim().isNotEmpty) 'color': color.trim(),
+        if (anio != null) 'anio': anio,
+        if (tipoCombustible != null && tipoCombustible.trim().isNotEmpty)
+          'tipo_combustible': tipoCombustible.trim(),
+        if (detalle != null && detalle.trim().isNotEmpty)
+          'detalle': detalle.trim(),
       };
 
       final response = await apiService.put(
         '/api/v1/vehiculos/$vehiculoId',
+        queryParams: {'usuario_id': usuarioId},
         body: body,
       );
 
-      return response;
+      if (response is Map<String, dynamic>) {
+        return response;
+      }
+      throw Exception('Respuesta inesperada del servidor');
     } catch (e) {
-      throw Exception('Error al actualizar vehículo: $e');
+      throw Exception('Error al actualizar vehiculo: $e');
     }
   }
 
-  /// Eliminar un vehículo
-  /// DELETE /api/v1/vehiculos/{id}
-  Future<Map<String, dynamic>> eliminarVehiculo({required int id}) async {
-    try {
-      final response = await apiService.delete('/api/v1/vehiculos/$id');
-
-      return response;
-    } catch (e) {
-      throw Exception('Error al eliminar vehículo: $e');
-    }
+  /// El backend actual no expone endpoint para eliminar vehiculos.
+  Future<void> eliminarVehiculoNoDisponible() async {
+    throw Exception(
+      'Eliminar vehiculo no esta disponible en el backend actual.',
+    );
   }
 }

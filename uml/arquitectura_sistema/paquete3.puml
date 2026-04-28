@@ -17,9 +17,9 @@ package "3. Gestión Técnico" #LightBlue {
     usecase "CU-21: Gestionar disponibilidad del técnico" as CU21
     usecase "CU-25: Gestionar cobro de comisión" as CU25
 
-
-    CU19 ..> CU20 : <<extend>>
-
+usecase "CU-24: Recibir notificaciones" as CU24 #GhostWhite
+    CU19 ..> CU21 : <<include>>
+    CU20 ..> CU24 : <<include>>
 
 
 }

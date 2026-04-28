@@ -45,18 +45,10 @@ class UsuarioProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final perfilActualizado = await usuarioService.actualizarPerfil(
-        nombre: nombre,
-        apellido: apellido,
-        telefono: telefono,
-        direccion: direccion,
-        ciudad: ciudad,
-      );
-
-      _perfil = {...?_perfil, ...perfilActualizado};
+      await usuarioService.actualizarPerfilNoDisponible();
       _isLoading = false;
       notifyListeners();
-      return true;
+      return false;
     } catch (e) {
       _errorMessage = e.toString();
       _isLoading = false;
@@ -70,25 +62,10 @@ class UsuarioProvider extends ChangeNotifier {
     required String contrasenaActual,
     required String contrasenaNueva,
   }) async {
-    _isLoading = true;
-    _errorMessage = null;
+    _errorMessage =
+        'Cambio de contrasena no disponible en backend movil actual.';
     notifyListeners();
-
-    try {
-      await usuarioService.cambiarContrasena(
-        contrasenaActual: contrasenaActual,
-        contrasenaNueva: contrasenaNueva,
-      );
-
-      _isLoading = false;
-      notifyListeners();
-      return true;
-    } catch (e) {
-      _errorMessage = e.toString();
-      _isLoading = false;
-      notifyListeners();
-      return false;
-    }
+    return false;
   }
 
   /// Solicitar recuperación de contraseña
@@ -98,7 +75,7 @@ class UsuarioProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await usuarioService.solicitarRecuperacionContrasena(email: email);
+      await usuarioService.solicitarRecuperacionContrasena(correo: email);
       _isLoading = false;
       notifyListeners();
       return true;

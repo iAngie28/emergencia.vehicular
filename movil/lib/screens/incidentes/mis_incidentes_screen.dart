@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/incidente_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../theme/colors.dart';
 
 class MisIncidentesScreen extends StatefulWidget {
@@ -16,7 +17,12 @@ class _MisIncidentesScreenState extends State<MisIncidentesScreen> {
     super.initState();
     // Cargar incidentes al abrir la pantalla
     Future.microtask(() {
-      context.read<IncidenteProvider>().cargarMisIncidentes(usuarioId: 1);
+      final userId = context.read<AuthProvider>().userId;
+      if (userId != null) {
+        context.read<IncidenteProvider>().cargarMisIncidentes(
+          usuarioId: userId,
+        );
+      }
     });
   }
 
@@ -30,9 +36,7 @@ class _MisIncidentesScreenState extends State<MisIncidentesScreen> {
       body: Consumer<IncidenteProvider>(
         builder: (context, incidenteProvider, _) {
           if (incidenteProvider.isLoading) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
+            return const Center(child: CircularProgressIndicator());
           }
 
           if (incidenteProvider.misIncidentes.isEmpty) {
@@ -68,7 +72,10 @@ class _MisIncidentesScreenState extends State<MisIncidentesScreen> {
     );
   }
 
-  Widget _buildIncidenteCard(BuildContext context, Map<String, dynamic> incidente) {
+  Widget _buildIncidenteCard(
+    BuildContext context,
+    Map<String, dynamic> incidente,
+  ) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
@@ -82,16 +89,22 @@ class _MisIncidentesScreenState extends State<MisIncidentesScreen> {
               children: [
                 Text(
                   'Incidente #${incidente['id']}',
-                  style: Theme.of(context).textTheme.displayLarge?.copyWith(fontSize: 14),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.displayLarge?.copyWith(fontSize: 14),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: _getColorEstado(incidente['estado']),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    incidente['estado']?.toString().toUpperCase() ?? 'PENDIENTE',
+                    incidente['estado']?.toString().toUpperCase() ??
+                        'PENDIENTE',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 12,
@@ -115,11 +128,18 @@ class _MisIncidentesScreenState extends State<MisIncidentesScreen> {
             // Vehículo
             Row(
               children: [
-                const Icon(Icons.directions_car, size: 16, color: AppColors.secondaryColor),
+                const Icon(
+                  Icons.directions_car,
+                  size: 16,
+                  color: AppColors.secondaryColor,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   incidente['vehiculo']?['placa'] ?? 'Vehículo desconocido',
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ],
             ),
@@ -128,7 +148,11 @@ class _MisIncidentesScreenState extends State<MisIncidentesScreen> {
             // Ubicación
             Row(
               children: [
-                const Icon(Icons.location_on, size: 16, color: AppColors.secondaryColor),
+                const Icon(
+                  Icons.location_on,
+                  size: 16,
+                  color: AppColors.secondaryColor,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -198,13 +222,28 @@ class _MisIncidentesScreenState extends State<MisIncidentesScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              _buildDetalleRow('Estado', incidente['estado']?.toString().toUpperCase() ?? 'N/A'),
-              _buildDetalleRow('Descripción', incidente['descripcion'] ?? 'N/A'),
+              _buildDetalleRow(
+                'Estado',
+                incidente['estado']?.toString().toUpperCase() ?? 'N/A',
+              ),
+              _buildDetalleRow(
+                'Descripción',
+                incidente['descripcion'] ?? 'N/A',
+              ),
               _buildDetalleRow('Ubicación', incidente['ubicacion'] ?? 'N/A'),
-              _buildDetalleRow('Vehículo', incidente['vehiculo']?['placa'] ?? 'N/A'),
-              _buildDetalleRow('Fecha', _formatearFecha(incidente['fecha_reporte'])),
+              _buildDetalleRow(
+                'Vehículo',
+                incidente['vehiculo']?['placa'] ?? 'N/A',
+              ),
+              _buildDetalleRow(
+                'Fecha',
+                _formatearFecha(incidente['fecha_reporte']),
+              ),
               if (incidente['taller'] != null)
-                _buildDetalleRow('Taller Asignado', incidente['taller']['nombre'] ?? 'N/A'),
+                _buildDetalleRow(
+                  'Taller Asignado',
+                  incidente['taller']['nombre'] ?? 'N/A',
+                ),
             ],
           ),
         ),
@@ -229,10 +268,7 @@ class _MisIncidentesScreenState extends State<MisIncidentesScreen> {
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
           ),
           const SizedBox(height: 4),
-          Text(
-            value,
-            style: const TextStyle(fontSize: 13),
-          ),
+          Text(value, style: const TextStyle(fontSize: 13)),
         ],
       ),
     );

@@ -1,0 +1,10 @@
+@startuml
+left to right direction
+actor "Taller (Administrador)" as T
+    
+rectangle "Sistema" {
+usecase "CU-15: Registrar técnico" as CU15
+}
+
+T --> CU15
+@enduml

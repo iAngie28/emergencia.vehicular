@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/pago_provider.dart';
 import '../../theme/colors.dart';
 
@@ -10,7 +11,8 @@ class PagosScreen extends StatefulWidget {
   State<PagosScreen> createState() => _PagosScreenState();
 }
 
-class _PagosScreenState extends State<PagosScreen> with SingleTickerProviderStateMixin {
+class _PagosScreenState extends State<PagosScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   @override
@@ -20,9 +22,11 @@ class _PagosScreenState extends State<PagosScreen> with SingleTickerProviderStat
 
     // Cargar datos
     Future.microtask(() {
+      final userId = context.read<AuthProvider>().userId;
+      if (userId == null) return;
       final pagoProvider = context.read<PagoProvider>();
-      pagoProvider.cargarHistorialPagos(usuarioId: 1);
-      pagoProvider.cargarFacturasPendientes(usuarioId: 1);
+      pagoProvider.cargarHistorialPagos(usuarioId: userId);
+      pagoProvider.cargarFacturasPendientes(usuarioId: userId);
     });
   }
 
@@ -42,10 +46,7 @@ class _PagosScreenState extends State<PagosScreen> with SingleTickerProviderStat
       ),
       body: TabBarView(
         controller: _tabController,
-        children: [
-          _buildHistorialPagos(),
-          _buildFacturasPendientes(),
-        ],
+        children: [_buildHistorialPagos(), _buildFacturasPendientes()],
       ),
     );
   }
@@ -62,11 +63,7 @@ class _PagosScreenState extends State<PagosScreen> with SingleTickerProviderStat
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  Icons.receipt_long,
-                  size: 64,
-                  color: Colors.grey[400],
-                ),
+                Icon(Icons.receipt_long, size: 64, color: Colors.grey[400]),
                 const SizedBox(height: 16),
                 Text(
                   'No tienes pagos registrados',
@@ -101,11 +98,7 @@ class _PagosScreenState extends State<PagosScreen> with SingleTickerProviderStat
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  Icons.check_circle,
-                  size: 64,
-                  color: Colors.green[400],
-                ),
+                Icon(Icons.check_circle, size: 64, color: Colors.green[400]),
                 const SizedBox(height: 16),
                 Text(
                   '¡No tienes facturas pendientes!',
@@ -164,7 +157,11 @@ class _PagosScreenState extends State<PagosScreen> with SingleTickerProviderStat
     );
   }
 
-  Widget _buildPagoCard(BuildContext context, Map<String, dynamic> pago, bool esPendiente) {
+  Widget _buildPagoCard(
+    BuildContext context,
+    Map<String, dynamic> pago,
+    bool esPendiente,
+  ) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
@@ -182,18 +179,26 @@ class _PagosScreenState extends State<PagosScreen> with SingleTickerProviderStat
                     children: [
                       Text(
                         'Incidente #${pago['incidente_id']}',
-                        style: Theme.of(context).textTheme.displayLarge?.copyWith(fontSize: 14),
+                        style: Theme.of(
+                          context,
+                        ).textTheme.displayLarge?.copyWith(fontSize: 14),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         'Taller: ${pago['taller']?['nombre'] ?? 'Desconocido'}',
-                        style: const TextStyle(fontSize: 12, color: Colors.grey),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
                       ),
                     ],
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: _getColorEstado(pago['estado'] ?? 'pendiente'),
                     borderRadius: BorderRadius.circular(20),
@@ -300,9 +305,9 @@ class _PagosScreenState extends State<PagosScreen> with SingleTickerProviderStat
   }
 
   void _descargarFactura(BuildContext context, Map<String, dynamic> pago) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('📥 Descargando factura...')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('📥 Descargando factura...')));
   }
 
   void _descargarComprobante(BuildContext context, Map<String, dynamic> pago) {

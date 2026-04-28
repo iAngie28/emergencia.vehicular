@@ -8,6 +8,7 @@ class AuthService {
   final ApiService apiService;
   static const String _tokenKey = 'auth_token';
   static const String _userKey = 'user_data';
+  static const String _userIdKey = 'auth_user_id';
 
   AuthService({required this.apiService});
 
@@ -38,7 +39,15 @@ class AuthService {
         // Guardar token localmente
         if (data != null && data['access_token'] != null) {
           final prefs = await SharedPreferences.getInstance();
-          await prefs.setString(_tokenKey, data['access_token']);
+          final token = data['access_token'] as String;
+          await prefs.setString(_tokenKey, token);
+
+          final userId = _extractUserIdFromToken(token);
+          if (userId != null) {
+            await prefs.setInt(_userIdKey, userId);
+            data['user_id'] = userId;
+          }
+
           if (data['user'] != null) {
             await prefs.setString(_userKey, data['user'].toString());
           }
@@ -48,7 +57,8 @@ class AuthService {
       } else {
         final errorData = jsonDecode(response.body);
         throw Exception(
-          errorData['detail'] ?? 'Error al iniciar sesión: ${response.statusCode}'
+          errorData['detail'] ??
+              'Error al iniciar sesión: ${response.statusCode}',
         );
       }
     } catch (e) {
@@ -67,6 +77,7 @@ class AuthService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_tokenKey);
     await prefs.remove(_userKey);
+    await prefs.remove(_userIdKey);
   }
 
   /// Verifica si el usuario está autenticado
@@ -79,5 +90,27 @@ class AuthService {
   Future<String?> getUserData() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_userKey);
+  }
+
+  Future<int?> getCurrentUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt(_userIdKey);
+  }
+
+  int? _extractUserIdFromToken(String token) {
+    try {
+      final parts = token.split('.');
+      if (parts.length != 3) return null;
+
+      final payload = utf8.decode(
+        base64Url.decode(base64Url.normalize(parts[1])),
+      );
+      final decoded = jsonDecode(payload);
+      final sub = decoded['sub'];
+      if (sub == null) return null;
+      return int.tryParse(sub.toString());
+    } catch (_) {
+      return null;
+    }
   }
 }

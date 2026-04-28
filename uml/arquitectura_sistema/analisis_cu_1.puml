@@ -37,12 +37,12 @@ skinparam arrow {
 
 actor "Usuario\n(Cliente/Taller)" as U
 boundary "Vista Login" as V
-control "AuthController" as C
-entity "Usuario" as E
+control "auth.py login_access_token()" as C
+entity "Usuario + Token" as E
 
 U -> V : 1: Ingresar credenciales()
-V -> C : 2: Autenticar()
-C -> E : 3: Consultar datos()
-E --> C : 4: Retornar validación()
+V -> C : 2: POST /auth/login
+C -> E : 3: usuario_crud.authenticate()
+E --> C : 4: Retornar access_token bearer
 C --> V : 5: Redireccionar al Inicio()
 @enduml

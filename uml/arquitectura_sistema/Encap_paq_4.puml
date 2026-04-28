@@ -32,8 +32,13 @@ package "4. Reportes y Notificaciones" #LightBlue {
     usecase "CU-24: Recibir notificaciones Push en tiempo real" as CU24
 
     ' Relaciones de dependencia UML 2.5
-    CU23 <.. CU14 : <<extend>>
-    CU23 <.. CU17 : <<extend>>
+   usecase "CU-19: Asignar técnico a incidente" as CU19
+   usecase "CU-20: Actualizar estado del servicio" as CU20
+   usecase "CU-21: Gestionar disponibilidad del técnico" as CU21
+
+    CU14  ..>  CU23 : <<extended>>
+    CU19 ..> CU21 : <<include>>
+    CU20 ..> CU24 : <<include>>
 }
 
 ' Relaciones del Taller

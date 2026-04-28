@@ -1,4 +1,3 @@
-import 'package:http/http.dart' as http;
 import 'api_service.dart';
 
 /// Servicio para gestionar talleres disponibles
@@ -16,15 +15,12 @@ class TallerService {
     try {
       final response = await apiService.get(
         '/api/v1/talleres/activos',
-        queryParams: {
-          'skip': skip,
-          'limit': limit,
-        },
+        queryParams: {'skip': skip, 'limit': limit},
       );
 
       if (response is List) {
         return List<Map<String, dynamic>>.from(
-          response.map((item) => item as Map<String, dynamic>)
+          response.map((item) => item as Map<String, dynamic>),
         );
       } else if (response is Map<String, dynamic>) {
         return [response];
@@ -65,7 +61,7 @@ class TallerService {
 
       if (response is List) {
         return List<Map<String, dynamic>>.from(
-          response.map((item) => item as Map<String, dynamic>)
+          response.map((item) => item as Map<String, dynamic>),
         );
       } else if (response is Map<String, dynamic>) {
         return [response];
@@ -84,7 +80,7 @@ class TallerService {
   /// - Calcular distancia entre usuario y talleres
   /// - Ordenar por proximidad
   /// - Mostrar talleres más cercanos al incidente reportado
-  /// 
+  ///
   /// Cuando se implemente, se verá algo como:
   /// POST /api/v1/talleres/cercanos
   /// {
@@ -99,9 +95,15 @@ class TallerService {
   }) async {
     try {
       print('⚠️ ACTUALIZACIÓN NO DISPONIBLE');
-      print('La funcionalidad de búsqueda de talleres cercanos se implementará en la próxima versión.');
-      print('Requiere integración con servicios de geolocalización y cálculo de distancias.');
-      print('Por ahora, usa obtenerTalleresActivos() para ver todos los talleres disponibles.');
+      print(
+        'La funcionalidad de búsqueda de talleres cercanos se implementará en la próxima versión.',
+      );
+      print(
+        'Requiere integración con servicios de geolocalización y cálculo de distancias.',
+      );
+      print(
+        'Por ahora, usa obtenerTalleresActivos() para ver todos los talleres disponibles.',
+      );
       return [];
     } catch (e) {
       throw Exception('Error al obtener talleres cercanos: $e');
@@ -115,12 +117,12 @@ class TallerService {
   }) async {
     try {
       final response = await apiService.get(
-        '/talleres/$tallerId/servicios',
+        '/api/v1/talleres/$tallerId/servicios',
       );
 
       if (response is List) {
         return List<Map<String, dynamic>>.from(
-          response.map((item) => item as Map<String, dynamic>)
+          response.map((item) => item as Map<String, dynamic>),
         );
       } else if (response is Map<String, dynamic>) {
         return [response];

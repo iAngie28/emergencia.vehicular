@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/usuario_provider.dart';
 import '../../providers/auth_provider.dart';
-import '../../providers/notificacion_provider.dart';
 import '../../theme/colors.dart';
 
 class PerfilScreen extends StatefulWidget {
@@ -48,10 +47,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
                   decoration: BoxDecoration(
                     color: AppColors.primaryColor.withOpacity(0.2),
                     shape: BoxShape.circle,
-                    border: Border.all(
-                      color: AppColors.primaryColor,
-                      width: 2,
-                    ),
+                    border: Border.all(color: AppColors.primaryColor, width: 2),
                   ),
                   child: Icon(
                     Icons.person,
@@ -107,7 +103,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
         const SizedBox(height: 12),
         _buildInfoCard(
           label: 'Email',
-          value: perfil['email'] ?? 'N/A',
+          value: perfil['correo'] ?? 'N/A',
           icon: Icons.email,
         ),
         const SizedBox(height: 12),
@@ -158,7 +154,10 @@ class _PerfilScreenState extends State<PerfilScreen> {
                 const SizedBox(height: 4),
                 Text(
                   value,
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -202,12 +201,14 @@ class _PerfilScreenState extends State<PerfilScreen> {
 
   void _editarPerfil(BuildContext context) {
     final perfil = context.read<UsuarioProvider>().perfil;
-    
+
     final nombreController = TextEditingController(text: perfil?['nombre']);
     final apellidoController = TextEditingController(text: perfil?['apellido']);
     final telefonoController = TextEditingController(text: perfil?['telefono']);
     final ciudadController = TextEditingController(text: perfil?['ciudad']);
-    final direccionController = TextEditingController(text: perfil?['direccion']);
+    final direccionController = TextEditingController(
+      text: perfil?['direccion'],
+    );
 
     showDialog(
       context: context,
@@ -266,6 +267,14 @@ class _PerfilScreenState extends State<PerfilScreen> {
                   const SnackBar(
                     content: Text('Perfil actualizado'),
                     backgroundColor: Colors.green,
+                  ),
+                );
+              } else if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      usuarioProvider.errorMessage ?? 'Operacion no disponible',
+                    ),
                   ),
                 );
               }
@@ -347,6 +356,14 @@ class _PerfilScreenState extends State<PerfilScreen> {
                     backgroundColor: Colors.green,
                   ),
                 );
+              } else if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      usuarioProvider.errorMessage ?? 'Operacion no disponible',
+                    ),
+                  ),
+                );
               }
             },
             child: const Text('Cambiar'),
@@ -371,9 +388,15 @@ class _PerfilScreenState extends State<PerfilScreen> {
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
               ),
               SizedBox(height: 12),
-              Text('¿Cómo reporto un incidente?\n- Toca el botón "Reportar" en la pantalla de inicio\n- Selecciona tu vehículo\n- Describe el problema\n- Proporciona la ubicación\n\n'),
-              Text('¿Cómo pagó mis facturas?\n- Ve a la sección "Pagos y Facturas"\n- Selecciona la factura pendiente\n- Toca "Pagar Ahora"\n\n'),
-              Text('¿Necesitas más ayuda?\n- Contacta a nuestro equipo de soporte'),
+              Text(
+                '¿Cómo reporto un incidente?\n- Toca el botón "Reportar" en la pantalla de inicio\n- Selecciona tu vehículo\n- Describe el problema\n- Proporciona la ubicación\n\n',
+              ),
+              Text(
+                '¿Cómo pagó mis facturas?\n- Ve a la sección "Pagos y Facturas"\n- Selecciona la factura pendiente\n- Toca "Pagar Ahora"\n\n',
+              ),
+              Text(
+                '¿Necesitas más ayuda?\n- Contacta a nuestro equipo de soporte',
+              ),
             ],
           ),
         ),

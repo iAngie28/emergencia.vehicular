@@ -37,12 +37,12 @@ skinparam arrow {
 
 actor "Usuario" as U
 boundary "Menú Principal" as V
-control "AuthController" as C
-entity "Sesión" as E
+control "auth.py (sin endpoint /logout)" as C
+entity "Token + Bitacora" as E
 
 U -> V : 1: Clic Cerrar Sesión()
-V -> C : 2: Finalizar sesión()
-C -> E : 3: Invalidar token()
-E --> C : 4: Confirmación()
+V -> C : 2: Invalidar sesión en cliente
+C -> E : 3: Limpiar token bearer y cerrar contexto
+E --> C : 4: Confirmación de cierre local
 C --> V : 5: Redireccionar al Login()
 @enduml

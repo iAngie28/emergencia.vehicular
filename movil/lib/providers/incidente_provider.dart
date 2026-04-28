@@ -5,6 +5,7 @@ class IncidenteProvider extends ChangeNotifier {
   final IncidenteService incidenteService;
 
   List<Map<String, dynamic>> _misIncidentes = [];
+  final List<Map<String, dynamic>> _localIncidentes = [];
   Map<String, dynamic>? _incidenteSeleccionado;
   bool _isLoading = false;
   String? _errorMessage;
@@ -24,7 +25,26 @@ class IncidenteProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _misIncidentes = await incidenteService.obtenerMisIncidentes(usuarioId: usuarioId);
+      final pendientes = await incidenteService.obtenerIncidentesPendientes();
+      final remotosUsuario = pendientes
+          .where((inc) => inc['usuario_id'] == usuarioId)
+          .toList();
+
+      final combinados = [..._localIncidentes, ...remotosUsuario];
+      final Map<int, Map<String, dynamic>> porId = {};
+      for (final incidente in combinados) {
+        final id = incidente['id'];
+        if (id is int) {
+          porId[id] = incidente;
+        }
+      }
+
+      _misIncidentes = porId.values.toList()
+        ..sort((a, b) {
+          final idA = a['id'] is int ? a['id'] as int : 0;
+          final idB = b['id'] is int ? b['id'] as int : 0;
+          return idB.compareTo(idA);
+        });
       _isLoading = false;
       notifyListeners();
     } catch (e) {
@@ -57,6 +77,7 @@ class IncidenteProvider extends ChangeNotifier {
         longitud: longitud,
       );
 
+      _localIncidentes.insert(0, nuevoIncidente);
       _misIncidentes.insert(0, nuevoIncidente);
       _isLoading = false;
       notifyListeners();
@@ -76,7 +97,10 @@ class IncidenteProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _incidenteSeleccionado = await incidenteService.obtenerIncidente(id: id);
+      _incidenteSeleccionado = _misIncidentes.firstWhere(
+        (inc) => inc['id'] == id,
+        orElse: () => <String, dynamic>{},
+      );
       _isLoading = false;
       notifyListeners();
     } catch (e) {
@@ -87,23 +111,17 @@ class IncidenteProvider extends ChangeNotifier {
   }
 
   /// Actualizar estado del incidente
-  Future<void> actualizarEstado({required int id}) async {
-    try {
-      final nuevoEstado = await incidenteService.obtenerEstadoIncidente(id: id);
-      
-      final index = _misIncidentes.indexWhere((inc) => inc['id'] == id);
-      if (index != -1) {
-        _misIncidentes[index] = {..._misIncidentes[index], ...nuevoEstado};
-        notifyListeners();
-      }
-    } catch (e) {
-      _errorMessage = e.toString();
+  void actualizarEstadoLocal({required int id, required String estado}) {
+    final index = _misIncidentes.indexWhere((inc) => inc['id'] == id);
+    if (index != -1) {
+      _misIncidentes[index] = {..._misIncidentes[index], 'estado': estado};
       notifyListeners();
     }
   }
 
   void limpiar() {
     _misIncidentes = [];
+    _localIncidentes.clear();
     _incidenteSeleccionado = null;
     _errorMessage = null;
   }

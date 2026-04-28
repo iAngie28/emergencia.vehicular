@@ -37,12 +37,12 @@ skinparam arrow {
 
 actor "Usuario Nuevo" as U
 boundary "Vista Registro" as V
-control "UserController" as C
+control "usuario.py crear_administrador_adicional()" as C
 entity "Usuario" as E
 
 U -> V : 1: Llenar formulario()
-V -> C : 2: Enviar datos()
-C -> E : 3: Validar y guardar()
+V -> C : 2: POST /usuarios/nuevo-colega
+C -> E : 3: usuario_crud.create()
 E --> C : 4: Confirmación de registro()
 C --> V : 5: Mostrar mensaje de éxito()
 @enduml

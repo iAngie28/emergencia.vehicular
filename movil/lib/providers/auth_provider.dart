@@ -6,11 +6,12 @@ import '../services/api_service.dart';
 /// Provider que maneja el estado de autenticación global
 class AuthProvider extends ChangeNotifier {
   final AuthService authService;
-  
+
   bool _isLoading = false;
   bool _isAuthenticated = false;
   String? _errorMessage;
   String? _userEmail;
+  int? _userId;
 
   AuthProvider({required this.authService}) {
     _checkAuthentication();
@@ -21,10 +22,12 @@ class AuthProvider extends ChangeNotifier {
   bool get isAuthenticated => _isAuthenticated;
   String? get errorMessage => _errorMessage;
   String? get userEmail => _userEmail;
+  int? get userId => _userId;
 
   /// Verifica si hay sesión activa al iniciar
   Future<void> _checkAuthentication() async {
     _isAuthenticated = await authService.isAuthenticated();
+    _userId = await authService.getCurrentUserId();
     notifyListeners();
   }
 
@@ -35,13 +38,16 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await authService.login(
-        email: email,
-        password: password,
-      );
+      final data = await authService.login(email: email, password: password);
 
       _isAuthenticated = true;
       _userEmail = email;
+      final rawUserId = data['user_id'];
+      if (rawUserId is int) {
+        _userId = rawUserId;
+      } else {
+        _userId = await authService.getCurrentUserId();
+      }
       _isLoading = false;
       notifyListeners();
       return true;
@@ -58,6 +64,7 @@ class AuthProvider extends ChangeNotifier {
     await authService.logout();
     _isAuthenticated = false;
     _userEmail = null;
+    _userId = null;
     _errorMessage = null;
     notifyListeners();
   }
@@ -72,7 +79,10 @@ ChangeNotifierProvider<AuthProvider> authProvider() {
           baseUrl: 'http://localhost:5000', // Cambia por tu URL del backend
           getToken: () async {
             // Este callback se ejecutará antes de cada petición
-            final prefs = await context.read<AuthProvider>().authService.getToken();
+            final prefs = await context
+                .read<AuthProvider>()
+                .authService
+                .getToken();
             return prefs;
           },
         ),

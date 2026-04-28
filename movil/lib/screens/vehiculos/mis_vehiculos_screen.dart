@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/vehiculo_provider.dart';
 import '../../theme/colors.dart';
 import 'registrar_vehiculo_screen.dart';
@@ -17,7 +18,10 @@ class _MisVehiculosScreenState extends State<MisVehiculosScreen> {
     super.initState();
     // Cargar vehículos al abrir la pantalla
     Future.microtask(() {
-      context.read<VehiculoProvider>().cargarMisVehiculos(usuarioId: 1);
+      final userId = context.read<AuthProvider>().userId;
+      if (userId != null) {
+        context.read<VehiculoProvider>().cargarMisVehiculos(usuarioId: userId);
+      }
     });
   }
 
@@ -31,9 +35,7 @@ class _MisVehiculosScreenState extends State<MisVehiculosScreen> {
       body: Consumer<VehiculoProvider>(
         builder: (context, vehiculoProvider, _) {
           if (vehiculoProvider.isLoading) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
+            return const Center(child: CircularProgressIndicator());
           }
 
           if (vehiculoProvider.misVehiculos.isEmpty) {
@@ -87,7 +89,10 @@ class _MisVehiculosScreenState extends State<MisVehiculosScreen> {
     );
   }
 
-  Widget _buildVehiculoCard(BuildContext context, Map<String, dynamic> vehiculo) {
+  Widget _buildVehiculoCard(
+    BuildContext context,
+    Map<String, dynamic> vehiculo,
+  ) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
@@ -105,18 +110,26 @@ class _MisVehiculosScreenState extends State<MisVehiculosScreen> {
                     children: [
                       Text(
                         '${vehiculo['marca']} ${vehiculo['modelo']}',
-                        style: Theme.of(context).textTheme.displayLarge?.copyWith(fontSize: 16),
+                        style: Theme.of(
+                          context,
+                        ).textTheme.displayLarge?.copyWith(fontSize: 16),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         vehiculo['anio']?.toString() ?? '',
-                        style: const TextStyle(fontSize: 12, color: Colors.grey),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
                       ),
                     ],
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.primaryColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),
@@ -141,24 +154,13 @@ class _MisVehiculosScreenState extends State<MisVehiculosScreen> {
               value: vehiculo['color'] ?? 'No especificado',
             ),
             const SizedBox(height: 8),
-            if (vehiculo['vin'] != null)
+            if (vehiculo['detalle'] != null)
               Column(
                 children: [
                   _buildInfoRow(
                     icon: Icons.numbers,
-                    label: 'VIN',
-                    value: vehiculo['vin'],
-                  ),
-                  const SizedBox(height: 8),
-                ],
-              ),
-            if (vehiculo['seguro'] != null)
-              Column(
-                children: [
-                  _buildInfoRow(
-                    icon: Icons.security,
-                    label: 'Seguro',
-                    value: vehiculo['seguro'],
+                    label: 'Detalle',
+                    value: vehiculo['detalle'],
                   ),
                   const SizedBox(height: 8),
                 ],
@@ -228,16 +230,12 @@ class _MisVehiculosScreenState extends State<MisVehiculosScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
-              decoration: const InputDecoration(
-                labelText: 'Color',
-              ),
+              decoration: const InputDecoration(labelText: 'Color'),
               controller: TextEditingController(text: vehiculo['color']),
             ),
             const SizedBox(height: 16),
             TextField(
-              decoration: const InputDecoration(
-                labelText: 'Seguro',
-              ),
+              decoration: const InputDecoration(labelText: 'Seguro'),
               controller: TextEditingController(text: vehiculo['seguro']),
             ),
           ],
@@ -272,17 +270,22 @@ class _MisVehiculosScreenState extends State<MisVehiculosScreen> {
           ElevatedButton(
             onPressed: () async {
               final vehiculoProvider = context.read<VehiculoProvider>();
-              await vehiculoProvider.eliminarVehiculo(vehiculoId: vehiculo['id']);
+              await vehiculoProvider.eliminarVehiculo(
+                vehiculoId: vehiculo['id'],
+              );
               if (mounted) {
                 Navigator.of(context).pop();
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Vehículo eliminado')),
+                  SnackBar(
+                    content: Text(
+                      vehiculoProvider.errorMessage ??
+                          'Operacion no disponible',
+                    ),
+                  ),
                 );
               }
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
             child: const Text('Eliminar'),
           ),
         ],

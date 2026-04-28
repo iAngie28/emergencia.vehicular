@@ -32,7 +32,7 @@ package "2. Gestión de Asistencia" #LightBlue {
 
     ' Relaciones de dependencia UML 2.5
     CU18 ..> CU16 : <<include>>
-    CU10 <.. CU11 : <<extend>>
+    CU10 ..> CU9 : <<include>>
 }
 
 ' Relaciones del Taller
