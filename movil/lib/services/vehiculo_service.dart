@@ -63,6 +63,19 @@ class VehiculoService {
     }
   }
 
+  Future<Map<String, dynamic>> obtenerVehiculo({required int id}) async {
+    try {
+      final response = await apiService.get('/api/v1/vehiculos/$id');
+
+      if (response is Map<String, dynamic>) {
+        return response;
+      }
+      throw Exception('Formato de respuesta inesperado');
+    } catch (e) {
+      throw Exception('Error al obtener vehiculo: $e');
+    }
+  }
+
   Future<Map<String, dynamic>> actualizarVehiculo({
     required int vehiculoId,
     required int usuarioId,

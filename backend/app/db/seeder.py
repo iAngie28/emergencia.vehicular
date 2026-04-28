@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
 from sqlalchemy.orm import Session
 from decimal import Decimal
 from app.db.session import SessionLocal
@@ -175,34 +175,20 @@ def seed_db(db: Session) -> None:
         logger.info("📍 Incluye incidentes con UBICACIONES GPS variadas para pruebas de distancia.")
 
     # ---------------------------------------------------------
-    # 6. HORARIOS DE TALLERES
+    # 6. HORARIOS DE TALLERES (comentado temporalmente para debug)
     # ---------------------------------------------------------
-    horarios_taller = [
-        # Taller 1: Lunes a Viernes 8:00 - 18:00, Sábado 9:00 - 14:00
-        {"taller_id": 1, "dia": "lunes", "hora_apertura": "08:00", "hora_cierre": "18:00"},
-        {"taller_id": 1, "dia": "martes", "hora_apertura": "08:00", "hora_cierre": "18:00"},
-        {"taller_id": 1, "dia": "miércoles", "hora_apertura": "08:00", "hora_cierre": "18:00"},
-        {"taller_id": 1, "dia": "jueves", "hora_apertura": "08:00", "hora_cierre": "18:00"},
-        {"taller_id": 1, "dia": "viernes", "hora_apertura": "08:00", "hora_cierre": "18:00"},
-        {"taller_id": 1, "dia": "sábado", "hora_apertura": "09:00", "hora_cierre": "14:00"},
-        # Taller 2: Lunes a Viernes 7:00 - 19:00, Sábado 8:00 - 15:00
-        {"taller_id": 2, "dia": "lunes", "hora_apertura": "07:00", "hora_cierre": "19:00"},
-        {"taller_id": 2, "dia": "martes", "hora_apertura": "07:00", "hora_cierre": "19:00"},
-        {"taller_id": 2, "dia": "miércoles", "hora_apertura": "07:00", "hora_cierre": "19:00"},
-        {"taller_id": 2, "dia": "jueves", "hora_apertura": "07:00", "hora_cierre": "19:00"},
-        {"taller_id": 2, "dia": "viernes", "hora_apertura": "07:00", "hora_cierre": "19:00"},
-        {"taller_id": 2, "dia": "sábado", "hora_apertura": "08:00", "hora_cierre": "15:00"},
-    ]
+    # def parse_time(time_str: str) -> time:
+    #     """Convierte string 'HH:MM' a objeto time de Python"""
+    #     return datetime.strptime(time_str, "%H:%M").time()
     
-    for h in horarios_taller:
-        if not db.query(HorarioTaller).filter(
-            HorarioTaller.taller_id == h["taller_id"],
-            HorarioTaller.dia == h["dia"]
-        ).first():
-            horario = HorarioTaller(**h)
-            db.add(horario)
-    db.commit()
-    logger.info("✅ Horarios de talleres creados exitosamente.")
+    # horarios_taller = [...]  # Comentado
+    
+    # for h in horarios_taller:
+    #     if not db.query(HorarioTaller).filter(...).first():
+    #         horario = HorarioTaller(**h)
+    #         db.add(horario)
+    # db.commit()
+    logger.info("✅ Horarios de talleres saltados (debug).")
 
 if __name__ == "__main__":
     # Permite ejecutar `python seeder.py` directamente

@@ -76,15 +76,7 @@ ChangeNotifierProvider<AuthProvider> authProvider() {
     create: (context) => AuthProvider(
       authService: AuthService(
         apiService: ApiService(
-          baseUrl: 'http://localhost:5000', // Cambia por tu URL del backend
-          getToken: () async {
-            // Este callback se ejecutará antes de cada petición
-            final prefs = await context
-                .read<AuthProvider>()
-                .authService
-                .getToken();
-            return prefs;
-          },
+          baseUrl: 'http://localhost:8000', // Backend corriendo en puerto 8000
         ),
       ),
     ),

@@ -33,7 +33,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const backendUrl = 'http://192.168.0.50:5000';
+    const backendUrl = 'http://localhost:8000';
 
     return MultiProvider(
       providers: [
