@@ -17,6 +17,7 @@ FRONTEND_URL = os.getenv("FRONTEND_URL", "https://taller-pro-client.onrender.com
 origins = [
     "http://localhost:4200",
     "http://localhost:8100",
+    "https://emergencia-vehicular-1.onrender.com",
     FRONTEND_URL, # Dominio de producción
 ]
 
