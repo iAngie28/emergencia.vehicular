@@ -2,7 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-
+import { environment } from '../../../../environments/environment';
 @Component({
   selector: 'app-sidebar',
   standalone: true,
@@ -30,7 +30,7 @@ export class SidebarComponent implements OnInit {
     const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
 
     // Usamos el mismo endpoint que tu dashboard
-    this.http.get<any>('http://localhost:8000/api/v1/usuarios/me', { headers }).subscribe({
+    this.http.get<any>(`${environment.apiUrl}/usuarios/me`, { headers }).subscribe({
       next: (user) => {
         // Asignamos el nombre real (ej: "Angie")
         this.usuario = user.nombre;

@@ -1,0 +1,46 @@
+<div class="page-container">
+  <div class="header">
+    <h2>🔔 Centro de Notificaciones</h2>
+    <p>Historial de alertas, emergencias y pagos</p>
+  </div>
+
+  <div *ngIf="cargando" class="loading-state">
+    ⏳ Cargando tu historial...
+  </div>
+
+  <div *ngIf="!cargando && notificaciones.length === 0" class="empty-state">
+    <span class="empty-icon">📭</span>
+    <h3>No tienes notificaciones</h3>
+    <p>Aquí aparecerán los avisos de nuevos auxilios y actualizaciones.</p>
+  </div>
+
+  <div class="notificaciones-list" *ngIf="!cargando && notificaciones.length > 0">
+    
+    <div *ngFor="let noti of notificaciones" 
+         class="noti-card" 
+         [ngClass]="{'unread': !noti.leido}"> <div class="noti-icon">
+        <span *ngIf="noti.tipo === 'emergencia'">🚨</span>
+        <span *ngIf="noti.tipo === 'pago'">💰</span>
+        <span *ngIf="noti.tipo === 'sistema'">⚙️</span>
+        <span *ngIf="!['emergencia', 'pago', 'sistema'].includes(noti.tipo)">🔔</span>
+      </div>
+
+      <div class="noti-content">
+        <div class="noti-header">
+          <h4>{{ noti.titulo }}</h4>
+          <span class="noti-date">{{ noti.fecha_envio | date:'short' }}</span>
+        </div>
+        <p>{{ noti.mensaje }}</p>
+      </div>
+
+      <div class="noti-actions">
+        <button *ngIf="!noti.leido" class="btn-read" (click)="marcarComoLeida(noti.id)">
+          ✓ Marcar como leída
+        </button>
+      </div>
+      
+      <div class="unread-dot" *ngIf="!noti.leido"></div>
+    </div>
+
+  </div>
+</div>

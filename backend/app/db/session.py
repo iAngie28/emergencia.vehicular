@@ -24,9 +24,17 @@ if not SQLALCHEMY_DATABASE_URL:
     SQLALCHEMY_DATABASE_URL = "sqlite:///./emergencias.db"
 
 # 3. Crear el Engine (Motor de conexión)
+# Agregar opciones de conexión para PostgreSQL con mejor manejo de encoding
+connect_args = {}
+if SQLALCHEMY_DATABASE_URL and SQLALCHEMY_DATABASE_URL.startswith("postgresql://"):
+    # Para psycopg2: usar client_encoding para evitar problemas UTF-8
+    connect_args = {"client_encoding": "utf8"}
+
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL, 
-    pool_pre_ping=True
+    pool_pre_ping=True,
+    connect_args=connect_args if connect_args else {},
+    echo=False
 )
 
 # 4. Configurar la fábrica de sesiones

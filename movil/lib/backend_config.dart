@@ -1,25 +1,56 @@
 import 'package:flutter/foundation.dart';
 
+/// Configuración centralizada de conexión al backend
+/// ======================================================
+/// Esta clase gestiona dinámicamente la URL del servidor según:
+/// - Plataforma (Android, iOS, Web)
+/// - Tipo de dispositivo (emulador vs físico)
+/// - Variables de entorno
 class BackendConfig {
+  // ===== CONFIGURACIÓN GLOBAL =====
   static const String _defaultPort = '8000';
+  static const String _localNetworkIp = '192.168.56.1';
+  static const String _androidEmulatorHost = '10.0.2.2';
 
-  // Override example:
-  // flutter run --dart-define=BACKEND_URL=http://192.168.0.10:8000
+  // ===== URLS CONSTRUIDAS =====
+  static const String _localDevUrl = 'http://localhost:$_defaultPort';
+  static const String _localNetworkUrl = 'http://$_localNetworkIp:$_defaultPort';
+  static const String _androidEmulatorUrl = 'http://$_androidEmulatorHost:$_defaultPort';
+
+  /// URL del backend - automática por plataforma
   static String get baseUrl {
     const fromEnv = String.fromEnvironment('BACKEND_URL');
-    if (fromEnv.isNotEmpty) return fromEnv;
+    if (fromEnv.isNotEmpty) {
+      debugPrint('[CONFIG] URL de variable de entorno: $fromEnv');
+      return fromEnv;
+    }
 
-    if (kIsWeb) return 'http://localhost:$_defaultPort';
+    if (kIsWeb) {
+      debugPrint('[CONFIG] Web: $_localDevUrl');
+      return _localDevUrl;
+    }
 
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
-        // Android emulator: host machine is reachable via 10.0.2.2
-        return 'http://10.0.2.2:$_defaultPort';
+        debugPrint('[CONFIG] Android - Dispositivo físico: $_localNetworkUrl');
+        return _localNetworkUrl;
       case TargetPlatform.iOS:
-        return 'http://localhost:$_defaultPort';
+        debugPrint('[CONFIG] iOS - Dispositivo físico: $_localNetworkUrl');
+        return _localNetworkUrl;
       default:
-        return 'http://localhost:$_defaultPort';
+        return _localDevUrl;
     }
+  }
+
+  static String get androidEmulatorUrl => _androidEmulatorUrl;
+  static String get physicalDeviceUrl => _localNetworkUrl;
+  static String get localDevUrl => _localDevUrl;
+
+  static void printDebugInfo() {
+    print('[CONFIG] URL Base: $baseUrl');
+    print('[CONFIG] Emulador Android: $_androidEmulatorUrl');
+    print('[CONFIG] Dispositivo Físico: $_localNetworkUrl');
+    print('[CONFIG] Localhost: $_localDevUrl');
   }
 }
 

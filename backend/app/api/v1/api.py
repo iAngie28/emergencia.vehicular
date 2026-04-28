@@ -4,7 +4,12 @@ from app.api.v1.endpoints import (
     bitacora, notificaciones, pagos, roles, taller_detalles, evidencias, vehiculos
 )
 
+from fastapi import APIRouter
+from app.api.v1.endpoints import emergencia # Importa el nuevo archivo
+
 api_router = APIRouter()
+
+api_router.include_router(emergencia.router, prefix="/emergencia", tags=["Emergencia"])
 
 api_router.include_router(auth.router, prefix="/auth", tags=["Autenticación"])
 api_router.include_router(usuario.router, prefix="/usuarios", tags=["Usuarios"])
