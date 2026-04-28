@@ -99,13 +99,16 @@ class MyApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         title: 'Emergencia Vehicular',
         theme: appTheme,
-        home: Consumer<AuthProvider>(
-          builder: (context, authProvider, _) {
-            return authProvider.isAuthenticated
-                ? const HomePage()
-                : const LoginPage();
-          },
-        ),
+        // DEV MODE: Skip login, go directly to HomePage
+        home: const HomePage(),
+        // PRODUCTION: Uncomment for login requirement
+        // home: Consumer<AuthProvider>(
+        //   builder: (context, authProvider, _) {
+        //     return authProvider.isAuthenticated
+        //         ? const HomePage()
+        //         : const LoginPage();
+        //   },
+        // ),
       ),
     );
   }
