@@ -1361,23 +1361,31 @@ def obtener_historial_chat(
     if not incidente:
         raise HTTPException(status_code=404, detail="Incidente no encontrado")
         
-    # Validaciones de participación
-    if current_user.rol_id == 2:  # Cliente
+    original_rol_id = getattr(current_user, "original_rol_id", current_user.rol_id)
+
+    # Validaciones de participación flexibles
+    if original_rol_id == 4:
+        # Superadministrador tiene acceso libre a cualquier chat
+        pass
+    elif current_user.rol_id == 2:  # Cliente
         if incidente.usuario_id != current_user.id:
             raise HTTPException(status_code=403, detail="Acceso denegado al chat de este incidente")
     elif current_user.rol_id == 3:  # Técnico
-        if incidente.tecnico_id != current_user.id:
+        if incidente.tecnico_id != current_user.id and incidente.taller_id != current_user.taller_id:
             raise HTTPException(status_code=403, detail="Acceso denegado al chat de este incidente")
     elif current_user.rol_id == 1:  # Administrador de Taller
         if incidente.taller_id != current_user.taller_id:
             raise HTTPException(status_code=403, detail="Acceso denegado al chat de este incidente")
 
     from app.crud.crud_mensaje_chat import mensaje_chat_crud
-    from app.schemas.mensaje_chat import MensajeChatResponse
     from fastapi.encoders import jsonable_encoder
     
-    mensajes = mensaje_chat_crud.obtener_por_incidente(db, incidente_id=incidente_id)
-    return jsonable_encoder(mensajes)
+    try:
+        mensajes = mensaje_chat_crud.obtener_por_incidente(db, incidente_id=incidente_id)
+        return jsonable_encoder(mensajes or [])
+    except Exception as e:
+        logger.error(f"Error al obtener historial de chat para incidente #{incidente_id}: {str(e)}")
+        return []
 
 @router.post("/{incidente_id}/seleccionar-taller/{taller_id}")
 def seleccionar_taller_para_incidente(

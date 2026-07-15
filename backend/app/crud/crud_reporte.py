@@ -26,10 +26,9 @@ class CRUDReporte(CRUDBase[Reporte, ReporteCreate, ReporteUpdate]):
         return db.query(self.model).filter(self.model.incidente_id == incidente_id).first()
 
     def obtener_por_taller(self, db: Session, *, taller_id: int) -> List[Reporte]:
-        # El taller solo debe ver reportes de tipo 'tecnico'
         return (
             db.query(self.model)
-            .filter(self.model.taller_id == taller_id, self.model.tipo_reporte == "tecnico")
+            .filter(self.model.taller_id == taller_id)
             .order_by(self.model.fecha_creacion.desc())
             .all()
         )

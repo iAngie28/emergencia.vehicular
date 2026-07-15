@@ -523,39 +523,44 @@ class _MisIncidentesScreenState extends State<MisIncidentesScreen> {
           ),
         ),
         actions: [
-          if (!esTecnico && incidente['taller'] != null) ...[
+          if (incidente['id'] != null) ...[
             TextButton.icon(
               icon: const Icon(Icons.chat_bubble_outline),
               label: const Text('Chat'),
               onPressed: () {
                 Navigator.of(dialogContext).pop();
-                final taller = incidente['taller'] as Map<String, dynamic>;
+                final taller = incidente['taller'] as Map<String, dynamic>?;
+                final usuario = incidente['usuario'] as Map<String, dynamic>?;
+                final tituloChat = esTecnico
+                    ? (_nombrePersona(usuario) ?? 'Cliente')
+                    : (taller?['nombre']?.toString() ?? 'Taller');
                 Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (_) => ChatScreen(
                       incidenteId: incidente['id'] as int,
-                      tallerNombre: taller['nombre']?.toString() ?? 'Taller',
+                      tallerNombre: tituloChat,
                     ),
                   ),
                 );
               },
             ),
-            TextButton.icon(
-              icon: const Icon(Icons.report_problem_outlined, color: Colors.red),
-              label: const Text('Reportar', style: TextStyle(color: Colors.red)),
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-                final tecnico = incidente['tecnico'] as Map<String, dynamic>?;
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => ReporteScreen(
-                      incidenteId: incidente['id'] as int,
-                      tecnicoId: tecnico?['id'] as int?,
+            if (!esTecnico && incidente['taller'] != null)
+              TextButton.icon(
+                icon: const Icon(Icons.report_problem_outlined, color: Colors.red),
+                label: const Text('Reportar', style: TextStyle(color: Colors.red)),
+                onPressed: () {
+                  Navigator.of(dialogContext).pop();
+                  final tecnico = incidente['tecnico'] as Map<String, dynamic>?;
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => ReporteScreen(
+                        incidenteId: incidente['id'] as int,
+                        tecnicoId: tecnico?['id'] as int?,
+                      ),
                     ),
-                  ),
-                );
-              },
-            ),
+                  );
+                },
+              ),
           ],
           if (!esTecnico && _puedeCancelarCliente(incidente))
             TextButton(

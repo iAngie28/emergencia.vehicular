@@ -12,7 +12,8 @@ import '../../providers/tecnico_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/taller_service.dart';
 import '../../theme/colors.dart';
-// Para reutilizar logica o navegar, aunque es mejor importar el modal
+import '../servicios/chat_screen.dart';
+import '../servicios/reporte_screen.dart';
 
 
 class MapScreen extends StatefulWidget {
@@ -461,15 +462,31 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: () => _mostrarDialogoCancelar(context, activo, esTecnico),
-              icon: const Icon(Icons.cancel),
-              label: const Text('Cancelar'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red.shade600,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                if (!esTecnico)
+                  ElevatedButton.icon(
+                    onPressed: () => _abrirReporte(context, activo),
+                    icon: const Icon(Icons.report_problem_outlined),
+                    label: const Text('Reportar'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red.shade700,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    ),
+                  ),
+                ElevatedButton.icon(
+                  onPressed: () => _mostrarDialogoCancelar(context, activo, esTecnico),
+                  icon: const Icon(Icons.cancel),
+                  label: const Text('Cancelar'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.grey.shade700,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -576,40 +593,102 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
                   ),
               ],
             ),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                ElevatedButton.icon(
-                  onPressed: () {
-                    final clientPhone = activo['telefono_cliente']?.toString() ?? '';
-                    if (clientPhone.isNotEmpty) {
-                      launchUrl(Uri.parse('tel:$clientPhone'));
-                    }
-                  },
-                  icon: const Icon(Icons.call, color: Colors.white),
-                  label: const Text('Llamar Cliente', style: TextStyle(color: Colors.white)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            if (esTecnico) ...[
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: () => _abrirChat(context, activo),
+                    icon: const Icon(Icons.chat_bubble_outline),
+                    label: const Text('Chat'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    ),
                   ),
-                ),
-                OutlinedButton.icon(
-                  onPressed: () => launchUrl(Uri.parse("sms:+59112345678")),
-                  icon: const Icon(Icons.message),
-                  label: const Text('Mensaje'),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      final clientPhone = activo['telefono_cliente']?.toString() ?? '';
+                      if (clientPhone.isNotEmpty) {
+                        launchUrl(Uri.parse('tel:$clientPhone'));
+                      }
+                    },
+                    icon: const Icon(Icons.call, color: Colors.white),
+                    label: const Text('Llamar Cliente', style: TextStyle(color: Colors.white)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
+            ],
+            if (!esTecnico) ...[
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: () => _abrirChat(context, activo),
+                    icon: const Icon(Icons.chat_bubble_outline),
+                    label: const Text('Chat'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    ),
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: () => _abrirReporte(context, activo),
+                    icon: const Icon(Icons.report_problem_outlined),
+                    label: const Text('Reportar'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red.shade700,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
       );
     }
 
     return const SizedBox.shrink();
+  }
+
+  void _abrirReporte(BuildContext context, Map<String, dynamic> incidente) {
+    final tecnico = incidente['tecnico'] as Map<String, dynamic>?;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ReporteScreen(
+          incidenteId: incidente['id'] as int,
+          tecnicoId: tecnico?['id'] as int?,
+        ),
+      ),
+    );
+  }
+
+  void _abrirChat(BuildContext context, Map<String, dynamic> incidente) {
+    final auth = context.read<AuthProvider>();
+    final esTecnico = auth.isTecnico;
+    final taller = incidente['taller'] as Map<String, dynamic>?;
+    final usuario = incidente['usuario'] as Map<String, dynamic>?;
+    final tituloChat = esTecnico 
+        ? (usuario?['nombre']?.toString() ?? 'Cliente') 
+        : (taller?['nombre']?.toString() ?? 'Taller');
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ChatScreen(
+          incidenteId: incidente['id'] as int,
+          tallerNombre: tituloChat,
+        ),
+      ),
+    );
   }
 
   Widget _buildCarousel(int incidenteId) {

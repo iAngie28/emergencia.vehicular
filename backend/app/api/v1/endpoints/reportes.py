@@ -97,14 +97,14 @@ def listar_reportes(
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_active_user)
 ) -> Any:
-    # Si es Super Administrador (rol_id = 4 en BD o original_rol_id == 4)
+    # Si el usuario tiene taller_id activo (Admin de Taller real o Superadmin Impersonando Taller)
+    if current_user.taller_id and current_user.rol_id == 1:
+        return reporte_crud.obtener_por_taller(db, taller_id=current_user.taller_id)
+
+    # Si es Super Administrador actuando globalmente sin impersonar a un taller específico
     original_rol_id = getattr(current_user, "original_rol_id", current_user.rol_id)
     if original_rol_id == 4:
         return reporte_crud.obtener_todos_taller_reportes(db)
-        
-    # Si es Administrador de Taller (rol_id = 1)
-    if current_user.rol_id == 1:
-        return reporte_crud.obtener_por_taller(db, taller_id=current_user.taller_id)
 
     raise HTTPException(
         status_code=status.HTTP_403_FORBIDDEN,

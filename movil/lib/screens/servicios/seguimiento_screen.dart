@@ -4,6 +4,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import '../../providers/incidente_provider.dart';
 import '../../providers/tecnico_provider.dart';
+import 'chat_screen.dart';
 
 class SeguimientoScreen extends StatefulWidget {
   const SeguimientoScreen({super.key, required this.incidente});
@@ -355,6 +356,30 @@ class _SeguimientoScreenState extends State<SeguimientoScreen> {
               
               if (['asignado', 'en_camino', 'en_atencion'].contains(incidente['estado'])) ...[
                 const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      final usuario = incidente['usuario'] as Map<String, dynamic>?;
+                      final clienteNombre = usuario?['nombre']?.toString() ?? 'Cliente';
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => ChatScreen(
+                            incidenteId: incidente['id'] as int,
+                            tallerNombre: clienteNombre,
+                          ),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.chat_bubble_outline),
+                    label: const Text('Chat con Cliente'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF2563EB),
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
                 Row(
                   children: [
                     if (incidente['estado'] == 'en_atencion') ...[
