@@ -225,7 +225,7 @@
         </label>
 
         <!-- 💬 CHAT CON EL CLIENTE -->
-        <div class="chat-container-box" *ngIf="incidenteSeleccionado.estado !== 'pendiente' && incidenteSeleccionado.estado !== 'buscando_taller' && incidenteSeleccionado.estado !== 'cotizado'">
+        <div class="chat-container-box" *ngIf="puedeUsarChat(incidenteSeleccionado)">
           <label class="chat-label"><i class="fa-solid fa-comments me-1 text-primary"></i> Chat en Vivo con Cliente:</label>
           
           <div class="chat-messages-container">

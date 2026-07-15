@@ -51,7 +51,9 @@ class RealtimeProvider extends ChangeNotifier {
     });
 
     _statusSubscription?.cancel();
-    _statusSubscription = realtimeService.connectionStatus.listen((isConnected) {
+    _statusSubscription = realtimeService.connectionStatus.listen((
+      isConnected,
+    ) {
       _isConnected = isConnected;
       notifyListeners();
     });
@@ -76,17 +78,17 @@ class RealtimeProvider extends ChangeNotifier {
         id: incidentId,
         estado: newStatus,
       );
-      
+
       // Auto-abrir pantalla de calificación si es cliente y el incidente finalizó
-      if (!esTecnico && (newStatus.toLowerCase() == 'finalizado' || newStatus.toLowerCase() == 'completado')) {
+      if (!esTecnico &&
+          (newStatus.toLowerCase() == 'finalizado' ||
+              newStatus.toLowerCase() == 'completado')) {
         Future.delayed(const Duration(milliseconds: 500), () {
-          final context = navigatorKey.currentContext;
-          if (context != null) {
-            Navigator.of(context).push(
+          final navigator = navigatorKey.currentState;
+          if (navigator != null) {
+            navigator.push(
               MaterialPageRoute(
-                builder: (_) => CalificacionScreen(
-                  incidenteId: incidentId,
-                ),
+                builder: (_) => CalificacionScreen(incidenteId: incidentId),
               ),
             );
           }
@@ -99,8 +101,9 @@ class RealtimeProvider extends ChangeNotifier {
     final body = event['mensaje']?.toString();
 
     if (title != null && title.isNotEmpty && body != null && body.isNotEmpty) {
-      String payloadStr = incidentId?.toString() ?? '';
-      if (event['evento'] == 'cobro_generado' || event['tipo'] == 'cobro_generado') {
+      String payloadStr = LocalNotificationService.payloadForData(event);
+      if (event['evento'] == 'cobro_generado' ||
+          event['tipo'] == 'cobro_generado') {
         payloadStr = 'pago';
       }
       LocalNotificationService().showNotification(
@@ -109,12 +112,18 @@ class RealtimeProvider extends ChangeNotifier {
         body: body,
         payload: payloadStr,
       );
-    } else if (incidentId != null && newStatus != null && newStatus.isNotEmpty) {
+    } else if (incidentId != null &&
+        newStatus != null &&
+        newStatus.isNotEmpty) {
       LocalNotificationService().showNotification(
         id: incidentId,
         title: 'Actualización de Incidente',
         body: 'El incidente #$incidentId ahora está: $newStatus',
-        payload: incidentId.toString(),
+        payload: LocalNotificationService.payloadForData({
+          'tipo': 'cambio_estado',
+          'incidente_id': incidentId,
+          'estado_nuevo': newStatus,
+        }),
       );
     }
 
@@ -137,7 +146,7 @@ class RealtimeProvider extends ChangeNotifier {
   bool _isIncidentEvent(Map<String, dynamic> event) {
     final type = event['tipo']?.toString() ?? '';
     if (type == 'ubicacion_tecnico') return false;
-    
+
     final realtimeEvent = event['evento']?.toString() ?? '';
 
     return event['incidente_id'] != null ||

@@ -92,7 +92,7 @@
               <tr *ngFor="let rep of reportes" class="hover-row">
                 <td><span class="id-badge danger">#{{ rep.id }}</span></td>
                 <td><span class="incidente-ref">#{{ rep.incidente_id }}</span></td>
-                <td><strong>Taller ID:</strong> #{{ rep.taller_id }}</td>
+                <td><strong>Taller:</strong> {{ nombreTallerReportado(rep) }}</td>
                 <td><span class="motivo-label">{{ rep.motivo }}</span></td>
                 <td class="desc-cell" [title]="rep.descripcion">{{ rep.descripcion }}</td>
                 <td>
@@ -130,6 +130,7 @@
       <div class="modal-body">
         <div class="info-block">
           <p><strong>Incidente Relacionado:</strong> #{{ reporteSeleccionado?.incidente_id }}</p>
+          <p><strong>Taller Reportado:</strong> {{ nombreTallerReportado(reporteSeleccionado) }}</p>
           <p><strong>Motivo:</strong> {{ reporteSeleccionado?.motivo }}</p>
           <p><strong>Descripción:</strong></p>
           <div class="desc-box">{{ reporteSeleccionado?.descripcion }}</div>

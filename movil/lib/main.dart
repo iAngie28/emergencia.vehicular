@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter_stripe/flutter_stripe.dart' hide Card; // 🚩 Import Stripe
+import 'package:flutter_stripe/flutter_stripe.dart'
+    hide Card; // 🚩 Import Stripe
 
 import 'backend_config.dart';
 import 'providers/auth_provider.dart';
@@ -52,19 +53,31 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  RemoteMessage? initialMessage;
   try {
     await Firebase.initializeApp();
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+    FirebaseMessaging.onMessageOpenedApp.listen((message) {
+      LocalNotificationService().handleNotificationData(message.data);
+    });
+    initialMessage = await FirebaseMessaging.instance.getInitialMessage();
   } catch (e) {
     debugPrint("Error inicializando Firebase: $e");
   }
   await LocalNotificationService().initialize();
-  
+
   // 🚩 Setup Stripe
-  Stripe.publishableKey = 'pk_test_51TfaqoRFvDNKnuYCx0gIUcFPWSe3FsytLXYVjojUI6KkkK3q74lWSx2eTK4ygKiMKW5OHNqxmfvcrRPa9YdB3TDR00sUOo6yCP';
+  Stripe.publishableKey =
+      'pk_test_51TfaqoRFvDNKnuYCx0gIUcFPWSe3FsytLXYVjojUI6KkkK3q74lWSx2eTK4ygKiMKW5OHNqxmfvcrRPa9YdB3TDR00sUOo6yCP';
   await Stripe.instance.applySettings();
-  
+
   runApp(const MyApp());
+
+  if (initialMessage != null) {
+    Future.delayed(const Duration(milliseconds: 800), () {
+      LocalNotificationService().handleNotificationData(initialMessage!.data);
+    });
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -142,9 +155,7 @@ class MyApp extends StatelessWidget {
           create: (context) =>
               UsuarioProvider(usuarioService: context.read<UsuarioService>()),
         ),
-        ChangeNotifierProvider(
-          create: (context) => ConnectivityProvider(),
-        ),
+        ChangeNotifierProvider(create: (context) => ConnectivityProvider()),
         ChangeNotifierProvider(
           create: (context) => TecnicoProvider(
             incidenteService: context.read<IncidenteService>(),
@@ -358,17 +369,19 @@ class _HomePageState extends State<HomePage> {
     final userId = authProvider.userId;
     if (userId != null) {
       try {
+        final plataforma = Theme.of(context).platform == TargetPlatform.android
+            ? 'android'
+            : 'ios';
+
         final token = await FirebaseMessaging.instance.getToken();
         if (token == null) {
           debugPrint('[FCM] No se pudo obtener el token de Firebase');
           return;
         }
-        
-        final plataforma = Theme.of(context).platform == TargetPlatform.android
-            ? 'android'
-            : 'ios';
-            
-        debugPrint('[FCM] Intentando registrar token FCM para usuario $userId...');
+
+        debugPrint(
+          '[FCM] Intentando registrar token FCM para usuario $userId...',
+        );
         await notificacionProvider.registrarTokenDispositivo(
           usuarioId: userId,
           tokenFCM: token,
@@ -465,21 +478,26 @@ class _HomePageState extends State<HomePage> {
                 return Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 4),
                   child: Tooltip(
-                    message: '${syncService.pendientesCount} incidente(s) pendiente(s) de sincronizar',
+                    message:
+                        '${syncService.pendientesCount} incidente(s) pendiente(s) de sincronizar',
                     child: Stack(
                       alignment: Alignment.center,
                       children: [
                         IconButton(
-                          icon: const Icon(Icons.wifi_off, color: Colors.orange),
+                          icon: const Icon(
+                            Icons.wifi_off,
+                            color: Colors.orange,
+                          ),
                           onPressed: () async {
-                            final result = await syncService.intentarSincronizar();
+                            final result = await syncService
+                                .intentarSincronizar();
                             if (!context.mounted) return;
                             final msg = result.sincronizados > 0
                                 ? '✅ ${result.sincronizados} sincronizado(s)'
                                 : '❌ Sin conexión aún';
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(msg)),
-                            );
+                            ScaffoldMessenger.of(
+                              context,
+                            ).showSnackBar(SnackBar(content: Text(msg)));
                           },
                         ),
                         Positioned(
@@ -493,7 +511,10 @@ class _HomePageState extends State<HomePage> {
                             ),
                             child: Text(
                               '${syncService.pendientesCount}',
-                              style: const TextStyle(fontSize: 9, color: Colors.white),
+                              style: const TextStyle(
+                                fontSize: 9,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                         ),
@@ -558,9 +579,11 @@ class _TecnicoDashboardState extends State<TecnicoDashboard> {
     // Cargar incidente activo en TecnicoProvider para seguimiento
     if (tecnicoProvider != null) {
       await tecnicoProvider.cargarIncidenteActivo(usuarioId: userId);
-      
-      if (tecnicoProvider.incidenteActivo != null && !tecnicoProvider.isTracking) {
-        final estado = (tecnicoProvider.incidenteActivo!['estado'] ?? '').toString();
+
+      if (tecnicoProvider.incidenteActivo != null &&
+          !tecnicoProvider.isTracking) {
+        final estado = (tecnicoProvider.incidenteActivo!['estado'] ?? '')
+            .toString();
         if (estado == 'en_camino' || estado == 'en_atencion') {
           tecnicoProvider.iniciarTracking();
         }
@@ -773,7 +796,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
     return Consumer<IncidenteProvider>(
       builder: (context, incidenteProvider, child) {
         final activo = incidenteProvider.incidenteActivoCliente;
-        
+
         return ListView(
           padding: const EdgeInsets.all(16),
           children: [
@@ -782,13 +805,13 @@ class _HomeDashboardState extends State<HomeDashboard> {
                 color: Colors.orange.shade700,
                 elevation: 4,
                 margin: const EdgeInsets.only(bottom: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 child: InkWell(
                   onTap: () {
                     Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const MapScreen(),
-                      ),
+                      MaterialPageRoute(builder: (_) => const MapScreen()),
                     );
                   },
                   borderRadius: BorderRadius.circular(12),
@@ -799,18 +822,41 @@ class _HomeDashboardState extends State<HomeDashboard> {
                       children: [
                         Row(
                           children: [
-                            const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 28),
+                            const Icon(
+                              Icons.warning_amber_rounded,
+                              color: Colors.white,
+                              size: 28,
+                            ),
                             const SizedBox(width: 8),
-                            const Text('Incidente Activo', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+                            const Text(
+                              'Incidente Activo',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                              ),
+                            ),
                             const Spacer(),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(12)),
-                              child: Text(
-                                (activo['estado'] ?? '').toString().toUpperCase(),
-                                style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
                               ),
-                            )
+                              decoration: BoxDecoration(
+                                color: Colors.white24,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                (activo['estado'] ?? '')
+                                    .toString()
+                                    .toUpperCase(),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 12),
@@ -823,11 +869,21 @@ class _HomeDashboardState extends State<HomeDashboard> {
                         const SizedBox(height: 12),
                         const Row(
                           children: [
-                            Text('Toca para ver el mapa en tiempo real', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                            Text(
+                              'Toca para ver el mapa en tiempo real',
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 12,
+                              ),
+                            ),
                             Spacer(),
-                            Icon(Icons.arrow_forward_ios, color: Colors.white70, size: 14)
+                            Icon(
+                              Icons.arrow_forward_ios,
+                              color: Colors.white70,
+                              size: 14,
+                            ),
                           ],
-                        )
+                        ),
                       ],
                     ),
                   ),
@@ -867,84 +923,88 @@ class _HomeDashboardState extends State<HomeDashboard> {
                   );
                 },
               ),
-        _actionCard(
-          context,
-          color: Colors.red,
-          icon: Icons.warning_amber_rounded,
-          title: 'Reportar Incidente',
-          subtitle: 'Describe tu emergencia',
-          onTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => const ReportarIncidenteScreen(),
-              ),
-            );
-          },
-        ),
-
-        _actionCard(
-          context,
-          color: AppColors.accentColor,
-          icon: Icons.directions_car_outlined,
-          title: 'Mis Vehiculos',
-          subtitle: 'Gestiona tus vehiculos',
-          onTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const MisVehiculosScreen()),
-            );
-          },
-        ),
-        _actionCard(
-          context,
-          color: const Color(0xFF7E22CE),
-          icon: Icons.payment_outlined,
-          title: 'Pagos',
-          subtitle: 'Gestiona tus cobros pendientes',
-          onTap: () {
-            Navigator.of(
+            _actionCard(
               context,
-            ).push(MaterialPageRoute(builder: (_) => const PagosScreen()));
-          },
-        ),
-        _actionCard(
-          context,
-          color: AppColors.info,
-          icon: Icons.support_agent_outlined,
-          title: 'Chatbot Auxiliar',
-          subtitle: 'Recomendaciones mientras esperas ayuda',
-          onTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const AssistantScreen()),
-            );
-          },
-        ),
-        _actionCard(
-          context,
-          color: const Color(0xFF0D9488),
-          icon: Icons.store_mall_directory_outlined,
-          title: 'Directorio de Talleres',
-          subtitle: 'Consulta talleres por especialidad',
-          onTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const DirectorioTalleresScreen()),
-            );
-          },
-        ),
-        const SizedBox(height: 12),
-        OutlinedButton.icon(
-          onPressed: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const MisIncidentesScreen()),
-            );
-          },
-          icon: const Icon(Icons.list_alt_outlined),
-          label: const Text('Ver mis reportes'),
-        ),
-      ],
+              color: Colors.red,
+              icon: Icons.warning_amber_rounded,
+              title: 'Reportar Incidente',
+              subtitle: 'Describe tu emergencia',
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const ReportarIncidenteScreen(),
+                  ),
+                );
+              },
+            ),
+
+            _actionCard(
+              context,
+              color: AppColors.accentColor,
+              icon: Icons.directions_car_outlined,
+              title: 'Mis Vehiculos',
+              subtitle: 'Gestiona tus vehiculos',
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const MisVehiculosScreen()),
+                );
+              },
+            ),
+            _actionCard(
+              context,
+              color: const Color(0xFF7E22CE),
+              icon: Icons.payment_outlined,
+              title: 'Pagos',
+              subtitle: 'Gestiona tus cobros pendientes',
+              onTap: () {
+                Navigator.of(
+                  context,
+                ).push(MaterialPageRoute(builder: (_) => const PagosScreen()));
+              },
+            ),
+            _actionCard(
+              context,
+              color: AppColors.info,
+              icon: Icons.support_agent_outlined,
+              title: 'Chatbot Auxiliar',
+              subtitle: 'Recomendaciones mientras esperas ayuda',
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const AssistantScreen()),
+                );
+              },
+            ),
+            _actionCard(
+              context,
+              color: const Color(0xFF0D9488),
+              icon: Icons.store_mall_directory_outlined,
+              title: 'Directorio de Talleres',
+              subtitle: 'Consulta talleres por especialidad',
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const DirectorioTalleresScreen(),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const MisIncidentesScreen(),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.list_alt_outlined),
+              label: const Text('Ver mis reportes'),
+            ),
+          ],
+        );
+      },
     );
-   },
-  );
- }
+  }
 
   Widget _actionCard(
     BuildContext context, {

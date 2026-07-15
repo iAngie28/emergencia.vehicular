@@ -50,6 +50,7 @@ class _ChatScreenState extends State<ChatScreen> {
       final List<dynamic> response = await apiService.get(
         '/api/v1/incidentes/${widget.incidenteId}/chat',
       );
+      if (!mounted) return;
       setState(() {
         _mensajes.clear();
         for (var item in response) {
@@ -61,12 +62,13 @@ class _ChatScreenState extends State<ChatScreen> {
       });
       _scrollToBottom();
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al cargar historial: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error al cargar historial: $e')));
     }
   }
 
@@ -159,7 +161,10 @@ class _ChatScreenState extends State<ChatScreen> {
                           itemBuilder: (context, index) {
                             final msg = _mensajes[index];
                             final isMe = msg['remitente_id'] == _userId;
-                            return _buildMessageBubble(msg['contenido'] ?? '', isMe);
+                            return _buildMessageBubble(
+                              msg['contenido'] ?? '',
+                              isMe,
+                            );
                           },
                         ),
                 ),
@@ -180,8 +185,12 @@ class _ChatScreenState extends State<ChatScreen> {
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(12),
             topRight: const Radius.circular(12),
-            bottomLeft: isMe ? const Radius.circular(12) : const Radius.circular(0),
-            bottomRight: isMe ? const Radius.circular(0) : const Radius.circular(12),
+            bottomLeft: isMe
+                ? const Radius.circular(12)
+                : const Radius.circular(0),
+            bottomRight: isMe
+                ? const Radius.circular(0)
+                : const Radius.circular(12),
           ),
         ),
         child: Text(

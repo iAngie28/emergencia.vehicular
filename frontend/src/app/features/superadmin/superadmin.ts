@@ -56,6 +56,11 @@ export class SuperadminComponent implements OnInit {
     this.tabActiva = tab;
   }
 
+  nombreTallerReportado(reporte?: Reporte | null): string {
+    if (!reporte) return 'N/A';
+    return reporte.taller_nombre || (reporte.taller_id ? `#${reporte.taller_id}` : 'N/A');
+  }
+
   impersonar(tallerId: number) {
     this.cargando = true;
     this.authService.impersonarTaller(tallerId).subscribe({

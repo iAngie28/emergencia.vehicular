@@ -38,7 +38,9 @@ class TallerService {
   /// GET /api/v1/taller-config/especialidades
   Future<List<Map<String, dynamic>>> obtenerEspecialidades() async {
     try {
-      final response = await apiService.get('/api/v1/taller-config/especialidades');
+      final response = await apiService.get(
+        '/api/v1/taller-config/especialidades',
+      );
 
       if (response is List) {
         return List<Map<String, dynamic>>.from(
@@ -63,8 +65,8 @@ class TallerService {
         '/api/v1/talleres/directorio',
         queryParams: {
           'especialidad_id': especialidadId,
-          if (latitud != null) 'latitud': latitud,
-          if (longitud != null) 'longitud': longitud,
+          'latitud': ?latitud,
+          'longitud': ?longitud,
         },
       );
 

@@ -16,6 +16,8 @@ export interface Reporte {
   usuario_id: number;
   taller_id: number;
   tecnico_id?: number;
+  taller_nombre?: string;
+  tecnico_nombre?: string;
 }
 
 @Injectable({

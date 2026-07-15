@@ -45,3 +45,19 @@ class Reporte(Base):
     tecnico = relationship("Usuario", foreign_keys=[tecnico_id], back_populates="reportes_recibidos")
     incidente = relationship("Incidente", back_populates="reportes")
     taller = relationship("Taller", back_populates="reportes")
+
+    @property
+    def tecnico_nombre(self):
+        if not self.tecnico:
+            return None
+
+        partes = [self.tecnico.nombre, self.tecnico.apellido]
+        nombre = " ".join([parte for parte in partes if parte]).strip()
+        return nombre or self.tecnico.correo
+
+    @property
+    def taller_nombre(self):
+        if not self.taller:
+            return None
+
+        return self.taller.nombre

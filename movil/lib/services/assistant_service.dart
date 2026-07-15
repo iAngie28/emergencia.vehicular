@@ -24,17 +24,21 @@ class AssistantService {
 
   Future<Map<String, dynamic>> chat({String? nodo, String? opcion}) async {
     final url = Uri.parse('${BackendConfig.baseUrl}/api/v1/assistant/chat');
-    final body = jsonEncode({
-      if (nodo != null) 'nodo': nodo,
-      if (opcion != null) 'opcion': opcion,
-    });
+    final body = jsonEncode({'nodo': ?nodo, 'opcion': ?opcion});
 
-    final response = await http.post(url, headers: await _headers(), body: body);
+    final response = await http.post(
+      url,
+      headers: await _headers(),
+      body: body,
+    );
 
     if (response.statusCode == 200) {
-      return jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+      return jsonDecode(utf8.decode(response.bodyBytes))
+          as Map<String, dynamic>;
     }
 
-    throw Exception('No se pudo contactar al asistente (${response.statusCode}).');
+    throw Exception(
+      'No se pudo contactar al asistente (${response.statusCode}).',
+    );
   }
 }

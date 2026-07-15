@@ -29,8 +29,8 @@
             <td><span class="incidente-ref">#{{ rep.incidente_id }}</span></td>
             <td>
               <div class="reportado-info">
-                <strong>{{ modoSuperadminGlobal ? 'Taller ID:' : 'ID:' }}</strong>
-                #{{ modoSuperadminGlobal ? rep.taller_id : (rep.tecnico_id || 'N/A') }}
+                <strong>{{ modoSuperadminGlobal ? 'Taller:' : 'Técnico:' }}</strong>
+                {{ nombreReportado(rep) }}
               </div>
             </td>
             <td><span class="motivo-label">{{ rep.motivo }}</span></td>
@@ -70,7 +70,7 @@
           <p><strong>Incidente:</strong> #{{ reporteSeleccionado?.incidente_id }}</p>
           <p>
             <strong>{{ modoSuperadminGlobal ? 'Taller Reportado:' : 'Técnico Asignado:' }}</strong>
-            #{{ modoSuperadminGlobal ? reporteSeleccionado?.taller_id : reporteSeleccionado?.tecnico_id }}
+            {{ nombreReportado(reporteSeleccionado) }}
           </p>
           <p><strong>Motivo:</strong> {{ reporteSeleccionado?.motivo }}</p>
           <p><strong>Detalle del Cliente:</strong></p>

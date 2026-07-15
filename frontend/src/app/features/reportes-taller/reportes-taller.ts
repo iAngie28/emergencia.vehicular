@@ -73,6 +73,16 @@ export class ReportesTallerComponent implements OnInit {
     });
   }
 
+  nombreReportado(reporte?: Reporte | null): string {
+    if (!reporte) return 'N/A';
+
+    if (this.modoSuperadminGlobal) {
+      return reporte.taller_nombre || (reporte.taller_id ? `#${reporte.taller_id}` : 'N/A');
+    }
+
+    return reporte.tecnico_nombre || (reporte.tecnico_id ? `#${reporte.tecnico_id}` : 'Sin técnico asignado');
+  }
+
   abrirModalResolver(reporte: Reporte) {
     this.reporteSeleccionado = reporte;
     this.respuestaReporte = reporte.respuesta || '';

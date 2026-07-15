@@ -109,8 +109,10 @@ export class AuxiliosComponent implements OnInit {
 
   seleccionarIncidente(inc: any) { 
     this.incidenteSeleccionado = inc;
-    if (inc) {
+    if (this.puedeUsarChat(inc)) {
       this.cargarHistorialChat(inc.id);
+    } else {
+      this.chatMensajes = [];
     }
   }
 
@@ -185,6 +187,10 @@ export class AuxiliosComponent implements OnInit {
 
   puedeCancelar(inc: any): boolean {
     return ['asignado_taller', 'en_camino', 'en_atencion'].includes(inc?.estado);
+  }
+
+  puedeUsarChat(inc: any): boolean {
+    return !!inc && !['pendiente', 'buscando_taller', 'cotizado'].includes(inc.estado);
   }
 
   // --- HELPERS PARA CARDS ---

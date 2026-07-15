@@ -4,8 +4,6 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/incidente_provider.dart';
 import '../../theme/colors.dart';
-import '../ia/diagnostico_ia_screen.dart';
-import 'seguimiento_screen.dart';
 import '../pagos/pagos_screen.dart';
 import '../incidentes/map_screen.dart';
 
@@ -151,9 +149,7 @@ class _MisAtencionesScreenState extends State<MisAtencionesScreen> {
                   child: ElevatedButton.icon(
                     onPressed: () {
                       Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const MapScreen(),
-                        ),
+                        MaterialPageRoute(builder: (_) => const MapScreen()),
                       );
                     },
                     icon: const Icon(Icons.location_on_outlined),

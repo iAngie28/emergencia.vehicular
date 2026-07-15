@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/notificacion_provider.dart';
 import '../../theme/colors.dart';
+import '../servicios/reporte_respuesta_screen.dart';
 import 'package:intl/intl.dart';
 
 class NotificacionesScreen extends StatefulWidget {
@@ -25,9 +26,9 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
   Future<void> _cargarNotificaciones() async {
     final userId = context.read<AuthProvider>().userId;
     if (userId != null) {
-      await context
-          .read<NotificacionProvider>()
-          .cargarHistorialNotificaciones(usuarioId: userId);
+      await context.read<NotificacionProvider>().cargarHistorialNotificaciones(
+        usuarioId: userId,
+      );
     }
   }
 
@@ -74,15 +75,22 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
               itemBuilder: (context, index) {
                 final notificacion = notificaciones[index];
                 final esNoLeida = notificacion['leido'] != true;
-                final fecha = DateTime.tryParse(notificacion['fecha_creacion'] ?? '');
+                final fechaTexto =
+                    notificacion['fecha_envio'] ??
+                    notificacion['fecha_creacion'];
+                final fecha = DateTime.tryParse(fechaTexto?.toString() ?? '');
 
                 return Card(
                   margin: const EdgeInsets.only(bottom: 12),
-                  color: esNoLeida ? AppColors.info.withValues(alpha: 0.1) : Colors.white,
+                  color: esNoLeida
+                      ? AppColors.info.withValues(alpha: 0.1)
+                      : Colors.white,
                   child: ListTile(
                     contentPadding: const EdgeInsets.all(16),
                     leading: CircleAvatar(
-                      backgroundColor: _getColorParaTipo(notificacion['tipo_evento'] ?? ''),
+                      backgroundColor: _getColorParaTipo(
+                        notificacion['tipo_evento'] ?? '',
+                      ),
                       child: Icon(
                         _getIconParaTipo(notificacion['tipo_evento'] ?? ''),
                         color: Colors.white,
@@ -91,7 +99,9 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
                     title: Text(
                       notificacion['titulo'] ?? 'Notificación',
                       style: TextStyle(
-                        fontWeight: esNoLeida ? FontWeight.bold : FontWeight.normal,
+                        fontWeight: esNoLeida
+                            ? FontWeight.bold
+                            : FontWeight.normal,
                       ),
                     ),
                     subtitle: Column(
@@ -103,23 +113,14 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
                         if (fecha != null)
                           Text(
                             DateFormat('dd/MM/yyyy HH:mm').format(fecha),
-                            style: const TextStyle(fontSize: 12, color: Colors.grey),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey,
+                            ),
                           ),
                       ],
                     ),
-                    onTap: esNoLeida
-                        ? () {
-                            final userId = context.read<AuthProvider>().userId;
-                            context.read<NotificacionProvider>().marcarComoLeida(
-                                  notificacionId: notificacion['id'],
-                                  usuarioId: userId ?? 0,
-                                );
-                            // Actualizamos localmente para refrescar la UI sin recargar
-                            setState(() {
-                              notificacion['leido'] = true;
-                            });
-                          }
-                        : null,
+                    onTap: () => _abrirNotificacion(notificacion),
                   ),
                 );
               },
@@ -130,8 +131,83 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
     );
   }
 
+  Future<void> _abrirNotificacion(Map<String, dynamic> notificacion) async {
+    final esNoLeida = notificacion['leido'] != true;
+    final userId = context.read<AuthProvider>().userId;
+
+    if (esNoLeida && notificacion['id'] != null) {
+      await context.read<NotificacionProvider>().marcarComoLeida(
+        notificacionId: _readInt(notificacion['id']) ?? 0,
+        usuarioId: userId ?? 0,
+      );
+      notificacion['leido'] = true;
+    }
+
+    if (!mounted) return;
+
+    final tipo = (notificacion['tipo'] ?? notificacion['tipo_evento'] ?? '')
+        .toString()
+        .toLowerCase();
+    final incidenteId = _readInt(notificacion['incidente_id']);
+
+    if (tipo == 'reporte_respondido' && incidenteId != null) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => ReporteRespuestaScreen(incidenteId: incidenteId),
+        ),
+      );
+      return;
+    }
+
+    _mostrarDetalleNotificacion(notificacion);
+  }
+
+  void _mostrarDetalleNotificacion(Map<String, dynamic> notificacion) {
+    final fechaTexto =
+        notificacion['fecha_envio'] ?? notificacion['fecha_creacion'];
+    final fecha = DateTime.tryParse(fechaTexto?.toString() ?? '');
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(notificacion['titulo']?.toString() ?? 'Notificación'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(notificacion['mensaje']?.toString() ?? ''),
+            if (notificacion['incidente_id'] != null) ...[
+              const SizedBox(height: 12),
+              Text('Incidente #${notificacion['incidente_id']}'),
+            ],
+            if (fecha != null) ...[
+              const SizedBox(height: 12),
+              Text(
+                DateFormat('dd/MM/yyyy HH:mm').format(fecha.toLocal()),
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+            ],
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cerrar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  int? _readInt(dynamic value) {
+    if (value is int) return value;
+    return int.tryParse(value?.toString() ?? '');
+  }
+
   Color _getColorParaTipo(String tipo) {
     switch (tipo.toLowerCase()) {
+      case 'reporte_respondido':
+        return AppColors.success;
       case 'incidente_aceptado':
         return AppColors.success;
       case 'llegada_taller':
@@ -147,6 +223,8 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
 
   IconData _getIconParaTipo(String tipo) {
     switch (tipo.toLowerCase()) {
+      case 'reporte_respondido':
+        return Icons.mark_chat_read_outlined;
       case 'incidente_aceptado':
         return Icons.check_circle_outline;
       case 'llegada_taller':

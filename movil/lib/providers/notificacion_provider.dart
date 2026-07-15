@@ -8,6 +8,7 @@ class NotificacionProvider extends ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
   int _countNoLeidas = 0;
+  bool _mostrandoHistorial = false;
 
   NotificacionProvider({required this.notificacionService});
 
@@ -44,6 +45,7 @@ class NotificacionProvider extends ChangeNotifier {
     try {
       _notificacionesNoLeidas = await notificacionService
           .obtenerNotificacionesNoLeidas(usuarioId: usuarioId);
+      _mostrandoHistorial = false;
       _countNoLeidas = _notificacionesNoLeidas.length;
       _isLoading = false;
       notifyListeners();
@@ -62,7 +64,10 @@ class NotificacionProvider extends ChangeNotifier {
     try {
       _notificacionesNoLeidas = await notificacionService
           .obtenerHistorialNotificaciones(usuarioId: usuarioId);
-      _countNoLeidas = _notificacionesNoLeidas.where((n) => n['leido'] != true).length;
+      _mostrandoHistorial = true;
+      _countNoLeidas = _notificacionesNoLeidas
+          .where((n) => n['leido'] != true)
+          .length;
       _isLoading = false;
       notifyListeners();
     } catch (e) {
@@ -83,9 +88,20 @@ class NotificacionProvider extends ChangeNotifier {
         usuarioId: usuarioId,
       );
 
-      // Remover de no leídas
-      _notificacionesNoLeidas.removeWhere((n) => n['id'] == notificacionId);
-      _countNoLeidas = _notificacionesNoLeidas.length;
+      if (_mostrandoHistorial) {
+        for (final notificacion in _notificacionesNoLeidas) {
+          if (notificacion['id'] == notificacionId) {
+            notificacion['leido'] = true;
+            break;
+          }
+        }
+        _countNoLeidas = _notificacionesNoLeidas
+            .where((n) => n['leido'] != true)
+            .length;
+      } else {
+        _notificacionesNoLeidas.removeWhere((n) => n['id'] == notificacionId);
+        _countNoLeidas = _notificacionesNoLeidas.length;
+      }
 
       notifyListeners();
       return true;
@@ -105,7 +121,13 @@ class NotificacionProvider extends ChangeNotifier {
         );
       }
 
-      _notificacionesNoLeidas = [];
+      if (_mostrandoHistorial) {
+        for (final notificacion in _notificacionesNoLeidas) {
+          notificacion['leido'] = true;
+        }
+      } else {
+        _notificacionesNoLeidas = [];
+      }
       _countNoLeidas = 0;
       notifyListeners();
       return true;
@@ -120,5 +142,6 @@ class NotificacionProvider extends ChangeNotifier {
     _notificacionesNoLeidas = [];
     _countNoLeidas = 0;
     _errorMessage = null;
+    _mostrandoHistorial = false;
   }
 }

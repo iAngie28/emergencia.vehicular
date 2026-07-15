@@ -20,6 +20,8 @@ class ReporteOut(ReporteBase):
     usuario_id: int
     taller_id: int
     tecnico_id: Optional[int]
+    taller_nombre: Optional[str] = None
+    tecnico_nombre: Optional[str] = None
     estado: str
     respuesta: Optional[str]
     fecha_creacion: datetime
@@ -27,3 +29,4 @@ class ReporteOut(ReporteBase):
 
     class Config:
         orm_mode = True
+        from_attributes = True

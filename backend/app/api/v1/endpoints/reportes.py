@@ -79,15 +79,31 @@ def crear_reporte(
         }
     )
 
-    # 7. Notificar a los administradores correspondientes (Taller o Superadmin)
-    NotificacionService.crear_notificacion(
-        db,
-        usuario_id=reporte.taller_id,  # Esto enviará a la cuenta del taller si está conectado, el seeder/notificaciones filtra
-        titulo=f"Nuevo Reporte de {reporte.tipo_reporte.capitalize()}",
-        mensaje=f"Se ha registrado un reporte contra el {reporte.tipo_reporte} por el motivo: {reporte.motivo}.",
-        tipo="reporte_registrado",
-        incidente_id=incidente.id
-    )
+    # 7. Notificar a los responsables correctos.
+    # Reporte de técnico: admins del taller. Reporte de taller: superadmins.
+    if reporte.tipo_reporte == "tecnico":
+        destinatarios = db.query(Usuario).filter(
+            Usuario.taller_id == reporte.taller_id,
+            Usuario.rol_id == 1
+        ).all()
+    else:
+        destinatarios = db.query(Usuario).filter(Usuario.rol_id == 4).all()
+
+    for destinatario in destinatarios:
+        NotificacionService.crear_notificacion(
+            db,
+            usuario_id=destinatario.id,
+            titulo=f"Nuevo Reporte de {reporte.tipo_reporte.capitalize()}",
+            mensaje=f"Se ha registrado un reporte contra el {reporte.tipo_reporte} por el motivo: {reporte.motivo}.",
+            tipo="reporte_registrado",
+            incidente_id=incidente.id,
+            extra_data={
+                "tipo_reporte": reporte.tipo_reporte,
+                "reporte_id": reporte.id,
+                "taller_id": reporte.taller_id,
+                "tecnico_id": reporte.tecnico_id,
+            }
+        )
 
     return reporte
 
@@ -110,6 +126,23 @@ def listar_reportes(
         status_code=status.HTTP_403_FORBIDDEN,
         detail="No tienes permisos para ver el listado de reportes."
     )
+
+
+@router.get("/incidente/{incidente_id}/mi-reporte", response_model=ReporteOut)
+def obtener_mi_reporte_por_incidente(
+    incidente_id: int,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_cliente)
+) -> Any:
+    reporte = reporte_crud.obtener_por_incidente(db, incidente_id=incidente_id)
+
+    if not reporte or reporte.usuario_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No se encontró un reporte tuyo para este incidente."
+        )
+
+    return reporte
 
 
 @router.patch("/{id}/responder", response_model=ReporteOut)

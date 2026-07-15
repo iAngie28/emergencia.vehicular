@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../services/api_service.dart';
@@ -7,11 +9,7 @@ class ReporteScreen extends StatefulWidget {
   final int incidenteId;
   final int? tecnicoId;
 
-  const ReporteScreen({
-    super.key,
-    required this.incidenteId,
-    this.tecnicoId,
-  });
+  const ReporteScreen({super.key, required this.incidenteId, this.tecnicoId});
 
   @override
   State<ReporteScreen> createState() => _ReporteScreenState();
@@ -23,6 +21,12 @@ class _ReporteScreenState extends State<ReporteScreen> {
   final TextEditingController _motivoController = TextEditingController();
   final TextEditingController _descripcionController = TextEditingController();
   bool _isSubmitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _tipoReporte = widget.tecnicoId != null ? 'tecnico' : 'taller';
+  }
 
   @override
   void dispose() {
@@ -50,7 +54,7 @@ class _ReporteScreenState extends State<ReporteScreen> {
     try {
       await apiService.post('/api/v1/reportes/', body: payload);
       if (!mounted) return;
-      
+
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
@@ -105,7 +109,7 @@ class _ReporteScreenState extends State<ReporteScreen> {
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
-              
+
               // Selector de Taller / Técnico
               Row(
                 children: [
@@ -137,7 +141,9 @@ class _ReporteScreenState extends State<ReporteScreen> {
                         }
                       },
                     ),
-                    const Text('Reportar Técnico (Ir al Administrador de Taller)'),
+                    const Text(
+                      'Reportar Técnico (Ir al Administrador de Taller)',
+                    ),
                   ],
                 ),
               const SizedBox(height: 16),
@@ -147,7 +153,8 @@ class _ReporteScreenState extends State<ReporteScreen> {
                 controller: _motivoController,
                 decoration: const InputDecoration(
                   labelText: 'Motivo abreviado',
-                  hintText: 'Ej: Demora excesiva, Maltrato, Falta de herramientas',
+                  hintText:
+                      'Ej: Demora excesiva, Maltrato, Falta de herramientas',
                   border: OutlineInputBorder(),
                 ),
                 validator: (val) {
@@ -198,7 +205,10 @@ class _ReporteScreenState extends State<ReporteScreen> {
                         )
                       : const Text(
                           'Enviar Reporte',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                 ),
               ),
