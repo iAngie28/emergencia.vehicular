@@ -1377,12 +1377,21 @@ def obtener_historial_chat(
         if incidente.taller_id != current_user.taller_id:
             raise HTTPException(status_code=403, detail="Acceso denegado al chat de este incidente")
 
-    from app.crud.crud_mensaje_chat import mensaje_chat_crud
-    from fastapi.encoders import jsonable_encoder
-    
     try:
+        from app.crud.crud_mensaje_chat import mensaje_chat_crud
+
         mensajes = mensaje_chat_crud.obtener_por_incidente(db, incidente_id=incidente_id)
-        return jsonable_encoder(mensajes or [])
+        return [
+            {
+                "id": mensaje.id,
+                "incidente_id": mensaje.incidente_id,
+                "remitente_id": mensaje.remitente_id,
+                "contenido": mensaje.contenido,
+                "tipo": mensaje.tipo,
+                "fecha_envio": mensaje.fecha_envio.isoformat() if mensaje.fecha_envio else None,
+            }
+            for mensaje in (mensajes or [])
+        ]
     except Exception as e:
         print(f"[CHAT ERROR] Incidente #{incidente_id}: {str(e)}")
         return []
