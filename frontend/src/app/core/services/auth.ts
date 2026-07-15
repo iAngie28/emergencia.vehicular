@@ -130,4 +130,49 @@ export class AuthService {
       nueva_clave: nueva_clave 
     });
   }
+
+  impersonarTaller(tallerId: number): Observable<LoginResponse> {
+    const originalToken = localStorage.getItem('token');
+    const originalRol = localStorage.getItem('rol_id');
+    const originalNombre = localStorage.getItem('nombre');
+    
+    if (originalToken && originalRol && originalNombre) {
+      localStorage.setItem('original_token', originalToken);
+      localStorage.setItem('original_rol_id', originalRol);
+      localStorage.setItem('original_nombre', originalNombre);
+    }
+
+    return this.http.post<LoginResponse>(`${this.baseUrl}/impersonar-taller/${tallerId}`, {}).pipe(
+      tap((response) => {
+        localStorage.setItem('token', response.access_token);
+        localStorage.setItem('rol_id', response.rol_id.toString());
+        localStorage.setItem('usuario_id', response.usuario_id.toString());
+        localStorage.setItem('nombre', response.nombre);
+        this.isAuthenticated.set(true);
+      })
+    );
+  }
+
+  revertirImpersonacion(): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>(`${this.baseUrl}/revertir-impersonacion`, {}).pipe(
+      tap((response) => {
+        localStorage.setItem('token', response.access_token);
+        localStorage.setItem('rol_id', response.rol_id.toString());
+        localStorage.setItem('usuario_id', response.usuario_id.toString());
+        localStorage.setItem('nombre', response.nombre);
+        
+        localStorage.removeItem('original_token');
+        localStorage.removeItem('original_rol_id');
+        localStorage.removeItem('original_nombre');
+        this.isAuthenticated.set(true);
+      })
+    );
+  }
+
+  isImpersonating(): boolean {
+    if (typeof window !== 'undefined' && localStorage) {
+      return !!localStorage.getItem('original_token');
+    }
+    return false;
+  }
 }

@@ -9,7 +9,9 @@
     <div class="avatar">{{ usuario[0] | uppercase }}</div>
     <div class="user-info">
       <p class="user-name">{{ usuario }}</p>
-      <span class="user-role">Admin de Taller</span>
+      <span class="user-role" *ngIf="isSuperadminOriginal && !isImpersonating">Super Administrador</span>
+      <span class="user-role" *ngIf="!isSuperadminOriginal">Admin de Taller</span>
+      <span class="user-role" *ngIf="isSuperadminOriginal && isImpersonating">Admin (Impersonado)</span>
       <span class="connection-status" [class.connected]="wsService.conectado">
         <span class="status-dot"></span>
         {{ wsService.conectado ? 'Conectado' : 'Desconectado' }}
@@ -18,11 +20,20 @@
   </div>
 
   <nav class="sidebar-nav">
-    <div class="nav-group">
+    <!-- SECCIÓN SUPERADMIN (Solo si es superadmin original y no está impersonando) -->
+    <div class="nav-group" *ngIf="isSuperadminOriginal && !isImpersonating">
+      <p class="nav-label">CONSOLA GLOBAL</p>
+      <a routerLink="/superadmin" routerLinkActive="active" class="nav-link">
+        <span><i class="fa-solid fa-shield-halved"></i></span> Consola Superadmin
+      </a>
+      <a routerLink="/bitacora" routerLinkActive="active" class="nav-link">
+        <span><i class="fa-solid fa-scroll"></i></span> Bitácora Global
+      </a>
+    </div>
+
+    <!-- SECCIÓN TALLER NORMAL (Solo si rolId === 1, que aplica también al impersonar) -->
+    <div class="nav-group" *ngIf="rolId === 1">
       <p class="nav-label">1. GESTIÓN DE USUARIOS</p>
-      <!-- <a routerLink="/mi-perfil" routerLinkActive="active" class="nav-link">
-        <span><i class="fa-solid fa-user"></i></span> Mi Perfil
-      </a> -->
       <a routerLink="/perfil-taller" routerLinkActive="active" class="nav-link">
         <span><i class="fa-solid fa-shop"></i></span> Mi Taller
       </a>
@@ -47,6 +58,9 @@
       <p class="nav-label">4. GESTIÓN DE REPORTES Y CALIFICACIONES</p>
       <a routerLink="/dashboard" routerLinkActive="active" class="nav-link">
         <span><i class="fa-solid fa-chart-simple"></i></span> Dashboard
+      </a>
+      <a routerLink="/reportes-taller" routerLinkActive="active" class="nav-link">
+        <span><i class="fa-solid fa-user-ninja"></i></span> Reportes sobre Técnicos
       </a>
       <a routerLink="/ranking" routerLinkActive="active" class="nav-link">
         <span><i class="fa-solid fa-trophy"></i></span> Ranking de Talleres

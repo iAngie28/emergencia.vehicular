@@ -1350,6 +1350,35 @@ def listar_candidatos_incidente(
         })
     return resultado
 
+@router.get("/{incidente_id}/chat")
+def obtener_historial_chat(
+    incidente_id: int,
+    db: Session = Depends(deps.get_db),
+    current_user = Depends(deps.get_current_active_user)
+):
+    """Retorna el historial de chat para un incidente."""
+    incidente = incidente_crud.get(db, id=incidente_id)
+    if not incidente:
+        raise HTTPException(status_code=404, detail="Incidente no encontrado")
+        
+    # Validaciones de participación
+    if current_user.rol_id == 2:  # Cliente
+        if incidente.usuario_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Acceso denegado al chat de este incidente")
+    elif current_user.rol_id == 3:  # Técnico
+        if incidente.tecnico_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Acceso denegado al chat de este incidente")
+    elif current_user.rol_id == 1:  # Administrador de Taller
+        if incidente.taller_id != current_user.taller_id:
+            raise HTTPException(status_code=403, detail="Acceso denegado al chat de este incidente")
+
+    from app.crud.crud_mensaje_chat import mensaje_chat_crud
+    from app.schemas.mensaje_chat import MensajeChatResponse
+    from fastapi.encoders import jsonable_encoder
+    
+    mensajes = mensaje_chat_crud.obtener_por_incidente(db, incidente_id=incidente_id)
+    return jsonable_encoder(mensajes)
+
 @router.post("/{incidente_id}/seleccionar-taller/{taller_id}")
 def seleccionar_taller_para_incidente(
     incidente_id: int,

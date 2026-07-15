@@ -43,6 +43,8 @@ export const routes: Routes = [
       { path: 'calificaciones', loadComponent: () => import('./features/calificaciones/calificaciones').then(m => m.CalificacionesComponent) },
       { path: 'analisis', loadComponent: () => import('./features/analisis/analisis').then(m => m.Analisis) },
       { path: 'ranking', loadComponent: () => import('./features/ranking-talleres/ranking-talleres').then(m => m.RankingTalleres) },
+      { path: 'superadmin', loadComponent: () => import('./features/superadmin/superadmin').then(m => m.SuperadminComponent) },
+      { path: 'reportes-taller', loadComponent: () => import('./features/reportes-taller/reportes-taller').then(m => m.ReportesTallerComponent) },
       { path: 'administradores', component: GestionAdminsComponent },
       { path: 'notificaciones', component: NotificacionesComponent },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },

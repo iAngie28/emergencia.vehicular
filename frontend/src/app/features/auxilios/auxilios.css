@@ -851,3 +851,128 @@ body, h1, p, table, th, td, input, button {
   gap: 10px;
   margin-top: 15px;
 }
+
+/* --- Chat Container & UI inside Side Panel --- */
+.chat-container-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.chat-label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+}
+
+.chat-messages-container {
+  height: 250px;
+  overflow-y: auto;
+  border: 1px solid #f1f5f9;
+  background: white;
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chat-bubble {
+  max-width: 80%;
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 0.88rem;
+  line-height: 1.4;
+  word-break: break-word;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.chat-bubble.me {
+  background: #2563eb;
+  color: white;
+  align-self: flex-end;
+  border-bottom-right-radius: 2px;
+}
+
+.chat-bubble.other {
+  background: #f1f5f9;
+  color: #0f172a;
+  align-self: flex-start;
+  border-bottom-left-radius: 2px;
+  border: 1px solid #e2e8f0;
+}
+
+.bubble-text {
+  margin: 0;
+}
+
+.bubble-time {
+  font-size: 0.7rem;
+  align-self: flex-end;
+  opacity: 0.8;
+}
+
+.chat-bubble.other .bubble-time {
+  color: #64748b;
+}
+
+.empty-chat {
+  text-align: center;
+  color: #94a3b8;
+  font-size: 0.85rem;
+  margin: auto 0;
+  padding: 20px 0;
+}
+
+.chat-input-bar {
+  display: flex;
+  gap: 8px;
+}
+
+.chat-input-bar input {
+  flex: 1;
+  border: 1px solid #cbd5e1;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  outline: none;
+  background: white;
+  color: #0f172a;
+}
+
+.chat-input-bar input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+}
+
+.chat-input-bar button {
+  background: #2563eb;
+  color: white;
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.chat-input-bar button:hover {
+  background: #1d4ed8;
+}
+
+.chat-input-bar button:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+}

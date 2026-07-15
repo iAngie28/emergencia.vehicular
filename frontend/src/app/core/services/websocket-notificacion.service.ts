@@ -149,6 +149,17 @@ export class WebSocketNotificacionService implements OnDestroy {
     }
   }
 
+  enviarMensajeChat(incidenteId: number, contenido: string) {
+    if (this.websocket?.readyState === WebSocket.OPEN) {
+      this.websocket.send(JSON.stringify({
+        tipo: 'chat_message',
+        incidente_id: incidenteId,
+        contenido: contenido,
+        tipo_msg: 'texto'
+      }));
+    }
+  }
+
   ngOnDestroy() {
     this.desconectar();
   }

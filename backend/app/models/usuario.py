@@ -65,6 +65,11 @@ class Usuario(Base):
     bitacoras = relationship("Bitacora", back_populates="usuario")
     notificaciones = relationship("Notificacion", back_populates="usuario", cascade="all, delete-orphan")
     tokens = relationship("TokenDispositivo", back_populates="usuario", cascade="all, delete-orphan")
+    
+    # Relaciones para chat y reportes
+    mensajes_chat = relationship("MensajeChat", back_populates="remitente", cascade="all, delete-orphan")
+    reportes_creados = relationship("Reporte", foreign_keys="[Reporte.usuario_id]", back_populates="usuario", cascade="all, delete-orphan")
+    reportes_recibidos = relationship("Reporte", foreign_keys="[Reporte.tecnico_id]", back_populates="tecnico")
 
 # 4. TOKEN DE RESTABLECIMIENTO
 class PasswordResetToken(Base):

@@ -44,4 +44,8 @@ export class TalleresService {
   cancelarSuscripcion(): Observable<any> {
     return this.http.post(`${environment.apiUrl}/suscripciones/cancelar`, {}, { headers: this.getHeaders() });
   }
+
+  listarTodos(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/`, { headers: this.getHeaders() });
+  }
 }

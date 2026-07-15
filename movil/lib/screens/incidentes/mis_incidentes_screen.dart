@@ -9,6 +9,8 @@ import '../../services/incidente_service.dart';
 import '../../services/sync_service.dart';
 import '../../theme/colors.dart';
 import '../calificacion/calificacion_screen.dart';
+import '../servicios/chat_screen.dart';
+import '../servicios/reporte_screen.dart';
 
 class MisIncidentesScreen extends StatefulWidget {
   const MisIncidentesScreen({super.key});
@@ -521,6 +523,40 @@ class _MisIncidentesScreenState extends State<MisIncidentesScreen> {
           ),
         ),
         actions: [
+          if (!esTecnico && incidente['taller'] != null) ...[
+            TextButton.icon(
+              icon: const Icon(Icons.chat_bubble_outline),
+              label: const Text('Chat'),
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                final taller = incidente['taller'] as Map<String, dynamic>;
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => ChatScreen(
+                      incidenteId: incidente['id'] as int,
+                      tallerNombre: taller['nombre']?.toString() ?? 'Taller',
+                    ),
+                  ),
+                );
+              },
+            ),
+            TextButton.icon(
+              icon: const Icon(Icons.report_problem_outlined, color: Colors.red),
+              label: const Text('Reportar', style: TextStyle(color: Colors.red)),
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                final tecnico = incidente['tecnico'] as Map<String, dynamic>?;
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => ReporteScreen(
+                      incidenteId: incidente['id'] as int,
+                      tecnicoId: tecnico?['id'] as int?,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ],
           if (!esTecnico && _puedeCancelarCliente(incidente))
             TextButton(
               onPressed: () {

@@ -16,3 +16,5 @@ from app.models.asignacion_inteligente import (
     IncidenteAsignacionCandidato,
 )
 from app.models.calificacion import Calificacion  # noqa
+from app.models.mensaje_chat import MensajeChat  # noqa
+from app.models.reporte import Reporte  # noqa

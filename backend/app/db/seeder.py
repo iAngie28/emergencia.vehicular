@@ -254,7 +254,8 @@ def seed_db(
     roles_base = [
         {"id": 1, "nombre": "Administrador de Taller"},
         {"id": 2, "nombre": "Cliente"},
-        {"id": 3, "nombre": "Técnico"}
+        {"id": 3, "nombre": "Técnico"},
+        {"id": 4, "nombre": "Super Administrador"}
     ]
     for r in roles_base:
         if not db.query(Rol).filter(Rol.id == r["id"]).first():
@@ -370,7 +371,8 @@ def seed_db(
     # 4. USUARIOS (Admins de taller, Técnicos, Clientes)
     # ---------------------------------------------------------
     logger.info("👨‍💼 Creando USUARIOS (Admins, Técnicos, Clientes)...")
-    usuario_id_counter = 1
+    last_user = db.query(Usuario.id).order_by(Usuario.id.desc()).first()
+    usuario_id_counter = (last_user[0] + 1) if last_user else 1
     usuarios = []
     tecnicos = []
     clientes = []
@@ -390,8 +392,8 @@ def seed_db(
                 telefono=fake.phone_number()[:20]  # Teléfono
             )
             db.add(usuario)
-            usuarios.append(usuario)
             usuario_id_counter += 1
+        usuarios.append(usuario)
     db.commit()
     
     # Técnicos por taller
@@ -419,9 +421,9 @@ def seed_db(
                 esp = random.sample(especialidades, k=random.randint(1, 2))
                 usuario.especialidades = esp
                 db.add(usuario)
-                usuarios.append(usuario)
-                tecnicos.append(usuario)
                 usuario_id_counter += 1
+            usuarios.append(usuario)
+            tecnicos.append(usuario)
     db.commit()
 
     garantizar_cobertura_especialidades(tecnicos, especialidades)
@@ -444,9 +446,27 @@ def seed_db(
                 telefono=fake.phone_number()[:20]  # Teléfono
             )
             db.add(usuario)
-            usuarios.append(usuario)
-            clientes.append(usuario)
             usuario_id_counter += 1
+        usuarios.append(usuario)
+        clientes.append(usuario)
+    
+    # Super Administrador por defecto
+    superadmin = db.query(Usuario).filter(Usuario.correo == "admin@vialia.com").first()
+    if not superadmin:
+        superadmin = Usuario(
+            id=usuario_id_counter,
+            nombre="Super Administrador",
+            correo="admin@vialia.com",
+            clave_hash=hash_clave,
+            rol_id=4,  # Super Administrador
+            taller_id=None,
+            esta_activo=True,
+            telefono="77777777"
+        )
+        db.add(superadmin)
+        usuario_id_counter += 1
+    usuarios.append(superadmin)
+        
     db.commit()
     
     logger.info(f"✅ Creados {len(usuarios)} usuarios")

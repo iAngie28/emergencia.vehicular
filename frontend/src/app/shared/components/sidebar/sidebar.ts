@@ -30,8 +30,17 @@ export class SidebarComponent implements OnInit, OnDestroy {
   public usuario: string = 'Cargando...';
   public notificacionesNoLeidas: number = 0;
   public incidentesPendientesCount: number = 0;
+  
+  public rolId: number = 0;
+  public isSuperadminOriginal: boolean = false;
+  public isImpersonating: boolean = false;
 
   ngOnInit() {
+    this.rolId = this.authService.getRolId();
+    this.isImpersonating = this.authService.isImpersonating();
+    const origRol = localStorage.getItem('original_rol_id') || localStorage.getItem('rol_id');
+    this.isSuperadminOriginal = origRol === '4';
+
     this.cargarDatosUsuario();
     this.contadorSub = this.contadorNotificaciones.noLeidas$.subscribe((cantidad) => {
       this.notificacionesNoLeidas = cantidad;

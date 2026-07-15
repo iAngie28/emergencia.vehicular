@@ -12,8 +12,7 @@ def obtener_hash_clave(password: str) -> str:
 def verificar_clave(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
-# --- AGREGA ESTA FUNCIÓN PARA EL LOGIN ---
-def crear_token_acceso(subject: Union[str, Any], expires_delta: timedelta = None) -> str:
+def crear_token_acceso(subject: Union[str, Any], expires_delta: timedelta = None, extra_claims: dict = None) -> str:
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
     else:
@@ -21,6 +20,8 @@ def crear_token_acceso(subject: Union[str, Any], expires_delta: timedelta = None
             minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
         )
     to_encode = {"exp": expire, "sub": str(subject)}
+    if extra_claims:
+        to_encode.update(extra_claims)
     encoded_jwt = jwt.encode(
         to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM
     )

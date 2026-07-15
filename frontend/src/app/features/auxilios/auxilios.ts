@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, inject, OnInit, ChangeDetectorRef, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms'; 
 import { HttpClient, HttpHeaders } from '@angular/common/http';
@@ -29,6 +29,11 @@ export class AuxiliosComponent implements OnInit {
   cargando: boolean = false;
   incidenteSeleccionado: any = null;
 
+  // Variables de Chat
+  chatMensajes: any[] = [];
+  nuevoMensajeTexto: string = '';
+  usuarioId: number = 0;
+
   // Estados de Modales
   mostrarModalCobro: boolean = false;
   mostrarModalAsignar: boolean = false; 
@@ -48,13 +53,21 @@ export class AuxiliosComponent implements OnInit {
   accionMotivo: 'rechazar' | 'cancelar' = 'rechazar';
 
   ngOnInit() { 
+    this.usuarioId = Number(localStorage.getItem('usuario_id'));
     this.cargarDatos();
     this.cargarTecnicos();
     
-    // Suscribirse a websocket para auto-actualizar estados
+    // Suscribirse a websocket para auto-actualizar estados y chat
     this.wsNotificacionService.notificaciones$.subscribe(notif => {
-      if (notif && notif.incidente_id) {
-        this.cargarDatos(); // Recargar datos si hay cualquier novedad del incidente
+      if (notif) {
+        if (notif.tipo === 'chat_message') {
+          if (this.incidenteSeleccionado && notif.incidente_id === this.incidenteSeleccionado.id) {
+            this.chatMensajes.push(notif);
+            this.scrollChatAlFinal();
+          }
+        } else if (notif.incidente_id) {
+          this.cargarDatos(); // Recargar datos si hay cualquier novedad del incidente
+        }
       }
     });
   }
@@ -96,6 +109,49 @@ export class AuxiliosComponent implements OnInit {
 
   seleccionarIncidente(inc: any) { 
     this.incidenteSeleccionado = inc;
+    if (inc) {
+      this.cargarHistorialChat(inc.id);
+    }
+  }
+
+  cargarHistorialChat(incidenteId: number) {
+    this.chatMensajes = [];
+    this.incidentesService.getChatHistory(incidenteId).subscribe({
+      next: (mensajes) => {
+        this.chatMensajes = mensajes;
+        this.scrollChatAlFinal();
+      },
+      error: (err) => console.error('Error al cargar chat:', err)
+    });
+  }
+
+  enviarMensajeChat() {
+    if (!this.nuevoMensajeTexto.trim() || !this.incidenteSeleccionado) return;
+    
+    const texto = this.nuevoMensajeTexto;
+    this.nuevoMensajeTexto = '';
+    
+    // Enviar a través de WS
+    this.wsNotificacionService.enviarMensajeChat(this.incidenteSeleccionado.id, texto);
+    
+    // Agregar localmente para feedback inmediato
+    this.chatMensajes.push({
+      remitente_id: this.usuarioId,
+      contenido: texto,
+      fecha_envio: new Date().toISOString()
+    });
+    this.scrollChatAlFinal();
+  }
+
+  scrollChatAlFinal() {
+    setTimeout(() => {
+      try {
+        const el = document.querySelector('.chat-messages-container');
+        if (el) {
+          el.scrollTop = el.scrollHeight;
+        }
+      } catch (err) {}
+    }, 100);
   }
 
   etiquetaEstado(estado: string): string {

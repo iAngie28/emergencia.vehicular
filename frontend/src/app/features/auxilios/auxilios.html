@@ -219,10 +219,38 @@
           <p style="color: #94a3b8;">Coordenadas no disponibles</p>
         </ng-template>
         
-        <label style="font-size: 0.85rem; color: #64748b; display: block; margin-top: 10px;">
+        <label style="font-size: 0.85rem; color: #64748b; display: block; margin-top: 10px; margin-bottom: 15px;">
           Coordenadas: {{ incidenteSeleccionado.latitud | number:'1.4-4' }}, 
           {{ incidenteSeleccionado.longitud | number:'1.4-4' }}
         </label>
+
+        <!-- 💬 CHAT CON EL CLIENTE -->
+        <div class="chat-container-box" *ngIf="incidenteSeleccionado.estado !== 'pendiente' && incidenteSeleccionado.estado !== 'buscando_taller' && incidenteSeleccionado.estado !== 'cotizado'">
+          <label class="chat-label"><i class="fa-solid fa-comments me-1 text-primary"></i> Chat en Vivo con Cliente:</label>
+          
+          <div class="chat-messages-container">
+            <div *ngFor="let msg of chatMensajes" 
+                 class="chat-bubble" 
+                 [class.me]="msg.remitente_id === usuarioId" 
+                 [class.other]="msg.remitente_id !== usuarioId">
+              <p class="bubble-text">{{ msg.contenido }}</p>
+              <span class="bubble-time">{{ msg.fecha_envio | date:'shortTime' }}</span>
+            </div>
+            <div *ngIf="chatMensajes.length === 0" class="empty-chat">
+              No hay mensajes aún. Envía un mensaje para iniciar el contacto.
+            </div>
+          </div>
+
+          <div class="chat-input-bar">
+            <input type="text" 
+                   [(ngModel)]="nuevoMensajeTexto" 
+                   (keyup.enter)="enviarMensajeChat()"
+                   placeholder="Escribe un mensaje...">
+            <button (click)="enviarMensajeChat()" [disabled]="!nuevoMensajeTexto.trim()">
+              <i class="fa-solid fa-paper-plane"></i>
+            </button>
+          </div>
+        </div>
       </div>
       <div class="panel-footer">
         <a [href]="'tel:' + incidenteSeleccionado.telefono_cliente" class="btn-call"><i class="fa-solid fa-phone me-1"></i> Llamar al Cliente</a>

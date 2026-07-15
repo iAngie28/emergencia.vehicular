@@ -1,0 +1,96 @@
+<div class="reportes-taller-page">
+  <div class="header-card">
+    <div class="header-content">
+      <h1>
+        <i class="fa-solid fa-user-ninja glow-icon"></i>
+        Reportes sobre Técnicos
+      </h1>
+      <p class="subtitle">Gestiona las quejas e incidencias registradas por los clientes contra tus técnicos asignados.</p>
+    </div>
+  </div>
+
+  <div class="card-glass shadow-premium fade-in">
+    <div class="table-responsive">
+      <table class="premium-table">
+        <thead>
+          <tr>
+            <th>ID Reporte</th>
+            <th>ID Incidente</th>
+            <th>Técnico Reportado</th>
+            <th>Motivo</th>
+            <th>Descripción</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let rep of reportes" class="hover-row">
+            <td><span class="id-badge">#{{ rep.id }}</span></td>
+            <td><span class="incidente-ref">#{{ rep.incidente_id }}</span></td>
+            <td>
+              <div class="tecnico-info">
+                <strong>ID:</strong> #{{ rep.tecnico_id || 'N/A' }}
+              </div>
+            </td>
+            <td><span class="motivo-label">{{ rep.motivo }}</span></td>
+            <td class="desc-cell" [title]="rep.descripcion">{{ rep.descripcion }}</td>
+            <td>
+              <span class="status-indicator" [ngClass]="rep.estado">
+                {{ rep.estado | uppercase }}
+              </span>
+            </td>
+            <td>
+              <button class="btn-action" [class.btn-resolve]="rep.estado !== 'resuelto'" (click)="abrirModalResolver(rep)">
+                <i class="fa-solid" [class.fa-eye]="rep.estado === 'resuelto'" [class.fa-reply]="rep.estado !== 'resuelto'"></i>
+                {{ rep.estado === 'resuelto' ? 'Ver Respuesta' : 'Resolver' }}
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="reportes.length === 0">
+            <td colspan="7" class="empty-row">No se han registrado reportes contra tus técnicos. ¡Buen trabajo!</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- MODAL RESOLVER -->
+  <div class="modal-backdrop" *ngIf="mostrarModalResolver">
+    <div class="modal-card bounce-in">
+      <div class="modal-header">
+        <h2>
+          <i class="fa-solid fa-reply"></i>
+          {{ reporteSeleccionado?.estado === 'resuelto' ? 'Detalle del Reporte' : 'Responder Reclamo' }}
+        </h2>
+        <button class="close-btn" (click)="cerrarModalResolver()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="info-block">
+          <p><strong>Incidente:</strong> #{{ reporteSeleccionado?.incidente_id }}</p>
+          <p><strong>Técnico Asignado:</strong> ID #{{ reporteSeleccionado?.tecnico_id }}</p>
+          <p><strong>Motivo:</strong> {{ reporteSeleccionado?.motivo }}</p>
+          <p><strong>Detalle del Cliente:</strong></p>
+          <div class="desc-box">{{ reporteSeleccionado?.descripcion }}</div>
+        </div>
+
+        <div class="input-block">
+          <label for="respuesta">Descargo / Respuesta del Taller:</label>
+          <textarea id="respuesta" 
+                    [(ngModel)]="respuestaTaller" 
+                    [disabled]="reporteSeleccionado?.estado === 'resuelto' || cargando"
+                    placeholder="Describe las acciones correctivas o explicaciones que se le darán al cliente..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="cerrarModalResolver()">Cerrar</button>
+        <button class="btn-primary" 
+                *ngIf="reporteSeleccionado?.estado !== 'resuelto'"
+                [disabled]="cargando || !respuestaTaller.trim()" 
+                (click)="guardarResolucion()">
+          <span *ngIf="!cargando"><i class="fa-solid fa-check"></i> Marcar Resuelto</span>
+          <span *ngIf="cargando"><i class="fa-solid fa-spinner fa-spin"></i> Guardando...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

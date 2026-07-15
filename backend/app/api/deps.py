@@ -30,6 +30,8 @@ def get_current_user(
             token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
         )
         user_id: str = payload.get("sub")
+        taller_override = payload.get("taller_id")
+        rol_override = payload.get("rol_id")
         
         if user_id is None:
             raise HTTPException(
@@ -51,6 +53,13 @@ def get_current_user(
     if not user:
         raise HTTPException(status_code=404, detail="Usuario no encontrado en la base de datos")
     
+    # Aplicar overrides en memoria para impersonación
+    user.original_rol_id = user.rol_id
+    if taller_override is not None:
+        user.taller_id = int(taller_override)
+    if rol_override is not None:
+        user.rol_id = int(rol_override)
+
     return user
 
 # --- CANDADOS DE SEGURIDAD ---
@@ -67,7 +76,7 @@ def get_current_admin_taller(
     if current_user.rol_id != 1:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Acceso denegado: Se requieren permisos de Administrador.",
+            detail="Acceso denegado: Se requieren permisos de Administrador de Taller.",
         )
     return current_user
 
@@ -81,3 +90,16 @@ def get_current_cliente(
             detail="Acceso denegado: Endpoint exclusivo para la aplicación móvil.",
         )
     return current_user
+
+def get_current_superadmin(
+    current_user: Usuario = Depends(get_current_active_user),
+) -> Usuario:
+    """Candado: Solo permite el paso a Super Administradores de la Plataforma"""
+    # Verificamos si su rol original en base de datos es 4 (Super Administrador)
+    original_rol_id = getattr(current_user, "original_rol_id", current_user.rol_id)
+    if original_rol_id != 4:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Acceso denegado: Se requieren permisos de Super Administrador.",
+        )
+    return current_user

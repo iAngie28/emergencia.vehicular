@@ -191,12 +191,20 @@ async def websocket_endpoint(websocket: WebSocket, usuario_id: int):
         await manager.connect(usuario_id, websocket)
         logger.info(f"✅ Usuario {usuario_id} conectado a WebSocket")
 
-        # Mantener conexión abierta y escuchar heartbeat del cliente
+        # Mantener conexión abierta y escuchar heartbeat/chat del cliente
+        import json
         while True:
             try:
                 data = await websocket.receive_text()
                 if data == "ping":
                     await websocket.send_text("pong")
+                else:
+                    try:
+                        message_data = json.loads(data)
+                        if message_data.get("tipo") == "chat_message":
+                            await manager.recibir_mensaje_chat(usuario_id, message_data)
+                    except json.JSONDecodeError:
+                        logger.warning(f"Mensaje no JSON recibido de usuario {usuario_id}: {data}")
             except WebSocketDisconnect:
                 logger.info(f"👋 Usuario {usuario_id} se desconectó limpiamente")
                 break

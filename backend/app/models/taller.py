@@ -3,6 +3,7 @@ from sqlalchemy.orm import relationship
 from app.db.base_class import Base
 from app.models.usuario import Especialidad
 from datetime import datetime
+
 class Taller(Base):
     __tablename__ = "taller"
     id = Column(Integer, primary_key=True, index=True)
@@ -33,7 +34,7 @@ class Taller(Base):
     pagos = relationship("Pago", back_populates="taller")
     bitacoras = relationship("Bitacora", back_populates="taller")
     calificaciones = relationship("Calificacion", back_populates="taller")
-
+    reportes = relationship("Reporte", back_populates="taller", cascade="all, delete-orphan")
 
     @property
     def especialidades_activas(self):

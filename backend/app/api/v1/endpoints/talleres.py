@@ -152,3 +152,12 @@ def leer_taller_por_id(
     if not taller:
         raise HTTPException(status_code=404, detail="Taller no encontrado")
     return taller
+
+@router.get("/", response_model=List[Taller])
+def listar_todos_los_talleres(
+    db: Session = Depends(deps.get_db),
+    current_user = Depends(deps.get_current_superadmin)
+):
+    """(Superadmin) Retorna el listado completo de todos los talleres registrados en el sistema."""
+    from app.models.taller import Taller as TallerModel
+    return db.query(TallerModel).all()

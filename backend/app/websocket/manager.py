@@ -140,6 +140,74 @@ class WebSocketManager:
         """Verifica si un usuario está conectado."""
         return usuario_id in self.active_connections
 
+    async def recibir_mensaje_chat(self, remitente_id: int, message_data: dict):
+        """
+        Procesa un mensaje de chat entrante desde el cliente WebSocket.
+        """
+        from app.db.session import SessionLocal
+        from app.models.incidente import Incidente
+        from app.schemas.mensaje_chat import MensajeChatCreate
+        
+        incidente_id = message_data.get("incidente_id")
+        contenido = message_data.get("contenido")
+        tipo_msg = message_data.get("tipo_msg", "texto")
+        
+        if not incidente_id or not contenido:
+            return
+            
+        db = SessionLocal()
+        try:
+            incidente = db.query(Incidente).filter(Incidente.id == incidente_id).first()
+            if not incidente:
+                return
+                
+            # Determinar destinatario
+            destinatarios = []
+            if remitente_id == incidente.usuario_id:
+                # El remitente es el cliente, notificar al técnico y taller
+                if incidente.tecnico_id:
+                    destinatarios.append(incidente.tecnico_id)
+                if incidente.taller_id:
+                    from app.models.usuario import Usuario
+                    taller_admin = db.query(Usuario).filter(Usuario.taller_id == incidente.taller_id, Usuario.rol_id == 1).first()
+                    if taller_admin:
+                        destinatarios.append(taller_admin.id)
+            else:
+                # El remitente es el técnico o taller admin, notificar al cliente
+                destinatarios.append(incidente.usuario_id)
+                
+            # Guardar mensaje en base de datos
+            from app.models.mensaje_chat import MensajeChat
+            db_msg = MensajeChat(
+                incidente_id=incidente_id,
+                remitente_id=remitente_id,
+                contenido=contenido,
+                tipo=tipo_msg
+            )
+            db.add(db_msg)
+            db.commit()
+            db.refresh(db_msg)
+            
+            # Formatear datos de reenvío
+            payload = {
+                "tipo": "chat_message",
+                "id": db_msg.id,
+                "incidente_id": incidente_id,
+                "remitente_id": remitente_id,
+                "contenido": contenido,
+                "tipo_msg": tipo_msg,
+                "fecha_envio": db_msg.fecha_envio.isoformat()
+            }
+            
+            # Reenviar por WS
+            for dest_id in destinatarios:
+                await self.send_personal_notification(dest_id, payload)
+                
+        except Exception as e:
+            self.logger.error(f"Error procesando chat en WebSocketManager: {str(e)}")
+        finally:
+            db.close()
+
 
 # Instancia global
 manager = WebSocketManager()

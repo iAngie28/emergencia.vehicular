@@ -124,4 +124,8 @@ export class IncidentesService {
       tiempo_reparacion_estimado: tiempo
     }, { headers });
   }
+
+  getChatHistory(id: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/${id}/chat`, { headers: this.getHeaders() });
+  }
 }

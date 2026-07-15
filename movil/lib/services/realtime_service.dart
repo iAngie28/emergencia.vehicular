@@ -126,4 +126,10 @@ class RealtimeService {
       await socket.close();
     }
   }
+
+  void send(Map<String, dynamic> data) {
+    if (isConnected) {
+      _socket?.add(jsonEncode(data));
+    }
+  }
 }

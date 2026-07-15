@@ -1,0 +1,158 @@
+<div class="superadmin-page">
+  <div class="header-card">
+    <div class="header-content">
+      <h1>
+        <i class="fa-solid fa-shield-halved glow-icon"></i>
+        Consola de Super Administrador
+      </h1>
+      <p class="subtitle">Administra los talleres afiliados y responde reportes de calidad globales.</p>
+    </div>
+    <div class="status-glow"></div>
+  </div>
+
+  <div class="tabs-navigation">
+    <button class="nav-tab-btn" [class.active]="tabActiva === 'talleres'" (click)="cambiarTab('talleres')">
+      <i class="fa-solid fa-warehouse"></i> Talleres Afiliados
+      <span class="count-badge" *ngIf="talleres.length > 0">{{ talleres.length }}</span>
+    </button>
+    <button class="nav-tab-btn" [class.active]="tabActiva === 'reportes'" (click)="cambiarTab('reportes')">
+      <i class="fa-solid fa-triangle-exclamation"></i> Reportes de Talleres
+      <span class="count-badge danger" *ngIf="reportes.length > 0">{{ reportes.length }}</span>
+    </button>
+  </div>
+
+  <div class="panel-content">
+    <!-- TAB TALLERES -->
+    <div *ngIf="tabActiva === 'talleres'" class="tab-pane fade-in">
+      <div class="card-glass shadow-premium">
+        <div class="table-responsive">
+          <table class="premium-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Dirección / Zona</th>
+                <th>Teléfono</th>
+                <th>Comisión</th>
+                <th>Plan</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let taller of talleres" class="hover-row">
+                <td><span class="id-badge">#{{ taller.id }}</span></td>
+                <td>
+                  <div class="taller-info">
+                    <span class="taller-name">{{ taller.nombre }}</span>
+                    <span class="taller-status" [class.active]="taller.estado">
+                      {{ taller.estado ? '🟢 Activo' : '🔴 Inactivo' }}
+                    </span>
+                  </div>
+                </td>
+                <td>{{ taller.direccion }}</td>
+                <td>{{ taller.telefono || 'Sin teléfono' }}</td>
+                <td><span class="badge-comision">{{ taller.comision_porcentaje }}%</span></td>
+                <td>
+                  <span class="badge-plan" [class.premium]="taller.plan_suscripcion === 'premium'">
+                    {{ taller.plan_suscripcion | uppercase }}
+                  </span>
+                </td>
+                <td>
+                  <button class="btn-impersonate" [disabled]="cargando" (click)="impersonar(taller.id)">
+                    <i class="fa-solid fa-right-to-bracket"></i> Ingresar como Admin
+                  </button>
+                </td>
+              </tr>
+              <tr *ngIf="talleres.length === 0">
+                <td colspan="7" class="empty-row">No hay talleres afiliados en el sistema.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB REPORTES -->
+    <div *ngIf="tabActiva === 'reportes'" class="tab-pane fade-in">
+      <div class="card-glass shadow-premium">
+        <div class="table-responsive">
+          <table class="premium-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Incidente</th>
+                <th>Taller</th>
+                <th>Motivo</th>
+                <th>Descripción</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let rep of reportes" class="hover-row">
+                <td><span class="id-badge danger">#{{ rep.id }}</span></td>
+                <td><span class="incidente-ref">#{{ rep.incidente_id }}</span></td>
+                <td><strong>Taller ID:</strong> #{{ rep.taller_id }}</td>
+                <td><span class="motivo-label">{{ rep.motivo }}</span></td>
+                <td class="desc-cell" [title]="rep.descripcion">{{ rep.descripcion }}</td>
+                <td>
+                  <span class="status-indicator" [ngClass]="rep.estado">
+                    {{ rep.estado | uppercase }}
+                  </span>
+                </td>
+                <td>
+                  <button class="btn-action" [class.btn-resolve]="rep.estado !== 'resuelto'" (click)="abrirModalResolver(rep)">
+                    <i class="fa-solid" [class.fa-comment-dots]="rep.estado === 'resuelto'" [class.fa-circle-check]="rep.estado !== 'resuelto'"></i>
+                    {{ rep.estado === 'resuelto' ? 'Ver Respuesta' : 'Responder' }}
+                  </button>
+                </td>
+              </tr>
+              <tr *ngIf="reportes.length === 0">
+                <td colspan="7" class="empty-row">No se han registrado reportes de talleres.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL RESOLVER -->
+  <div class="modal-backdrop" *ngIf="mostrarModalResolver">
+    <div class="modal-card bounce-in">
+      <div class="modal-header">
+        <h2>
+          <i class="fa-solid fa-gavel"></i>
+          {{ reporteSeleccionado?.estado === 'resuelto' ? 'Detalle de Reporte' : 'Responder Reporte de Taller' }}
+        </h2>
+        <button class="close-btn" (click)="cerrarModalResolver()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="info-block">
+          <p><strong>Incidente Relacionado:</strong> #{{ reporteSeleccionado?.incidente_id }}</p>
+          <p><strong>Motivo:</strong> {{ reporteSeleccionado?.motivo }}</p>
+          <p><strong>Descripción:</strong></p>
+          <div class="desc-box">{{ reporteSeleccionado?.descripcion }}</div>
+        </div>
+
+        <div class="input-block">
+          <label for="respuesta">Respuesta Oficial de la Plataforma:</label>
+          <textarea id="respuesta" 
+                    [(ngModel)]="respuestaAdmin" 
+                    [disabled]="reporteSeleccionado?.estado === 'resuelto' || cargando"
+                    placeholder="Escribe la respuesta o solución que se le dará al cliente..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="cerrarModalResolver()">Cerrar</button>
+        <button class="btn-primary" 
+                *ngIf="reporteSeleccionado?.estado !== 'resuelto'"
+                [disabled]="cargando || !respuestaAdmin.trim()" 
+                (click)="guardarResolucion()">
+          <span *ngIf="!cargando"><i class="fa-solid fa-paper-plane"></i> Enviar Resolución</span>
+          <span *ngIf="cargando"><i class="fa-solid fa-spinner fa-spin"></i> Enviando...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
