@@ -1384,7 +1384,7 @@ def obtener_historial_chat(
         mensajes = mensaje_chat_crud.obtener_por_incidente(db, incidente_id=incidente_id)
         return jsonable_encoder(mensajes or [])
     except Exception as e:
-        logger.error(f"Error al obtener historial de chat para incidente #{incidente_id}: {str(e)}")
+        print(f"[CHAT ERROR] Incidente #{incidente_id}: {str(e)}")
         return []
 
 @router.post("/{incidente_id}/seleccionar-taller/{taller_id}")
