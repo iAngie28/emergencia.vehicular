@@ -15,9 +15,14 @@
       </div>
     </div>
 
-    <div style="margin-top: 10px;">
+    <div style="margin-top: 10px; text-align: left;">
       <label>Contraseña:</label>
-      <input type="password" formControlName="password" placeholder="***">
+      <div class="password-wrapper">
+        <input [type]="showPassword ? 'text' : 'password'" formControlName="password" placeholder="***">
+        <button type="button" class="toggle-password-btn" (click)="toggleShowPassword()" tabindex="-1">
+          <i class="fa-solid" [class.fa-eye]="!showPassword" [class.fa-eye-slash]="showPassword"></i>
+        </button>
+      </div>
     </div>
 
     <div style="margin-top: 8px; text-align: right;">

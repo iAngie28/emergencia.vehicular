@@ -26,6 +26,11 @@ export class LoginComponent implements OnInit {
   errorMessage = '';
   isLoading = false;
   isCheckout = false;
+  showPassword = false;
+
+  toggleShowPassword() {
+    this.showPassword = !this.showPassword;
+  }
 
   ngOnInit() {
     this.isCheckout = this.route.snapshot.queryParams['checkout'] === 'true';

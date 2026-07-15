@@ -91,6 +91,40 @@ button:hover {
   background-color: #0056b3;
 }
 
+.password-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.password-wrapper input {
+  padding-right: 42px;
+}
+
+.toggle-password-btn {
+  position: absolute;
+  right: 6px;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+  border-radius: 6px;
+}
+
+.toggle-password-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: #2563eb;
+}
+
 .error-message {
   color: red;
   margin-top: 15px;
