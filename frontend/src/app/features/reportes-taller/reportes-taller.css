@@ -1,9 +1,19 @@
+:host {
+  display: block;
+  color-scheme: light;
+}
+
+:host * {
+  box-sizing: border-box;
+}
+
 .reportes-taller-page {
   font-family: 'Inter', system-ui, sans-serif;
   color: #1e293b;
   padding: 24px;
   max-width: 1200px;
   margin: 0 auto;
+  background: transparent;
 }
 
 /* Header Section */
@@ -45,12 +55,21 @@
 .table-responsive {
   width: 100%;
   overflow-x: auto;
+  background: #ffffff;
 }
 
 .premium-table {
   width: 100%;
   border-collapse: collapse;
   text-align: left;
+  background: #ffffff;
+  color: #334155;
+}
+
+.premium-table thead,
+.premium-table tbody,
+.premium-table tr {
+  background: #ffffff;
 }
 
 .premium-table th {
@@ -65,6 +84,7 @@
 }
 
 .premium-table td {
+  background: #ffffff;
   padding: 16px 20px;
   border-bottom: 1px solid #f1f5f9;
   font-size: 0.9rem;
@@ -196,6 +216,11 @@
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
   overflow: hidden;
   border: 1px solid #e2e8f0;
+}
+
+button,
+textarea {
+  color-scheme: light;
 }
 
 .modal-header {

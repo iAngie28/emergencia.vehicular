@@ -18,6 +18,7 @@ from pathlib import Path
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from sqlalchemy import text
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import PlainTextResponse
 from app.db.session import SessionLocal, engine
@@ -146,7 +147,7 @@ def readiness_check():
     try:
         from app.db.session import SessionLocal
         db = SessionLocal()
-        db.execute("SELECT 1")
+        db.execute(text("SELECT 1"))
         db.close()
         return {
             "ready": True,
@@ -247,10 +248,14 @@ async def startup_event():
     except Exception as e:
         logger.warning(f"⚠️  Firebase no inicializado: {str(e)}")
 
-    # Initialize database
-    logger.info("Initializing database tables...")
-    Base.metadata.create_all(bind=engine)
-    logger.info("✓ Database initialized")
+    # Initialize database only in local/dev. Render already runs Alembic in preDeployCommand;
+    # running create_all on every production cold start can make the first request time out.
+    if ENVIRONMENT == "production":
+        logger.info("Skipping create_all in production; using Alembic migrations.")
+    else:
+        logger.info("Initializing database tables...")
+        Base.metadata.create_all(bind=engine)
+        logger.info("✓ Database initialized")
 
     worker_enabled = os.getenv("ASSIGNMENT_TIMEOUT_WORKER_ENABLED", "true").lower()
     if worker_enabled not in {"0", "false", "no"}:
