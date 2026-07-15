@@ -57,21 +57,19 @@ export class LoginComponent implements OnInit {
         const rolId = this.authService.getRolId();
         console.log('Rol:', rolId);
         
+        let destino = '/';
+
         if (rolId === 3) {
-          // Técnico
-          this.router.navigate(['/tecnico/dashboard']);
+          destino = '/tecnico/dashboard';
         } else if (rolId === 4) {
-          // Superadmin
-          this.router.navigate(['/superadmin']);
+          destino = '/superadmin';
         } else if (rolId === 1) {
-          // Admin
-          if (this.isCheckout) {
-            this.router.navigate(['/perfil-taller'], { queryParams: { checkout: 'true' } });
-          } else {
-            this.router.navigate(['/dashboard']);
-          }
+          destino = this.isCheckout ? '/perfil-taller?checkout=true' : '/dashboard';
+        }
+
+        if (destino !== '/') {
+          window.location.assign(destino);
         } else {
-          // Cliente u otro rol
           this.router.navigate(['/']);
         }
       },

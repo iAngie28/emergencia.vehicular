@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 
@@ -9,8 +9,23 @@ import { Router } from '@angular/router';
   templateUrl: './landing.html',
   styleUrls: ['./landing.css']
 })
-export class LandingComponent {
+export class LandingComponent implements OnInit {
   private router = inject(Router);
+
+  ngOnInit() {
+    const token = localStorage.getItem('token');
+    const rolId = Number(localStorage.getItem('rol_id') || 0);
+
+    if (!token) return;
+
+    if (rolId === 4) {
+      this.router.navigateByUrl('/superadmin', { replaceUrl: true });
+    } else if (rolId === 3) {
+      this.router.navigateByUrl('/tecnico/dashboard', { replaceUrl: true });
+    } else if (rolId === 1) {
+      this.router.navigateByUrl('/dashboard', { replaceUrl: true });
+    }
+  }
 
   irALogin() {
     this.router.navigate(['/login']);

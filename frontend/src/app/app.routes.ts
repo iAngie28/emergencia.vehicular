@@ -15,6 +15,7 @@ import { HistorialComponent } from './features/historial/historial';
 import { TecnicoDashboardComponent } from './features/tecnico-dashboard/tecnico-dashboard';
 import { TecnicoIncidenteDetalleComponent } from './features/tecnico-dashboard/tecnico-incidente-detalle';
 import { NotificacionesComponent } from './features/notificaciones/notificaciones';
+import { SuperadminComponent } from './features/superadmin/superadmin';
 
 
 export const routes: Routes = [
@@ -43,7 +44,7 @@ export const routes: Routes = [
       { path: 'calificaciones', loadComponent: () => import('./features/calificaciones/calificaciones').then(m => m.CalificacionesComponent) },
       { path: 'analisis', loadComponent: () => import('./features/analisis/analisis').then(m => m.Analisis) },
       { path: 'ranking', loadComponent: () => import('./features/ranking-talleres/ranking-talleres').then(m => m.RankingTalleres) },
-      { path: 'superadmin', loadComponent: () => import('./features/superadmin/superadmin').then(m => m.SuperadminComponent) },
+      { path: 'superadmin', component: SuperadminComponent },
       { path: 'reportes-taller', loadComponent: () => import('./features/reportes-taller/reportes-taller').then(m => m.ReportesTallerComponent) },
       { path: 'administradores', component: GestionAdminsComponent },
       { path: 'notificaciones', component: NotificacionesComponent },
