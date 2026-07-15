@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 // 👇 Importamos el environment global
 import { environment } from '../../../environments/environment'; 
@@ -45,7 +45,19 @@ export class TalleresService {
     return this.http.post(`${environment.apiUrl}/suscripciones/cancelar`, {}, { headers: this.getHeaders() });
   }
 
-  listarTodos(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/`, { headers: this.getHeaders() });
+  listarTodos(filtros: any = {}): Observable<any[]> {
+    let params = new HttpParams();
+
+    Object.entries(filtros).forEach(([key, value]) => {
+      if (value !== null && value !== undefined && value !== '') {
+        params = params.set(key, String(value));
+      }
+    });
+
+    return this.http.get<any[]>(`${this.apiUrl}/`, { headers: this.getHeaders(), params });
+  }
+
+  obtenerDetalleSuperadmin(tallerId: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/superadmin/${tallerId}/detalle`, { headers: this.getHeaders() });
   }
 }

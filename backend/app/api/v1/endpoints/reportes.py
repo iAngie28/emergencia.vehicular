@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
-from typing import List, Any
+from typing import List, Any, Optional
 from app.db.session import get_db
 from app.api.deps import get_current_cliente, get_current_active_user
 from app.crud.crud_reporte import reporte_crud
@@ -29,12 +29,11 @@ def crear_reporte(
             detail="No tienes permiso para reportar este incidente."
         )
 
-    # 2. Validar que no exista ya un reporte previo para el incidente
-    reporte_existente = reporte_crud.obtener_por_incidente(db, incidente_id=reporte_in.incidente_id)
-    if reporte_existente:
+    # 2. Validar tipo de reporte
+    if reporte_in.tipo_reporte not in ("taller", "tecnico"):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Ya existe un reporte registrado para este incidente."
+            detail="El tipo de reporte debe ser 'taller' o 'tecnico'."
         )
 
     # 3. Validar que el incidente tenga taller asignado
@@ -57,7 +56,19 @@ def crear_reporte(
                 detail="El técnico especificado no participó en este incidente."
             )
 
-    # 5. Crear el reporte
+    # 5. Validar que no exista ya un reporte del mismo tipo para el incidente
+    reporte_existente = reporte_crud.obtener_por_incidente_y_tipo(
+        db,
+        incidente_id=reporte_in.incidente_id,
+        tipo_reporte=reporte_in.tipo_reporte,
+    )
+    if reporte_existente:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Ya existe un reporte de {reporte_in.tipo_reporte} registrado para este incidente."
+        )
+
+    # 6. Crear el reporte
     reporte = reporte_crud.crear_reporte(
         db,
         obj_in=reporte_in,
@@ -65,7 +76,7 @@ def crear_reporte(
         taller_id=incidente.taller_id
     )
 
-    # 6. Registrar en bitácora
+    # 7. Registrar en bitácora
     bitacora_crud.registrar(
         db,
         usuario_id=current_user.id,
@@ -79,7 +90,7 @@ def crear_reporte(
         }
     )
 
-    # 7. Notificar a los responsables correctos.
+    # 8. Notificar a los responsables correctos.
     # Reporte de técnico: admins del taller. Reporte de taller: superadmins.
     if reporte.tipo_reporte == "tecnico":
         destinatarios = db.query(Usuario).filter(
@@ -131,12 +142,25 @@ def listar_reportes(
 @router.get("/incidente/{incidente_id}/mi-reporte", response_model=ReporteOut)
 def obtener_mi_reporte_por_incidente(
     incidente_id: int,
+    tipo_reporte: Optional[str] = Query(None, description="Filtra por 'taller' o 'tecnico'"),
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_cliente)
 ) -> Any:
-    reporte = reporte_crud.obtener_por_incidente(db, incidente_id=incidente_id)
+    if tipo_reporte is not None and tipo_reporte not in ("taller", "tecnico"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="El tipo de reporte debe ser 'taller' o 'tecnico'."
+        )
 
-    if not reporte or reporte.usuario_id != current_user.id:
+    reporte = reporte_crud.obtener_ultimo_por_incidente(
+        db,
+        incidente_id=incidente_id,
+        usuario_id=current_user.id,
+        tipo_reporte=tipo_reporte,
+        priorizar_respondidos=True,
+    )
+
+    if not reporte:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="No se encontró un reporte tuyo para este incidente."

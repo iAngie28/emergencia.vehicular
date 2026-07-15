@@ -16,6 +16,7 @@ class HorarioTallerInfo(BaseModel):
 class TallerBase(BaseModel):
     nombre: str = Field(..., min_length=3, max_length=100)
     direccion: Optional[str] = Field(None, max_length=200)
+    ciudad: Optional[str] = Field(None, max_length=100)
     # Validamos que las coordenadas sean reales (Bolivia está en estos rangos aprox)
     latitud: Optional[Decimal] = Field(None, ge=-90, le=90)
     longitud: Optional[Decimal] = Field(None, ge=-180, le=180)
@@ -33,6 +34,7 @@ class TallerCreate(TallerBase):
 class TallerUpdate(BaseModel):
     nombre: Optional[str] = None
     direccion: Optional[str] = None
+    ciudad: Optional[str] = None
     latitud: Optional[Decimal] = None
     longitud: Optional[Decimal] = None
     telefono: Optional[str] = None
@@ -45,6 +47,8 @@ class TallerUpdate(BaseModel):
 
 class Taller(TallerBase):
     id: int
+    fecha_creacion: Optional[datetime] = None
+    cantidad_tecnicos: int = 0
     especialidades_activas: List[str] = []
     horarios: List[HorarioTallerInfo] = []
     esta_abierto_ahora: bool = False
@@ -59,6 +63,7 @@ class TallerDirectorioOut(BaseModel):
     nombre: str
     especialidad: str
     direccion: Optional[str] = None
+    ciudad: Optional[str] = None
     telefono: Optional[str] = None
     latitud: Optional[Decimal] = None
     longitud: Optional[Decimal] = None
@@ -67,3 +72,47 @@ class TallerDirectorioOut(BaseModel):
     esta_abierto_ahora: bool = False
     distancia_km: Optional[float] = None
     imagen_url: Optional[str] = None
+
+
+class TallerTecnicoResumen(BaseModel):
+    id: int
+    nombre: str
+    apellido: Optional[str] = None
+    correo: str
+    telefono: Optional[str] = None
+    esta_activo: bool = True
+    especialidades: List[str] = []
+
+
+class TallerReporteResumen(BaseModel):
+    id: int
+    incidente_id: int
+    tipo_reporte: str
+    motivo: str
+    descripcion: str
+    estado: str
+    fecha_creacion: Optional[datetime] = None
+    fecha_resolucion: Optional[datetime] = None
+    tecnico_id: Optional[int] = None
+    tecnico_nombre: Optional[str] = None
+
+
+class TallerEmergenciaResumen(BaseModel):
+    id: int
+    estado: str
+    prioridad: Optional[str] = None
+    descripcion: Optional[str] = None
+    ubicacion: Optional[str] = None
+    pago_estado: Optional[str] = None
+    fecha_creacion: Optional[datetime] = None
+    tecnico_id: Optional[int] = None
+    tecnico_nombre: Optional[str] = None
+    cliente_nombre: Optional[str] = None
+
+
+class TallerDetalleSuperadmin(BaseModel):
+    taller: Taller
+    estado_habilitacion: bool
+    tecnicos: List[TallerTecnicoResumen] = []
+    reportes: List[TallerReporteResumen] = []
+    emergencias: List[TallerEmergenciaResumen] = []

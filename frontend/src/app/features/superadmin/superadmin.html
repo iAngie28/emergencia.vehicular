@@ -24,6 +24,41 @@
   <div class="panel-content">
     <!-- TAB TALLERES -->
     <div *ngIf="tabActiva === 'talleres'" class="tab-pane fade-in">
+      <div class="filters-panel">
+        <div class="filter-field">
+          <label for="filtroNombre">Nombre</label>
+          <input id="filtroNombre" type="text" [(ngModel)]="filtrosTaller.nombre" placeholder="Buscar taller">
+        </div>
+        <div class="filter-field">
+          <label for="filtroCiudad">Ciudad</label>
+          <input id="filtroCiudad" type="text" [(ngModel)]="filtrosTaller.ciudad" placeholder="Ej. Santa Cruz">
+        </div>
+        <div class="filter-field">
+          <label for="filtroEstado">Estado</label>
+          <select id="filtroEstado" [(ngModel)]="filtrosTaller.estado">
+            <option value="">Todos</option>
+            <option value="true">Habilitados</option>
+            <option value="false">Inhabilitados</option>
+          </select>
+        </div>
+        <div class="filter-field">
+          <label for="filtroDesde">Desde</label>
+          <input id="filtroDesde" type="date" [(ngModel)]="filtrosTaller.fecha_desde">
+        </div>
+        <div class="filter-field">
+          <label for="filtroHasta">Hasta</label>
+          <input id="filtroHasta" type="date" [(ngModel)]="filtrosTaller.fecha_hasta">
+        </div>
+        <div class="filter-actions">
+          <button class="btn-primary" type="button" (click)="aplicarFiltrosTaller()">
+            <i class="fa-solid fa-filter"></i> Filtrar
+          </button>
+          <button class="btn-secondary" type="button" (click)="limpiarFiltrosTaller()">
+            Limpiar
+          </button>
+        </div>
+      </div>
+
       <div class="card-glass shadow-premium">
         <div class="table-responsive">
           <table class="premium-table">
@@ -31,9 +66,12 @@
               <tr>
                 <th>ID</th>
                 <th>Nombre</th>
-                <th>Dirección / Zona</th>
-                <th>Teléfono</th>
-                <th>Comisión</th>
+                <th>Ciudad</th>
+                <th>Dirección</th>
+                <th>Contacto</th>
+                <th>Estado</th>
+                <th>Técnicos</th>
+                <th>Registro</th>
                 <th>Plan</th>
                 <th>Acciones</th>
               </tr>
@@ -44,27 +82,37 @@
                 <td>
                   <div class="taller-info">
                     <span class="taller-name">{{ taller.nombre }}</span>
-                    <span class="taller-status" [class.active]="taller.estado">
-                      {{ taller.estado ? '🟢 Activo' : '🔴 Inactivo' }}
-                    </span>
+                    <span class="muted-text">{{ taller.comision_porcentaje || 0 }}% comisión</span>
                   </div>
                 </td>
+                <td>{{ taller.ciudad || 'Sin ciudad' }}</td>
                 <td>{{ taller.direccion }}</td>
                 <td>{{ taller.telefono || 'Sin teléfono' }}</td>
-                <td><span class="badge-comision">{{ taller.comision_porcentaje }}%</span></td>
+                <td>
+                  <span class="status-indicator" [class.resuelto]="taller.estado" [class.abierto]="!taller.estado">
+                    {{ etiquetaEstadoTaller(taller.estado) }}
+                  </span>
+                </td>
+                <td><span class="badge-comision">{{ taller.cantidad_tecnicos || 0 }}</span></td>
+                <td>{{ formatearFecha(taller.fecha_creacion) }}</td>
                 <td>
                   <span class="badge-plan" [class.premium]="taller.plan_suscripcion === 'premium'">
                     {{ taller.plan_suscripcion | uppercase }}
                   </span>
                 </td>
                 <td>
-                  <button class="btn-impersonate" [disabled]="cargando" (click)="impersonar(taller.id)">
+                  <div class="action-stack">
+                    <button class="btn-action" type="button" (click)="abrirDetalleTaller(taller)">
+                      <i class="fa-solid fa-eye"></i> Ver detalle
+                    </button>
+                    <button class="btn-impersonate" [disabled]="cargando" (click)="impersonar(taller.id)">
                     <i class="fa-solid fa-right-to-bracket"></i> Ingresar como Admin
-                  </button>
+                    </button>
+                  </div>
                 </td>
               </tr>
               <tr *ngIf="talleres.length === 0">
-                <td colspan="7" class="empty-row">No hay talleres afiliados en el sistema.</td>
+                <td colspan="10" class="empty-row">No hay talleres afiliados con los filtros seleccionados.</td>
               </tr>
             </tbody>
           </table>
@@ -113,6 +161,126 @@
             </tbody>
           </table>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DETALLE TALLER -->
+  <div class="modal-backdrop" *ngIf="mostrarModalDetalle">
+    <div class="modal-card detail-modal">
+      <div class="modal-header">
+        <h2>
+          <i class="fa-solid fa-warehouse"></i>
+          Detalle del Taller
+        </h2>
+        <button class="close-btn" (click)="cerrarDetalleTaller()">&times;</button>
+      </div>
+
+      <div class="modal-body detail-body">
+        <div *ngIf="cargandoDetalle" class="loading-state">
+          <i class="fa-solid fa-spinner fa-spin"></i>
+          Cargando detalle...
+        </div>
+
+        <ng-container *ngIf="!cargandoDetalle && detalleTaller">
+          <section class="detail-section">
+            <div class="detail-heading">
+              <div>
+                <h3>{{ detalleTaller.taller.nombre }}</h3>
+                <p>{{ detalleTaller.taller.direccion || 'Sin dirección registrada' }}</p>
+              </div>
+              <span class="status-indicator" [class.resuelto]="detalleTaller.estado_habilitacion" [class.abierto]="!detalleTaller.estado_habilitacion">
+                {{ etiquetaEstadoTaller(detalleTaller.estado_habilitacion) }}
+              </span>
+            </div>
+
+            <div class="detail-grid">
+              <div>
+                <span>Ciudad</span>
+                <strong>{{ detalleTaller.taller.ciudad || 'Sin ciudad' }}</strong>
+              </div>
+              <div>
+                <span>Contacto</span>
+                <strong>{{ detalleTaller.taller.telefono || 'Sin teléfono' }}</strong>
+              </div>
+              <div>
+                <span>Técnicos</span>
+                <strong>{{ detalleTaller.taller.cantidad_tecnicos || 0 }}</strong>
+              </div>
+              <div>
+                <span>Fecha de registro</span>
+                <strong>{{ formatearFecha(detalleTaller.taller.fecha_creacion) }}</strong>
+              </div>
+              <div>
+                <span>Plan</span>
+                <strong>{{ detalleTaller.taller.plan_suscripcion | uppercase }}</strong>
+              </div>
+              <div>
+                <span>Abierto ahora</span>
+                <strong>{{ detalleTaller.taller.esta_abierto_ahora ? 'Sí' : 'No' }}</strong>
+              </div>
+            </div>
+          </section>
+
+          <section class="detail-section">
+            <h3>Técnicos</h3>
+            <div class="compact-list" *ngIf="detalleTaller.tecnicos.length > 0; else sinTecnicos">
+              <div class="compact-row" *ngFor="let tecnico of detalleTaller.tecnicos">
+                <div>
+                  <strong>{{ nombreTecnico(tecnico) }}</strong>
+                  <span>{{ tecnico.correo }} · {{ tecnico.telefono || 'Sin teléfono' }}</span>
+                  <small>{{ tecnico.especialidades.length ? tecnico.especialidades.join(', ') : 'Sin especialidades' }}</small>
+                </div>
+                <span class="status-indicator" [class.resuelto]="tecnico.esta_activo" [class.abierto]="!tecnico.esta_activo">
+                  {{ tecnico.esta_activo ? 'Activo' : 'Inactivo' }}
+                </span>
+              </div>
+            </div>
+            <ng-template #sinTecnicos>
+              <p class="empty-detail">No hay técnicos registrados para este taller.</p>
+            </ng-template>
+          </section>
+
+          <section class="detail-section">
+            <h3>Reportes</h3>
+            <div class="compact-list" *ngIf="detalleTaller.reportes.length > 0; else sinReportes">
+              <div class="compact-row" *ngFor="let reporte of detalleTaller.reportes">
+                <div>
+                  <strong>#{{ reporte.id }} · {{ reporte.tipo_reporte | uppercase }} · {{ reporte.motivo }}</strong>
+                  <span>Incidente #{{ reporte.incidente_id }} · {{ reporte.tecnico_nombre || 'Sin técnico asociado' }}</span>
+                  <small>{{ reporte.descripcion }}</small>
+                </div>
+                <span class="status-indicator" [ngClass]="reporte.estado">
+                  {{ reporte.estado | uppercase }}
+                </span>
+              </div>
+            </div>
+            <ng-template #sinReportes>
+              <p class="empty-detail">No hay reportes asociados a este taller.</p>
+            </ng-template>
+          </section>
+
+          <section class="detail-section">
+            <h3>Emergencias</h3>
+            <div class="compact-list" *ngIf="detalleTaller.emergencias.length > 0; else sinEmergencias">
+              <div class="compact-row" *ngFor="let emergencia of detalleTaller.emergencias">
+                <div>
+                  <strong>#{{ emergencia.id }} · {{ emergencia.estado | uppercase }}</strong>
+                  <span>{{ emergencia.cliente_nombre || 'Cliente no disponible' }} · {{ emergencia.tecnico_nombre || 'Sin técnico' }}</span>
+                  <small>{{ emergencia.ubicacion || emergencia.descripcion || 'Sin ubicación registrada' }}</small>
+                </div>
+                <span class="motivo-label">{{ formatearFecha(emergencia.fecha_creacion) }}</span>
+              </div>
+            </div>
+            <ng-template #sinEmergencias>
+              <p class="empty-detail">No hay emergencias asociadas a este taller.</p>
+            </ng-template>
+          </section>
+        </ng-container>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="cerrarDetalleTaller()">Cerrar</button>
       </div>
     </div>
   </div>

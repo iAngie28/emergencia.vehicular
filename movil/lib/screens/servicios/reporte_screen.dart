@@ -80,7 +80,7 @@ class _ReporteScreenState extends State<ReporteScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Error al enviar reporte (recuerda que solo se permite un reporte por incidente): $e',
+            'Error al enviar reporte (solo se permite un reporte por taller y uno por tecnico en cada incidente): $e',
           ),
           backgroundColor: Colors.red,
         ),

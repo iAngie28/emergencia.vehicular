@@ -3,12 +3,14 @@ from sqlalchemy.orm import relationship
 from app.db.base_class import Base
 from app.models.usuario import Especialidad
 from datetime import datetime
+from sqlalchemy.sql import func
 
 class Taller(Base):
     __tablename__ = "taller"
     id = Column(Integer, primary_key=True, index=True)
     nombre = Column(String(100), nullable=False)
     direccion = Column(String(200))
+    ciudad = Column(String(100), nullable=True)
     latitud = Column(Numeric(10, 8))
     longitud = Column(Numeric(11, 8))
     telefono = Column(String(20))
@@ -16,6 +18,7 @@ class Taller(Base):
     comision_porcentaje = Column(Float, default=10.0) # Tu ganancia [Audio]
     calificacion_promedio = Column(Float, nullable=True, default=None)  # Promedio de calificaciones
     stripe_account_id = Column(String(255), nullable=True) # ID de la cuenta conectada en Stripe
+    fecha_creacion = Column(DateTime(timezone=True), server_default=func.now())
     
     # Suscripción
     plan_suscripcion = Column(String(50), default='gratuito') # 'gratuito' o 'premium'
@@ -35,6 +38,10 @@ class Taller(Base):
     bitacoras = relationship("Bitacora", back_populates="taller")
     calificaciones = relationship("Calificacion", back_populates="taller")
     reportes = relationship("Reporte", back_populates="taller", cascade="all, delete-orphan")
+
+    @property
+    def cantidad_tecnicos(self) -> int:
+        return sum(1 for u in self.usuarios if u.rol_id == 3)
 
     @property
     def especialidades_activas(self):

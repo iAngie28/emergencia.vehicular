@@ -1,11 +1,21 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from typing import List
+from datetime import date, datetime, time
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy.orm import Session, joinedload, selectinload
+from typing import List, Optional
 
 from app.api import deps  # 👈 Aquí vive la magia de la seguridad
 from app.crud.crud_taller import taller_crud
 from app.crud.crud_bitacora import bitacora_crud
-from app.schemas.taller import Taller, TallerCreate, TallerUpdate, TallerDirectorioOut
+from app.schemas.taller import (
+    Taller,
+    TallerCreate,
+    TallerUpdate,
+    TallerDirectorioOut,
+    TallerDetalleSuperadmin,
+    TallerEmergenciaResumen,
+    TallerReporteResumen,
+    TallerTecnicoResumen,
+)
 from app.services.ranking_taller_service import RankingTallerService
 from fastapi.encoders import jsonable_encoder
 
@@ -68,6 +78,7 @@ def directorio_talleres(
                 nombre=taller.nombre,
                 especialidad=item["especialidad"],
                 direccion=taller.direccion,
+                ciudad=taller.ciudad,
                 telefono=taller.telefono,
                 latitud=taller.latitud,
                 longitud=taller.longitud,
@@ -142,6 +153,131 @@ def actualizar_mi_taller(
     
     return taller_actualizado
 
+@router.get("/", response_model=List[Taller])
+def listar_todos_los_talleres(
+    db: Session = Depends(deps.get_db),
+    current_user = Depends(deps.get_current_superadmin),
+    nombre: Optional[str] = Query(None),
+    ciudad: Optional[str] = Query(None),
+    estado: Optional[bool] = Query(None),
+    fecha_desde: Optional[date] = Query(None),
+    fecha_hasta: Optional[date] = Query(None),
+):
+    """(Superadmin) Retorna los talleres registrados con filtros opcionales."""
+    from app.models.taller import Taller as TallerModel
+
+    query = db.query(TallerModel).options(selectinload(TallerModel.usuarios))
+
+    if nombre:
+        query = query.filter(TallerModel.nombre.ilike(f"%{nombre.strip()}%"))
+    if ciudad:
+        query = query.filter(TallerModel.ciudad.ilike(f"%{ciudad.strip()}%"))
+    if estado is not None:
+        query = query.filter(TallerModel.estado == estado)
+    if fecha_desde:
+        query = query.filter(TallerModel.fecha_creacion >= datetime.combine(fecha_desde, time.min))
+    if fecha_hasta:
+        query = query.filter(TallerModel.fecha_creacion <= datetime.combine(fecha_hasta, time.max))
+
+    return query.order_by(TallerModel.fecha_creacion.desc(), TallerModel.id.desc()).all()
+
+
+@router.get("/superadmin/{id}/detalle", response_model=TallerDetalleSuperadmin)
+def obtener_detalle_taller_superadmin(
+    id: int,
+    db: Session = Depends(deps.get_db),
+    current_user = Depends(deps.get_current_superadmin),
+):
+    """(Superadmin) Consulta detalle completo de un taller sin impersonar."""
+    from app.models.incidente import Incidente as IncidenteModel
+    from app.models.reporte import Reporte as ReporteModel
+    from app.models.taller import Taller as TallerModel
+    from app.models.usuario import Usuario as UsuarioModel
+
+    taller = (
+        db.query(TallerModel)
+        .options(
+            selectinload(TallerModel.usuarios).selectinload(UsuarioModel.especialidades),
+            selectinload(TallerModel.horarios),
+        )
+        .filter(TallerModel.id == id)
+        .first()
+    )
+    if not taller:
+        raise HTTPException(status_code=404, detail="Taller no encontrado")
+
+    tecnicos = [
+        TallerTecnicoResumen(
+            id=tecnico.id,
+            nombre=tecnico.nombre,
+            apellido=tecnico.apellido,
+            correo=tecnico.correo,
+            telefono=tecnico.telefono,
+            esta_activo=tecnico.esta_activo,
+            especialidades=[especialidad.nombre for especialidad in tecnico.especialidades],
+        )
+        for tecnico in taller.usuarios
+        if tecnico.rol_id == 3
+    ]
+
+    reportes_db = (
+        db.query(ReporteModel)
+        .options(joinedload(ReporteModel.tecnico))
+        .filter(ReporteModel.taller_id == id)
+        .order_by(ReporteModel.fecha_creacion.desc(), ReporteModel.id.desc())
+        .all()
+    )
+    reportes = [
+        TallerReporteResumen(
+            id=reporte.id,
+            incidente_id=reporte.incidente_id,
+            tipo_reporte=reporte.tipo_reporte,
+            motivo=reporte.motivo,
+            descripcion=reporte.descripcion,
+            estado=reporte.estado,
+            fecha_creacion=reporte.fecha_creacion,
+            fecha_resolucion=reporte.fecha_resolucion,
+            tecnico_id=reporte.tecnico_id,
+            tecnico_nombre=reporte.tecnico_nombre,
+        )
+        for reporte in reportes_db
+    ]
+
+    emergencias_db = (
+        db.query(IncidenteModel)
+        .options(
+            joinedload(IncidenteModel.tecnico),
+            joinedload(IncidenteModel.usuario),
+        )
+        .filter(IncidenteModel.taller_id == id)
+        .order_by(IncidenteModel.fecha_creacion.desc(), IncidenteModel.id.desc())
+        .all()
+    )
+    emergencias = [
+        TallerEmergenciaResumen(
+            id=incidente.id,
+            estado=incidente.estado,
+            prioridad=incidente.prioridad,
+            descripcion=incidente.descripcion,
+            ubicacion=incidente.ubicacion,
+            pago_estado=incidente.pago_estado,
+            fecha_creacion=incidente.fecha_creacion,
+            tecnico_id=incidente.tecnico_id,
+            tecnico_nombre=incidente.tecnico.nombre if incidente.tecnico else None,
+            cliente_nombre=incidente.usuario.nombre if incidente.usuario else None,
+        )
+        for incidente in emergencias_db
+    ]
+
+    return TallerDetalleSuperadmin(
+        taller=taller,
+        estado_habilitacion=bool(taller.estado),
+        tecnicos=tecnicos,
+        reportes=reportes,
+        emergencias=emergencias,
+    )
+
+
 # 4. Leer un taller por su ID (Genérico)
 @router.get("/{id}", response_model=Taller)
 def leer_taller_por_id(
@@ -152,12 +288,3 @@ def leer_taller_por_id(
     if not taller:
         raise HTTPException(status_code=404, detail="Taller no encontrado")
     return taller
-
-@router.get("/", response_model=List[Taller])
-def listar_todos_los_talleres(
-    db: Session = Depends(deps.get_db),
-    current_user = Depends(deps.get_current_superadmin)
-):
-    """(Superadmin) Retorna el listado completo de todos los talleres registrados en el sistema."""
-    from app.models.taller import Taller as TallerModel
-    return db.query(TallerModel).all()

@@ -11,7 +11,7 @@ class CRUDReporte(CRUDBase[Reporte, ReporteCreate, ReporteUpdate]):
             usuario_id=usuario_id,
             incidente_id=obj_in.incidente_id,
             taller_id=taller_id,
-            tecnico_id=obj_in.tecnico_id,
+            tecnico_id=obj_in.tecnico_id if obj_in.tipo_reporte == "tecnico" else None,
             tipo_reporte=obj_in.tipo_reporte,
             motivo=obj_in.motivo,
             descripcion=obj_in.descripcion,
@@ -24,6 +24,48 @@ class CRUDReporte(CRUDBase[Reporte, ReporteCreate, ReporteUpdate]):
 
     def obtener_por_incidente(self, db: Session, *, incidente_id: int) -> Optional[Reporte]:
         return db.query(self.model).filter(self.model.incidente_id == incidente_id).first()
+
+    def obtener_ultimo_por_incidente(
+        self,
+        db: Session,
+        *,
+        incidente_id: int,
+        usuario_id: Optional[int] = None,
+        tipo_reporte: Optional[str] = None,
+        priorizar_respondidos: bool = False,
+    ) -> Optional[Reporte]:
+        query = db.query(self.model).filter(self.model.incidente_id == incidente_id)
+
+        if usuario_id is not None:
+            query = query.filter(self.model.usuario_id == usuario_id)
+        if tipo_reporte is not None:
+            query = query.filter(self.model.tipo_reporte == tipo_reporte)
+
+        if priorizar_respondidos:
+            return query.order_by(
+                self.model.fecha_resolucion.is_(None),
+                self.model.fecha_resolucion.desc(),
+                self.model.fecha_creacion.desc(),
+                self.model.id.desc(),
+            ).first()
+
+        return query.order_by(self.model.fecha_creacion.desc(), self.model.id.desc()).first()
+
+    def obtener_por_incidente_y_tipo(
+        self,
+        db: Session,
+        *,
+        incidente_id: int,
+        tipo_reporte: str,
+    ) -> Optional[Reporte]:
+        return (
+            db.query(self.model)
+            .filter(
+                self.model.incidente_id == incidente_id,
+                self.model.tipo_reporte == tipo_reporte,
+            )
+            .first()
+        )
 
     def obtener_por_taller(self, db: Session, *, taller_id: int) -> List[Reporte]:
         return (

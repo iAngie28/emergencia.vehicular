@@ -22,6 +22,17 @@ export class SuperadminComponent implements OnInit {
   talleres: any[] = [];
   reportes: Reporte[] = [];
   tabActiva: 'talleres' | 'reportes' = 'talleres';
+  filtrosTaller = {
+    nombre: '',
+    ciudad: '',
+    estado: '',
+    fecha_desde: '',
+    fecha_hasta: ''
+  };
+
+  mostrarModalDetalle = false;
+  detalleTaller: any = null;
+  cargandoDetalle = false;
   
   // Modal de resolución de reporte
   mostrarModalResolver = false;
@@ -35,12 +46,32 @@ export class SuperadminComponent implements OnInit {
   }
 
   cargarTalleres() {
-    this.talleresService.listarTodos().subscribe({
+    const filtros = {
+      ...this.filtrosTaller,
+      estado: this.filtrosTaller.estado === '' ? '' : this.filtrosTaller.estado === 'true'
+    };
+
+    this.talleresService.listarTodos(filtros).subscribe({
       next: (data) => {
         this.talleres = data;
       },
       error: (err) => console.error('Error cargando talleres:', err)
     });
+  }
+
+  aplicarFiltrosTaller() {
+    this.cargarTalleres();
+  }
+
+  limpiarFiltrosTaller() {
+    this.filtrosTaller = {
+      nombre: '',
+      ciudad: '',
+      estado: '',
+      fecha_desde: '',
+      fecha_hasta: ''
+    };
+    this.cargarTalleres();
   }
 
   cargarReportes() {
@@ -59,6 +90,51 @@ export class SuperadminComponent implements OnInit {
   nombreTallerReportado(reporte?: Reporte | null): string {
     if (!reporte) return 'N/A';
     return reporte.taller_nombre || (reporte.taller_id ? `#${reporte.taller_id}` : 'N/A');
+  }
+
+  abrirDetalleTaller(taller: any) {
+    this.mostrarModalDetalle = true;
+    this.detalleTaller = null;
+    this.cargandoDetalle = true;
+
+    this.talleresService.obtenerDetalleSuperadmin(taller.id).subscribe({
+      next: (data) => {
+        this.detalleTaller = data;
+        this.cargandoDetalle = false;
+      },
+      error: (err) => {
+        this.cargandoDetalle = false;
+        console.error('Error cargando detalle del taller:', err);
+        alert('No se pudo cargar el detalle del taller.');
+        this.cerrarDetalleTaller();
+      }
+    });
+  }
+
+  cerrarDetalleTaller() {
+    this.mostrarModalDetalle = false;
+    this.detalleTaller = null;
+    this.cargandoDetalle = false;
+  }
+
+  nombreTecnico(tecnico: any): string {
+    return [tecnico?.nombre, tecnico?.apellido].filter(Boolean).join(' ') || 'Sin nombre';
+  }
+
+  formatearFecha(fecha?: string): string {
+    if (!fecha) return 'Sin fecha';
+    const date = new Date(fecha);
+    if (Number.isNaN(date.getTime())) return 'Sin fecha';
+
+    return date.toLocaleDateString('es-BO', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
+  }
+
+  etiquetaEstadoTaller(estado: boolean): string {
+    return estado ? 'Habilitado' : 'Inhabilitado';
   }
 
   impersonar(tallerId: number) {

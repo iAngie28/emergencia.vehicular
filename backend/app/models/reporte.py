@@ -1,10 +1,13 @@
-from sqlalchemy import Column, Integer, Text, String, ForeignKey, DateTime
+from sqlalchemy import Column, Integer, Text, String, ForeignKey, DateTime, UniqueConstraint
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from app.db.base_class import Base
 
 class Reporte(Base):
     __tablename__ = "reporte"
+    __table_args__ = (
+        UniqueConstraint("incidente_id", "tipo_reporte", name="uq_reporte_incidente_tipo"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     usuario_id = Column(
@@ -17,7 +20,6 @@ class Reporte(Base):
         Integer, 
         ForeignKey("incidente.id", ondelete="RESTRICT"), 
         nullable=False,
-        unique=True,  # Restricción: un único reporte por incidente
         index=True
     )
     taller_id = Column(
