@@ -12,6 +12,33 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+def _nombre_usuario_chat(incidente, usuario) -> str:
+    if not usuario:
+        return "Usuario"
+
+    if usuario.rol_id == 1 and getattr(incidente, "taller", None):
+        return incidente.taller.nombre or "Taller"
+
+    partes = [getattr(usuario, "nombre", None), getattr(usuario, "apellido", None)]
+    nombre = " ".join([parte for parte in partes if parte]).strip()
+    return nombre or getattr(usuario, "correo", None) or f"Usuario #{usuario.id}"
+
+
+def _tipo_usuario_chat(incidente, usuario) -> str:
+    if not usuario:
+        return "Usuario"
+
+    if usuario.id == incidente.usuario_id:
+        return "Cliente"
+    if usuario.rol_id == 3:
+        return "Técnico"
+    if usuario.rol_id == 1:
+        return "Taller"
+    if usuario.rol_id == 4:
+        return "Soporte"
+    return "Usuario"
+
+
 class WebSocketManager:
     """
     Maneja conexiones WebSocket de usuarios.
@@ -146,11 +173,12 @@ class WebSocketManager:
         """
         from app.db.session import SessionLocal
         from app.models.incidente import Incidente
-        from app.schemas.mensaje_chat import MensajeChatCreate
+        from app.models.usuario import Usuario
         
         incidente_id = message_data.get("incidente_id")
         contenido = message_data.get("contenido")
         tipo_msg = message_data.get("tipo_msg", "texto")
+        client_message_id = message_data.get("client_message_id")
         
         if not incidente_id or not contenido:
             return
@@ -160,21 +188,20 @@ class WebSocketManager:
             incidente = db.query(Incidente).filter(Incidente.id == incidente_id).first()
             if not incidente:
                 return
+
+            remitente = db.query(Usuario).filter(Usuario.id == remitente_id).first()
                 
-            # Determinar destinatario
-            destinatarios = []
-            if remitente_id == incidente.usuario_id:
-                # El remitente es el cliente, notificar al técnico y taller
-                if incidente.tecnico_id:
-                    destinatarios.append(incidente.tecnico_id)
-                if incidente.taller_id:
-                    from app.models.usuario import Usuario
-                    taller_admin = db.query(Usuario).filter(Usuario.taller_id == incidente.taller_id, Usuario.rol_id == 1).first()
-                    if taller_admin:
-                        destinatarios.append(taller_admin.id)
-            else:
-                # El remitente es el técnico o taller admin, notificar al cliente
-                destinatarios.append(incidente.usuario_id)
+            # El chat es compartido entre cliente, tecnico y admins del taller.
+            destinatarios = {incidente.usuario_id}
+            if incidente.tecnico_id:
+                destinatarios.add(incidente.tecnico_id)
+            if incidente.taller_id:
+                admins_taller = db.query(Usuario).filter(
+                    Usuario.taller_id == incidente.taller_id,
+                    Usuario.rol_id == 1,
+                ).all()
+                destinatarios.update(admin.id for admin in admins_taller)
+            destinatarios.discard(remitente_id)
                 
             # Guardar mensaje en base de datos
             from app.models.mensaje_chat import MensajeChat
@@ -194,8 +221,11 @@ class WebSocketManager:
                 "id": db_msg.id,
                 "incidente_id": incidente_id,
                 "remitente_id": remitente_id,
+                "remitente_nombre": _nombre_usuario_chat(incidente, remitente),
+                "remitente_tipo": _tipo_usuario_chat(incidente, remitente),
                 "contenido": contenido,
                 "tipo_msg": tipo_msg,
+                "client_message_id": client_message_id,
                 "fecha_envio": db_msg.fecha_envio.isoformat()
             }
             

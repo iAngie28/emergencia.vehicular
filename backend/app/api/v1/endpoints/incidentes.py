@@ -1350,6 +1350,34 @@ def listar_candidatos_incidente(
         })
     return resultado
 
+
+def _nombre_remitente_chat(incidente, usuario) -> str:
+    if not usuario:
+        return "Usuario"
+
+    if usuario.rol_id == 1 and getattr(incidente, "taller", None):
+        return incidente.taller.nombre or "Taller"
+
+    partes = [getattr(usuario, "nombre", None), getattr(usuario, "apellido", None)]
+    nombre = " ".join([parte for parte in partes if parte]).strip()
+    return nombre or getattr(usuario, "correo", None) or f"Usuario #{usuario.id}"
+
+
+def _tipo_remitente_chat(incidente, usuario) -> str:
+    if not usuario:
+        return "Usuario"
+
+    if usuario.id == incidente.usuario_id:
+        return "Cliente"
+    if usuario.rol_id == 3:
+        return "Técnico"
+    if usuario.rol_id == 1:
+        return "Taller"
+    if usuario.rol_id == 4:
+        return "Soporte"
+    return "Usuario"
+
+
 @router.get("/{incidente_id}/chat")
 def obtener_historial_chat(
     incidente_id: int,
@@ -1386,6 +1414,8 @@ def obtener_historial_chat(
                 "id": mensaje.id,
                 "incidente_id": mensaje.incidente_id,
                 "remitente_id": mensaje.remitente_id,
+                "remitente_nombre": _nombre_remitente_chat(incidente, mensaje.remitente),
+                "remitente_tipo": _tipo_remitente_chat(incidente, mensaje.remitente),
                 "contenido": mensaje.contenido,
                 "tipo": mensaje.tipo,
                 "fecha_envio": mensaje.fecha_envio.isoformat() if mensaje.fecha_envio else None,

@@ -51,13 +51,16 @@ class _ChatScreenState extends State<ChatScreen> {
         '/api/v1/incidentes/${widget.incidenteId}/chat',
       );
       if (!mounted) return;
+      final mensajes = <Map<String, dynamic>>[];
+      for (var item in response) {
+        if (item is Map<String, dynamic> && !_contieneMensaje(mensajes, item)) {
+          mensajes.add(item);
+        }
+      }
+
       setState(() {
         _mensajes.clear();
-        for (var item in response) {
-          if (item is Map<String, dynamic>) {
-            _mensajes.add(item);
-          }
-        }
+        _mensajes.addAll(mensajes);
         _isLoading = false;
       });
       _scrollToBottom();
@@ -77,10 +80,7 @@ class _ChatScreenState extends State<ChatScreen> {
     _realtimeSubscription = realtimeService.events.listen((event) {
       if (event['tipo'] == 'chat_message' &&
           event['incidente_id'] == widget.incidenteId) {
-        setState(() {
-          _mensajes.add(event);
-        });
-        _scrollToBottom();
+        _agregarMensaje(event);
       }
     });
   }
@@ -90,18 +90,23 @@ class _ChatScreenState extends State<ChatScreen> {
     if (text.isEmpty) return;
 
     final realtimeService = context.read<RealtimeService>();
+    final clientMessageId =
+        'mobile-${widget.incidenteId}-${DateTime.now().microsecondsSinceEpoch}';
     final payload = {
       'tipo': 'chat_message',
       'incidente_id': widget.incidenteId,
       'contenido': text,
       'tipo_msg': 'texto',
+      'client_message_id': clientMessageId,
     };
 
     realtimeService.send(payload);
 
     setState(() {
       _mensajes.add({
+        'client_message_id': clientMessageId,
         'remitente_id': _userId,
+        'remitente_tipo': 'Cliente',
         'contenido': text,
         'fecha_envio': DateTime.now().toUtc().toIso8601String(),
       });
@@ -122,6 +127,51 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
+  void _agregarMensaje(Map<String, dynamic> mensaje) {
+    if (_contieneMensaje(_mensajes, mensaje)) return;
+
+    setState(() {
+      _mensajes.add(mensaje);
+    });
+    _scrollToBottom();
+  }
+
+  bool _contieneMensaje(
+    List<Map<String, dynamic>> mensajes,
+    Map<String, dynamic> mensaje,
+  ) {
+    final id = mensaje['id'];
+    if (id != null &&
+        mensajes.any((actual) => actual['id']?.toString() == id.toString())) {
+      return true;
+    }
+
+    final clientMessageId = mensaje['client_message_id'];
+    if (clientMessageId != null) {
+      return mensajes.any(
+        (actual) =>
+            actual['client_message_id']?.toString() ==
+            clientMessageId.toString(),
+      );
+    }
+
+    final remitenteId = mensaje['remitente_id']?.toString();
+    final contenido = mensaje['contenido']?.toString();
+    final fechaEnvio = mensaje['fecha_envio']?.toString();
+
+    if (remitenteId == null || contenido == null || fechaEnvio == null) {
+      return false;
+    }
+
+    return mensajes.any(
+      (actual) =>
+          actual['id'] == null &&
+          actual['remitente_id']?.toString() == remitenteId &&
+          actual['contenido']?.toString() == contenido &&
+          actual['fecha_envio']?.toString() == fechaEnvio,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -129,13 +179,15 @@ class _ChatScreenState extends State<ChatScreen> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Chat con Soporte',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
             Text(
               widget.tallerNombre,
-              style: const TextStyle(fontSize: 12, color: Colors.white70),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const Text(
+              'Chat de soporte',
+              style: TextStyle(fontSize: 12, color: Colors.white70),
             ),
           ],
         ),
@@ -160,11 +212,10 @@ class _ChatScreenState extends State<ChatScreen> {
                           itemCount: _mensajes.length,
                           itemBuilder: (context, index) {
                             final msg = _mensajes[index];
-                            final isMe = msg['remitente_id'] == _userId;
-                            return _buildMessageBubble(
-                              msg['contenido'] ?? '',
-                              isMe,
-                            );
+                            final isMe =
+                                msg['remitente_id']?.toString() ==
+                                _userId?.toString();
+                            return _buildMessageBubble(msg, isMe);
                           },
                         ),
                 ),
@@ -174,7 +225,10 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  Widget _buildMessageBubble(String text, bool isMe) {
+  Widget _buildMessageBubble(Map<String, dynamic> msg, bool isMe) {
+    final text = msg['contenido']?.toString() ?? '';
+    final remitenteLabel = _remitenteLabel(msg, isMe);
+
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
@@ -193,15 +247,45 @@ class _ChatScreenState extends State<ChatScreen> {
                 : const Radius.circular(12),
           ),
         ),
-        child: Text(
-          text,
-          style: TextStyle(
-            color: isMe ? Colors.white : Colors.black87,
-            fontSize: 15,
-          ),
+        child: Column(
+          crossAxisAlignment: isMe
+              ? CrossAxisAlignment.end
+              : CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (!isMe && remitenteLabel.isNotEmpty) ...[
+              Text(
+                remitenteLabel,
+                style: const TextStyle(
+                  color: AppColors.primaryColor,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 3),
+            ],
+            Text(
+              text,
+              style: TextStyle(
+                color: isMe ? Colors.white : Colors.black87,
+                fontSize: 15,
+              ),
+            ),
+          ],
         ),
       ),
     );
+  }
+
+  String _remitenteLabel(Map<String, dynamic> msg, bool isMe) {
+    if (isMe) return 'Tú';
+
+    final tipo = msg['remitente_tipo']?.toString().trim() ?? '';
+    final nombre = msg['remitente_nombre']?.toString().trim() ?? '';
+
+    if (tipo.isNotEmpty && nombre.isNotEmpty) return '$tipo: $nombre';
+    if (tipo.isNotEmpty) return tipo;
+    return nombre;
   }
 
   Widget _buildInputBar() {
