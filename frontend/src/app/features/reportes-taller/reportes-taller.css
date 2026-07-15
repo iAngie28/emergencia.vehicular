@@ -41,11 +41,11 @@
 }
 
 .card-glass {
-  background: rgba(15, 23, 42, 0.4);
-  backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 12px;
   padding: 24px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
 }
 
 .table-responsive {
@@ -60,16 +60,18 @@
 
 .premium-table th {
   padding: 16px 20px;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
+  font-weight: 700;
   text-transform: uppercase;
-  color: #94a3b8;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
 }
 
 .premium-table td {
   padding: 18px 20px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   font-size: 0.95rem;
+  color: #f1f5f9;
 }
 
 .hover-row:hover {
@@ -283,8 +285,10 @@
 
 .empty-row {
   text-align: center;
-  padding: 30px !important;
-  color: #94a3b8;
+  padding: 40px !important;
+  color: #cbd5e1;
+  font-size: 1rem;
+  font-weight: 500;
 }
 
 @keyframes fadeIn {

@@ -148,7 +148,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       ? const Center(
                           child: Text(
                             'No hay mensajes. ¡Escribe un mensaje para iniciar el chat!',
-                            textAlign: Center,
+                            textAlign: TextAlign.center,
                             style: TextStyle(color: Colors.grey),
                           ),
                         )
