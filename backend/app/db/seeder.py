@@ -451,12 +451,12 @@ def seed_db(
         clientes.append(usuario)
     
     # Super Administrador por defecto
-    superadmin = db.query(Usuario).filter(Usuario.correo == "admin@vialia.com").first()
+    superadmin = db.query(Usuario).filter(Usuario.correo == "admin@super.com").first()
     if not superadmin:
         superadmin = Usuario(
             id=usuario_id_counter,
             nombre="Super Administrador",
-            correo="admin@vialia.com",
+            correo="admin@super.com",
             clave_hash=hash_clave,
             rol_id=4,  # Super Administrador
             taller_id=None,
@@ -466,7 +466,7 @@ def seed_db(
         db.add(superadmin)
         usuario_id_counter += 1
     usuarios.append(superadmin)
-        
+
     db.commit()
     
     logger.info(f"✅ Creados {len(usuarios)} usuarios")

@@ -60,6 +60,9 @@ export class LoginComponent implements OnInit {
         if (rolId === 3) {
           // Técnico
           this.router.navigate(['/tecnico/dashboard']);
+        } else if (rolId === 4) {
+          // Superadmin
+          this.router.navigate(['/superadmin']);
         } else if (rolId === 1) {
           // Admin
           if (this.isCheckout) {
