@@ -27,11 +27,14 @@ class _ChatScreenState extends State<ChatScreen> {
   StreamSubscription? _realtimeSubscription;
   bool _isLoading = true;
   int? _userId;
+  bool _soyTecnico = false;
 
   @override
   void initState() {
     super.initState();
-    _userId = context.read<AuthProvider>().userId;
+    final authProvider = context.read<AuthProvider>();
+    _userId = authProvider.userId;
+    _soyTecnico = authProvider.isTecnico;
     _cargarHistorial();
     _suscribirRealtime();
   }
@@ -106,7 +109,7 @@ class _ChatScreenState extends State<ChatScreen> {
       _mensajes.add({
         'client_message_id': clientMessageId,
         'remitente_id': _userId,
-        'remitente_tipo': 'Cliente',
+        'remitente_tipo': _soyTecnico ? 'Técnico' : 'Cliente',
         'contenido': text,
         'fecha_envio': DateTime.now().toUtc().toIso8601String(),
       });
@@ -253,11 +256,13 @@ class _ChatScreenState extends State<ChatScreen> {
               : CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (!isMe && remitenteLabel.isNotEmpty) ...[
+            if (remitenteLabel.isNotEmpty) ...[
               Text(
                 remitenteLabel,
-                style: const TextStyle(
-                  color: AppColors.primaryColor,
+                style: TextStyle(
+                  color: isMe
+                      ? Colors.white.withValues(alpha: 0.85)
+                      : AppColors.primaryColor,
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
                 ),
@@ -278,14 +283,17 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   String _remitenteLabel(Map<String, dynamic> msg, bool isMe) {
-    if (isMe) return 'Tú';
+    if (isMe) return _soyTecnico ? 'Tú (Técnico)' : 'Tú (Cliente)';
 
     final tipo = msg['remitente_tipo']?.toString().trim() ?? '';
     final nombre = msg['remitente_nombre']?.toString().trim() ?? '';
 
+    if (tipo == 'Taller' && nombre.isEmpty) return 'Taller: ${widget.tallerNombre}';
     if (tipo.isNotEmpty && nombre.isNotEmpty) return '$tipo: $nombre';
     if (tipo.isNotEmpty) return tipo;
-    return nombre;
+    if (nombre.isNotEmpty) return nombre;
+
+    return _soyTecnico ? 'Cliente' : 'Taller / Técnico';
   }
 
   Widget _buildInputBar() {

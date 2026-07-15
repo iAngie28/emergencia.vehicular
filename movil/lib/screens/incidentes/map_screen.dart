@@ -573,9 +573,25 @@ class _MapScreenState extends State<MapScreen>
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 10,
+              runSpacing: 10,
               children: [
+                if (!esTecnico)
+                  ElevatedButton.icon(
+                    onPressed: () => _abrirChat(context, activo),
+                    icon: const Icon(Icons.chat_bubble_outline),
+                    label: const Text('Chat'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 12,
+                      ),
+                    ),
+                  ),
                 if (!esTecnico)
                   ElevatedButton.icon(
                     onPressed: () => _abrirReporte(context, activo),

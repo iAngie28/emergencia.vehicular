@@ -231,8 +231,9 @@
           <div class="chat-messages-container">
             <div *ngFor="let msg of chatMensajes" 
                  class="chat-bubble" 
-                 [class.me]="msg.remitente_id === usuarioId" 
-                 [class.other]="msg.remitente_id !== usuarioId">
+                 [class.me]="esMensajePropio(msg)"
+                 [class.other]="!esMensajePropio(msg)">
+              <span class="bubble-sender">{{ etiquetaRemitenteChat(msg) }}</span>
               <p class="bubble-text">{{ msg.contenido }}</p>
               <span class="bubble-time">{{ msg.fecha_envio | date:'shortTime' }}</span>
             </div>

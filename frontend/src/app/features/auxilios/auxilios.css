@@ -915,6 +915,22 @@ body, h1, p, table, th, td, input, button {
   margin: 0;
 }
 
+.bubble-sender {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 1.1;
+}
+
+.chat-bubble.me .bubble-sender {
+  color: rgba(255, 255, 255, 0.88);
+  align-self: flex-end;
+}
+
+.chat-bubble.other .bubble-sender {
+  color: #2563eb;
+}
+
 .bubble-time {
   font-size: 0.7rem;
   align-self: flex-end;

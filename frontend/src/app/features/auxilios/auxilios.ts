@@ -139,10 +139,51 @@ export class AuxiliosComponent implements OnInit {
     // Agregar localmente para feedback inmediato
     this.chatMensajes.push({
       remitente_id: this.usuarioId,
+      remitente_tipo: 'Taller',
+      remitente_nombre: localStorage.getItem('nombre') || 'Taller',
       contenido: texto,
       fecha_envio: new Date().toISOString()
     });
     this.scrollChatAlFinal();
+  }
+
+  esMensajePropio(msg: any): boolean {
+    return msg?.remitente_id?.toString() === this.usuarioId.toString();
+  }
+
+  etiquetaRemitenteChat(msg: any): string {
+    if (this.esMensajePropio(msg)) return 'Tú (Taller)';
+
+    const tipo = msg?.remitente_tipo?.toString().trim();
+    const nombre = msg?.remitente_nombre?.toString().trim();
+    if (tipo && nombre) return `${tipo}: ${nombre}`;
+    if (tipo) return tipo;
+    if (nombre) return nombre;
+
+    const remitenteId = msg?.remitente_id?.toString();
+    const clienteId = this.incidenteSeleccionado?.usuario_id?.toString()
+      || this.incidenteSeleccionado?.usuario?.id?.toString();
+    const tecnicoId = this.incidenteSeleccionado?.tecnico_id?.toString()
+      || this.incidenteSeleccionado?.tecnico?.id?.toString();
+
+    if (remitenteId && clienteId && remitenteId === clienteId) {
+      return `Cliente: ${this.nombreClienteChat()}`;
+    }
+    if (remitenteId && tecnicoId && remitenteId === tecnicoId) {
+      return `Técnico: ${this.nombreTecnicoChat()}`;
+    }
+
+    return 'Cliente / Técnico';
+  }
+
+  private nombreClienteChat(): string {
+    return this.incidenteSeleccionado?.usuario?.nombre
+      || this.incidenteSeleccionado?.cliente_nombre
+      || 'Cliente';
+  }
+
+  private nombreTecnicoChat(): string {
+    return this.incidenteSeleccionado?.tecnico?.nombre || 'Técnico';
   }
 
   scrollChatAlFinal() {
