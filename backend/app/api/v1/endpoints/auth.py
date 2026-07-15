@@ -17,7 +17,8 @@ from app.schemas.token import Token
 from app.schemas.usuario import RegistroSaaS, UsuarioCreate, RecuperarClaveRequest, RestablecerClaveInput
 
 # Asegúrate de que tu modelo Usuario también esté importado aquí
-from app.models.usuario import PasswordResetToken, Usuario 
+from app.models.taller import Taller
+from app.models.usuario import PasswordResetToken, Usuario
 
 router = APIRouter()
 
@@ -128,6 +129,14 @@ def login_access_token(
         raise HTTPException(status_code=403, detail="Acceso denegado: Use la App Móvil.")
     if plataforma == "movil" and usuario.rol_id != 2:
         raise HTTPException(status_code=403, detail="Acceso denegado: La app móvil es solo para clientes.")
+
+    if usuario.rol_id in (1, 3) and usuario.taller_id:
+        taller = db.query(Taller).filter(Taller.id == usuario.taller_id).first()
+        if not taller or not taller.estado:
+            raise HTTPException(
+                status_code=403,
+                detail="Acceso denegado: El taller se encuentra inhabilitado."
+            )
 
     bitacora_crud.registrar(
         db,
@@ -243,8 +252,6 @@ def ejecutar_impersonacion(
 
 # Para evitar líos de inyección y placeholders, escribiremos la lógica directa aquí:
 from app.api.deps import get_current_superadmin, get_current_active_user
-from app.models.taller import Taller
-
 @router.post("/impersonar-taller/{taller_id}", response_model=Token)
 def api_impersonar_taller(
     taller_id: int,
@@ -254,6 +261,8 @@ def api_impersonar_taller(
     taller = db.query(Taller).filter(Taller.id == taller_id).first()
     if not taller:
         raise HTTPException(status_code=404, detail="El taller no existe.")
+    if not taller.estado:
+        raise HTTPException(status_code=400, detail="No se puede impersonar un taller inhabilitado.")
 
     # Registrar en bitácora
     bitacora_crud.registrar(

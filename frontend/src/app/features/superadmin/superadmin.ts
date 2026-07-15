@@ -33,6 +33,13 @@ export class SuperadminComponent implements OnInit {
   mostrarModalDetalle = false;
   detalleTaller: any = null;
   cargandoDetalle = false;
+  mostrarModalInhabilitar = false;
+  tallerParaInhabilitar: any = null;
+  datosInhabilitacion = {
+    tipo_inhabilitacion: 'temporal',
+    motivo: ''
+  };
+  procesandoInhabilitacion = false;
   
   // Modal de resolución de reporte
   mostrarModalResolver = false;
@@ -117,6 +124,56 @@ export class SuperadminComponent implements OnInit {
     this.cargandoDetalle = false;
   }
 
+  abrirInhabilitarTaller(taller: any = this.detalleTaller?.taller) {
+    if (!taller || !taller.estado) return;
+    this.tallerParaInhabilitar = taller;
+    this.datosInhabilitacion = {
+      tipo_inhabilitacion: 'temporal',
+      motivo: ''
+    };
+    this.mostrarModalInhabilitar = true;
+  }
+
+  cerrarInhabilitarTaller() {
+    this.mostrarModalInhabilitar = false;
+    this.tallerParaInhabilitar = null;
+    this.procesandoInhabilitacion = false;
+    this.datosInhabilitacion = {
+      tipo_inhabilitacion: 'temporal',
+      motivo: ''
+    };
+  }
+
+  confirmarInhabilitarTaller() {
+    if (!this.tallerParaInhabilitar || this.datosInhabilitacion.motivo.trim().length < 5) {
+      alert('Debes registrar un motivo de al menos 5 caracteres.');
+      return;
+    }
+
+    this.procesandoInhabilitacion = true;
+    this.talleresService.inhabilitarTaller(this.tallerParaInhabilitar.id, {
+      tipo_inhabilitacion: this.datosInhabilitacion.tipo_inhabilitacion,
+      motivo: this.datosInhabilitacion.motivo.trim()
+    }).subscribe({
+      next: (tallerActualizado) => {
+        this.procesandoInhabilitacion = false;
+        this.cerrarInhabilitarTaller();
+        this.cargarTalleres();
+        if (this.detalleTaller?.taller?.id === tallerActualizado.id) {
+          this.abrirDetalleTaller(tallerActualizado);
+        }
+      },
+      error: (err) => {
+        this.procesandoInhabilitacion = false;
+        const detail = err?.error?.detail;
+        const mensaje = typeof detail === 'string'
+          ? detail
+          : detail?.mensaje || 'No se pudo inhabilitar el taller.';
+        alert(mensaje);
+      }
+    });
+  }
+
   nombreTecnico(tecnico: any): string {
     return [tecnico?.nombre, tecnico?.apellido].filter(Boolean).join(' ') || 'Sin nombre';
   }
@@ -135,6 +192,12 @@ export class SuperadminComponent implements OnInit {
 
   etiquetaEstadoTaller(estado: boolean): string {
     return estado ? 'Habilitado' : 'Inhabilitado';
+  }
+
+  etiquetaTipoInhabilitacion(tipo?: string): string {
+    if (tipo === 'permanente') return 'Permanente';
+    if (tipo === 'temporal') return 'Temporal';
+    return 'No registrada';
   }
 
   impersonar(tallerId: number) {

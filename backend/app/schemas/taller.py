@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional, List
+from typing import Literal, Optional, List
 from decimal import Decimal
 from datetime import time, datetime
 
@@ -27,6 +27,10 @@ class TallerBase(BaseModel):
     plan_suscripcion: Optional[str] = "gratuito"
     suscripcion_expira: Optional[datetime] = None
     stripe_subscription_id: Optional[str] = None
+    tipo_inhabilitacion: Optional[str] = None
+    motivo_inhabilitacion: Optional[str] = None
+    fecha_inhabilitacion: Optional[datetime] = None
+    inhabilitado_por_usuario_id: Optional[int] = None
 
 class TallerCreate(TallerBase):
     pass
@@ -44,6 +48,10 @@ class TallerUpdate(BaseModel):
     plan_suscripcion: Optional[str] = "gratuito"
     suscripcion_expira: Optional[datetime] = None
     stripe_subscription_id: Optional[str] = None
+    tipo_inhabilitacion: Optional[str] = None
+    motivo_inhabilitacion: Optional[str] = None
+    fecha_inhabilitacion: Optional[datetime] = None
+    inhabilitado_por_usuario_id: Optional[int] = None
 
 class Taller(TallerBase):
     id: int
@@ -116,3 +124,8 @@ class TallerDetalleSuperadmin(BaseModel):
     tecnicos: List[TallerTecnicoResumen] = []
     reportes: List[TallerReporteResumen] = []
     emergencias: List[TallerEmergenciaResumen] = []
+
+
+class TallerInhabilitarRequest(BaseModel):
+    motivo: str = Field(..., min_length=5, max_length=500)
+    tipo_inhabilitacion: Literal["temporal", "permanente"] = "temporal"

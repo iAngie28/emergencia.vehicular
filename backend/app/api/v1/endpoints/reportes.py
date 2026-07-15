@@ -7,6 +7,7 @@ from app.crud.crud_reporte import reporte_crud
 from app.crud.crud_incidente import incidente_crud
 from app.crud.crud_bitacora import bitacora_crud
 from app.schemas.reporte import ReporteCreate, ReporteOut, ReporteUpdate
+from app.models.taller import Taller
 from app.models.usuario import Usuario
 from app.services.notificacion_service import NotificacionService
 
@@ -126,6 +127,12 @@ def listar_reportes(
 ) -> Any:
     # Si el usuario tiene taller_id activo (Admin de Taller real o Superadmin Impersonando Taller)
     if current_user.taller_id and current_user.rol_id == 1:
+        taller = db.query(Taller).filter(Taller.id == current_user.taller_id).first()
+        if not taller or not taller.estado:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Acceso restringido: El taller se encuentra inhabilitado."
+            )
         return reporte_crud.obtener_tecnicos_por_taller(db, taller_id=current_user.taller_id)
 
     # Si es Super Administrador actuando globalmente sin impersonar a un taller específico
@@ -193,6 +200,12 @@ def responder_reporte(
             )
     elif current_user.rol_id == 1:
         # Administrador del taller puede responder a reportes de tipo 'tecnico' de su propio taller
+        taller = db.query(Taller).filter(Taller.id == current_user.taller_id).first()
+        if not taller or not taller.estado:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Acceso restringido: El taller se encuentra inhabilitado."
+            )
         if reporte.tipo_reporte != "tecnico" or reporte.taller_id != current_user.taller_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,

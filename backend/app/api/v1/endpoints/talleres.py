@@ -13,9 +13,12 @@ from app.schemas.taller import (
     TallerDirectorioOut,
     TallerDetalleSuperadmin,
     TallerEmergenciaResumen,
+    TallerInhabilitarRequest,
     TallerReporteResumen,
     TallerTecnicoResumen,
 )
+from app.core.estados import ESTADOS_INCIDENTE_ACTIVOS
+from app.services.notificacion_service import NotificacionService
 from app.services.ranking_taller_service import RankingTallerService
 from fastapi.encoders import jsonable_encoder
 
@@ -94,7 +97,7 @@ def directorio_talleres(
 @router.get("/me", response_model=Taller)
 def obtener_mi_taller(
     db: Session = Depends(deps.get_db),
-    current_user = Depends(deps.get_current_active_user)
+    current_user = Depends(deps.get_current_admin_taller)
 ):
     taller = taller_crud.get(db, id=current_user.taller_id)
     if not taller:
@@ -105,7 +108,7 @@ def obtener_mi_taller(
 @router.get("/me/status", response_model=dict)
 def obtener_status_taller(
     db: Session = Depends(deps.get_db),
-    current_user = Depends(deps.get_current_active_user)
+    current_user = Depends(deps.get_current_admin_taller)
 ):
     """Obtiene si el taller está abierto AHORA"""
     taller = taller_crud.get(db, id=current_user.taller_id)
@@ -123,7 +126,7 @@ def obtener_status_taller(
 def actualizar_mi_taller(
     obj_in: TallerUpdate,
     db: Session = Depends(deps.get_db),
-    current_user = Depends(deps.get_current_active_user)
+    current_user = Depends(deps.get_current_admin_taller)
 ):
     taller_db = taller_crud.get(db, id=current_user.taller_id)
     if not taller_db:
@@ -276,6 +279,116 @@ def obtener_detalle_taller_superadmin(
         reportes=reportes,
         emergencias=emergencias,
     )
+
+
+@router.post("/superadmin/{id}/inhabilitar", response_model=Taller)
+def inhabilitar_taller_superadmin(
+    id: int,
+    payload: TallerInhabilitarRequest,
+    db: Session = Depends(deps.get_db),
+    current_user = Depends(deps.get_current_superadmin),
+):
+    """(Superadmin) Inhabilita un taller si no tiene emergencias activas asignadas."""
+    from app.models.asignacion_inteligente import IncidenteAsignacionCandidato
+    from app.models.incidente import Incidente as IncidenteModel
+    from app.models.taller import Taller as TallerModel
+    from app.models.usuario import Usuario as UsuarioModel
+
+    taller = db.query(TallerModel).filter(TallerModel.id == id).first()
+    if not taller:
+        raise HTTPException(status_code=404, detail="Taller no encontrado")
+
+    if not taller.estado:
+        raise HTTPException(status_code=400, detail="El taller ya se encuentra inhabilitado.")
+
+    emergencias_activas = (
+        db.query(IncidenteModel)
+        .filter(
+            IncidenteModel.taller_id == id,
+            IncidenteModel.estado.in_(ESTADOS_INCIDENTE_ACTIVOS),
+        )
+        .order_by(IncidenteModel.fecha_creacion.desc(), IncidenteModel.id.desc())
+        .all()
+    )
+    if emergencias_activas:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "mensaje": "No se puede inhabilitar el taller porque tiene emergencias activas sin reasignar.",
+                "incidentes": [
+                    {"id": incidente.id, "estado": incidente.estado}
+                    for incidente in emergencias_activas
+                ],
+            },
+        )
+
+    ahora = datetime.utcnow()
+
+    candidatos_pendientes = (
+        db.query(IncidenteAsignacionCandidato)
+        .filter(
+            IncidenteAsignacionCandidato.taller_id == id,
+            IncidenteAsignacionCandidato.estado.in_(["pendiente", "ofrecido", "sugerido", "cotizado"]),
+        )
+        .all()
+    )
+    for candidato in candidatos_pendientes:
+        candidato.estado = "saltado"
+        candidato.motivo_rechazo = "Taller inhabilitado por superadministrador."
+        candidato.fecha_respuesta = ahora
+        db.add(candidato)
+
+    taller.estado = False
+    taller.tipo_inhabilitacion = payload.tipo_inhabilitacion
+    taller.motivo_inhabilitacion = payload.motivo
+    taller.fecha_inhabilitacion = ahora
+    taller.inhabilitado_por_usuario_id = current_user.id
+    db.add(taller)
+    db.commit()
+    db.refresh(taller)
+
+    bitacora_crud.registrar(
+        db,
+        usuario_id=current_user.id,
+        taller_id=taller.id,
+        tabla="taller",
+        tabla_id=taller.id,
+        accion="INHABILITAR_TALLER",
+        anterior={"estado": True},
+        nuevo={
+            "estado": False,
+            "tipo_inhabilitacion": payload.tipo_inhabilitacion,
+            "motivo": payload.motivo,
+            "fecha_inhabilitacion": taller.fecha_inhabilitacion.isoformat() if taller.fecha_inhabilitacion else None,
+            "usuario_responsable_id": current_user.id,
+        },
+    )
+
+    admins_taller = (
+        db.query(UsuarioModel)
+        .filter(
+            UsuarioModel.taller_id == taller.id,
+            UsuarioModel.rol_id == 1,
+            UsuarioModel.esta_activo == True,
+        )
+        .all()
+    )
+    for admin in admins_taller:
+        NotificacionService.crear_notificacion(
+            db,
+            usuario_id=admin.id,
+            titulo="Taller inhabilitado",
+            mensaje=f"Tu taller fue inhabilitado por el superadministrador. Motivo: {payload.motivo}",
+            tipo="taller_inhabilitado",
+            extra_data={
+                "evento": "taller_inhabilitado",
+                "taller_id": taller.id,
+                "tipo_inhabilitacion": payload.tipo_inhabilitacion,
+                "motivo": payload.motivo,
+            },
+        )
+
+    return taller
 
 
 # 4. Leer un taller por su ID (Genérico)

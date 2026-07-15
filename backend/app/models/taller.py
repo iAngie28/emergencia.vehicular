@@ -19,6 +19,10 @@ class Taller(Base):
     calificacion_promedio = Column(Float, nullable=True, default=None)  # Promedio de calificaciones
     stripe_account_id = Column(String(255), nullable=True) # ID de la cuenta conectada en Stripe
     fecha_creacion = Column(DateTime(timezone=True), server_default=func.now())
+    tipo_inhabilitacion = Column(String(20), nullable=True)
+    motivo_inhabilitacion = Column(String(500), nullable=True)
+    fecha_inhabilitacion = Column(DateTime(timezone=True), nullable=True)
+    inhabilitado_por_usuario_id = Column(Integer, nullable=True)
     
     # Suscripción
     plan_suscripcion = Column(String(50), default='gratuito') # 'gratuito' o 'premium'

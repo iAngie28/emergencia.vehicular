@@ -65,11 +65,23 @@ def get_current_user(
 # --- CANDADOS DE SEGURIDAD ---
 
 def get_current_active_user(
+    db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_user),
 ) -> Usuario:
+    original_rol_id = getattr(current_user, "original_rol_id", current_user.rol_id)
+    if original_rol_id in (1, 3) and current_user.taller_id:
+        from app.models.taller import Taller
+        taller = db.query(Taller).filter(Taller.id == current_user.taller_id).first()
+        if not taller or not taller.estado:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Acceso restringido: El taller se encuentra inhabilitado.",
+            )
+
     return current_user
 
 def get_current_admin_taller(
+    db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_active_user), # 👈 Encadenamos con el validador de activo
 ) -> Usuario:
     """Candado: Solo permite el paso a Administradores de Taller (Web)"""
@@ -78,6 +90,21 @@ def get_current_admin_taller(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Acceso denegado: Se requieren permisos de Administrador de Taller.",
         )
+
+    if not current_user.taller_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Acceso denegado: El usuario no tiene un taller asignado.",
+        )
+
+    from app.models.taller import Taller
+    taller = db.query(Taller).filter(Taller.id == current_user.taller_id).first()
+    if not taller or not taller.estado:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Acceso restringido: El taller se encuentra inhabilitado.",
+        )
+
     return current_user
 
 def get_current_cliente(
@@ -102,4 +129,4 @@ def get_current_superadmin(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Acceso denegado: Se requieren permisos de Super Administrador.",
         )
-    return current_user
+    return current_user

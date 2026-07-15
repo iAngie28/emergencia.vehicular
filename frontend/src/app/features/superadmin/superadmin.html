@@ -105,7 +105,10 @@
                     <button class="btn-action" type="button" (click)="abrirDetalleTaller(taller)">
                       <i class="fa-solid fa-eye"></i> Ver detalle
                     </button>
-                    <button class="btn-impersonate" [disabled]="cargando" (click)="impersonar(taller.id)">
+                    <button class="btn-danger-soft" type="button" [disabled]="!taller.estado || cargando" (click)="abrirInhabilitarTaller(taller)">
+                      <i class="fa-solid fa-ban"></i> Inhabilitar
+                    </button>
+                    <button class="btn-impersonate" [disabled]="cargando || !taller.estado" (click)="impersonar(taller.id)">
                     <i class="fa-solid fa-right-to-bracket"></i> Ingresar como Admin
                     </button>
                   </div>
@@ -219,6 +222,19 @@
                 <span>Abierto ahora</span>
                 <strong>{{ detalleTaller.taller.esta_abierto_ahora ? 'Sí' : 'No' }}</strong>
               </div>
+              <div>
+                <span>Tipo inhabilitación</span>
+                <strong>{{ etiquetaTipoInhabilitacion(detalleTaller.taller.tipo_inhabilitacion) }}</strong>
+              </div>
+              <div>
+                <span>Fecha inhabilitación</span>
+                <strong>{{ formatearFecha(detalleTaller.taller.fecha_inhabilitacion) }}</strong>
+              </div>
+            </div>
+
+            <div class="warning-box" *ngIf="!detalleTaller.estado_habilitacion">
+              <strong>Motivo de inhabilitación</strong>
+              <p>{{ detalleTaller.taller.motivo_inhabilitacion || 'Sin motivo registrado.' }}</p>
             </div>
           </section>
 
@@ -280,7 +296,52 @@
       </div>
 
       <div class="modal-footer">
+        <button class="btn-danger" *ngIf="detalleTaller?.estado_habilitacion" (click)="abrirInhabilitarTaller(detalleTaller.taller)">
+          <i class="fa-solid fa-ban"></i> Inhabilitar taller
+        </button>
         <button class="btn-secondary" (click)="cerrarDetalleTaller()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL INHABILITAR TALLER -->
+  <div class="modal-backdrop" *ngIf="mostrarModalInhabilitar">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>
+          <i class="fa-solid fa-ban"></i>
+          Inhabilitar Taller
+        </h2>
+        <button class="close-btn" (click)="cerrarInhabilitarTaller()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="info-block">
+          <p><strong>Taller:</strong> {{ tallerParaInhabilitar?.nombre }}</p>
+          <p>El sistema verificará que no existan emergencias activas sin reasignar antes de aplicar la inhabilitación.</p>
+        </div>
+
+        <div class="input-block">
+          <label for="tipoInhabilitacion">Tipo de inhabilitación</label>
+          <select id="tipoInhabilitacion" [(ngModel)]="datosInhabilitacion.tipo_inhabilitacion" [disabled]="procesandoInhabilitacion">
+            <option value="temporal">Temporal</option>
+            <option value="permanente">Permanente</option>
+          </select>
+        </div>
+
+        <div class="input-block">
+          <label for="motivoInhabilitacion">Motivo</label>
+          <textarea id="motivoInhabilitacion"
+                    [(ngModel)]="datosInhabilitacion.motivo"
+                    [disabled]="procesandoInhabilitacion"
+                    placeholder="Describe el motivo de la inhabilitación..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="cerrarInhabilitarTaller()" [disabled]="procesandoInhabilitacion">Cancelar</button>
+        <button class="btn-danger" (click)="confirmarInhabilitarTaller()" [disabled]="procesandoInhabilitacion || datosInhabilitacion.motivo.trim().length < 5">
+          <span *ngIf="!procesandoInhabilitacion"><i class="fa-solid fa-ban"></i> Confirmar inhabilitación</span>
+          <span *ngIf="procesandoInhabilitacion"><i class="fa-solid fa-spinner fa-spin"></i> Procesando...</span>
+        </button>
       </div>
     </div>
   </div>
