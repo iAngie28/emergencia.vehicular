@@ -2,10 +2,10 @@
   <div class="header-card">
     <div class="header-content">
       <h1>
-        <i class="fa-solid fa-user-ninja glow-icon"></i>
-        Reportes sobre Técnicos
+        <i class="fa-solid glow-icon" [ngClass]="iconoPagina"></i>
+        {{ tituloPagina }}
       </h1>
-      <p class="subtitle">Gestiona las quejas e incidencias registradas por los clientes contra tus técnicos asignados.</p>
+      <p class="subtitle">{{ subtituloPagina }}</p>
     </div>
   </div>
 
@@ -16,7 +16,7 @@
           <tr>
             <th>ID Reporte</th>
             <th>ID Incidente</th>
-            <th>Técnico Reportado</th>
+            <th>{{ reportadoHeader }}</th>
             <th>Motivo</th>
             <th>Descripción</th>
             <th>Estado</th>
@@ -28,8 +28,9 @@
             <td><span class="id-badge">#{{ rep.id }}</span></td>
             <td><span class="incidente-ref">#{{ rep.incidente_id }}</span></td>
             <td>
-              <div class="tecnico-info">
-                <strong>ID:</strong> #{{ rep.tecnico_id || 'N/A' }}
+              <div class="reportado-info">
+                <strong>{{ modoSuperadminGlobal ? 'Taller ID:' : 'ID:' }}</strong>
+                #{{ modoSuperadminGlobal ? rep.taller_id : (rep.tecnico_id || 'N/A') }}
               </div>
             </td>
             <td><span class="motivo-label">{{ rep.motivo }}</span></td>
@@ -47,7 +48,7 @@
             </td>
           </tr>
           <tr *ngIf="reportes.length === 0">
-            <td colspan="7" class="empty-row">No se han registrado reportes contra tus técnicos. ¡Buen trabajo!</td>
+            <td colspan="7" class="empty-row">{{ emptyMessage }}</td>
           </tr>
         </tbody>
       </table>
@@ -60,32 +61,35 @@
       <div class="modal-header">
         <h2>
           <i class="fa-solid fa-reply"></i>
-          {{ reporteSeleccionado?.estado === 'resuelto' ? 'Detalle del Reporte' : 'Responder Reclamo' }}
+          {{ reporteSeleccionado?.estado === 'resuelto' ? 'Detalle del Reporte' : (modoSuperadminGlobal ? 'Responder Reporte de Taller' : 'Responder Reclamo') }}
         </h2>
         <button class="close-btn" (click)="cerrarModalResolver()">&times;</button>
       </div>
       <div class="modal-body">
         <div class="info-block">
           <p><strong>Incidente:</strong> #{{ reporteSeleccionado?.incidente_id }}</p>
-          <p><strong>Técnico Asignado:</strong> ID #{{ reporteSeleccionado?.tecnico_id }}</p>
+          <p>
+            <strong>{{ modoSuperadminGlobal ? 'Taller Reportado:' : 'Técnico Asignado:' }}</strong>
+            #{{ modoSuperadminGlobal ? reporteSeleccionado?.taller_id : reporteSeleccionado?.tecnico_id }}
+          </p>
           <p><strong>Motivo:</strong> {{ reporteSeleccionado?.motivo }}</p>
           <p><strong>Detalle del Cliente:</strong></p>
           <div class="desc-box">{{ reporteSeleccionado?.descripcion }}</div>
         </div>
 
         <div class="input-block">
-          <label for="respuesta">Descargo / Respuesta del Taller:</label>
-          <textarea id="respuesta" 
-                    [(ngModel)]="respuestaTaller" 
+          <label for="respuesta">{{ respuestaLabel }}</label>
+          <textarea id="respuesta"
+                    [(ngModel)]="respuestaReporte"
                     [disabled]="reporteSeleccionado?.estado === 'resuelto' || cargando"
-                    placeholder="Describe las acciones correctivas o explicaciones que se le darán al cliente..."></textarea>
+                    [placeholder]="respuestaPlaceholder"></textarea>
         </div>
       </div>
       <div class="modal-footer">
         <button class="btn-secondary" (click)="cerrarModalResolver()">Cerrar</button>
         <button class="btn-primary" 
                 *ngIf="reporteSeleccionado?.estado !== 'resuelto'"
-                [disabled]="cargando || !respuestaTaller.trim()" 
+                [disabled]="cargando || !respuestaReporte.trim()"
                 (click)="guardarResolucion()">
           <span *ngIf="!cargando"><i class="fa-solid fa-check"></i> Marcar Resuelto</span>
           <span *ngIf="cargando"><i class="fa-solid fa-spinner fa-spin"></i> Guardando...</span>

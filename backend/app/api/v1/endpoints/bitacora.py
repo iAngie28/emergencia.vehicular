@@ -14,26 +14,40 @@ def leer_historial_auditoria(
     db: Session = Depends(deps.get_db), 
     skip: int = 0, 
     limit: int = 100,
-    current_user = Depends(deps.get_current_admin_taller) # 👈 CANDADO APLICADO: Solo Admin Web
+    current_user = Depends(deps.get_current_active_user)
 ):
     """
-    Retorna la lista de movimientos registrados SOLO para el taller del usuario actual,
-    incluyendo el nombre del responsable.
+    Retorna la lista de movimientos registrados.
+    - Admin de taller: solo ve los registros de su taller.
+    - Superadmin sin impersonar: ve la bitácora global.
     """
-    if not current_user.taller_id:
+    original_rol_id = getattr(current_user, "original_rol_id", current_user.rol_id)
+    es_superadmin_global = original_rol_id == 4 and current_user.rol_id == 4
+    es_admin_taller = current_user.rol_id == 1
+
+    if not es_superadmin_global and not es_admin_taller:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Acceso denegado: se requieren permisos de Administrador o Super Administrador.",
+        )
+
+    if es_admin_taller and not current_user.taller_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="El usuario no tiene un taller asignado para ver auditoría."
         )
 
     # 1. Hacemos un JOIN con Usuario para traer el nombre de una vez (optimizado)
-    resultados = (
+    query = (
         db.query(Bitacora, Usuario.nombre)
         .outerjoin(Usuario, Bitacora.usuario_id == Usuario.id)
-        .filter(Bitacora.taller_id == current_user.taller_id)
         .order_by(Bitacora.fecha_hora.desc())
-        .offset(skip).limit(limit).all()
     )
+
+    if es_admin_taller:
+        query = query.filter(Bitacora.taller_id == current_user.taller_id)
+
+    resultados = query.offset(skip).limit(limit).all()
 
     # 2. Armamos la lista de diccionarios inyectando el nombre
     logs_formateados = []

@@ -33,6 +33,17 @@ class CRUDReporte(CRUDBase[Reporte, ReporteCreate, ReporteUpdate]):
             .all()
         )
 
+    def obtener_tecnicos_por_taller(self, db: Session, *, taller_id: int) -> List[Reporte]:
+        return (
+            db.query(self.model)
+            .filter(
+                self.model.taller_id == taller_id,
+                self.model.tipo_reporte == "tecnico"
+            )
+            .order_by(self.model.fecha_creacion.desc())
+            .all()
+        )
+
     def obtener_todos_taller_reportes(self, db: Session) -> List[Reporte]:
         # El superadmin ve todos los reportes de tipo 'taller'
         return (

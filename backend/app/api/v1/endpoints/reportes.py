@@ -99,11 +99,11 @@ def listar_reportes(
 ) -> Any:
     # Si el usuario tiene taller_id activo (Admin de Taller real o Superadmin Impersonando Taller)
     if current_user.taller_id and current_user.rol_id == 1:
-        return reporte_crud.obtener_por_taller(db, taller_id=current_user.taller_id)
+        return reporte_crud.obtener_tecnicos_por_taller(db, taller_id=current_user.taller_id)
 
     # Si es Super Administrador actuando globalmente sin impersonar a un taller específico
     original_rol_id = getattr(current_user, "original_rol_id", current_user.rol_id)
-    if original_rol_id == 4:
+    if original_rol_id == 4 and current_user.rol_id == 4:
         return reporte_crud.obtener_todos_taller_reportes(db)
 
     raise HTTPException(
@@ -124,9 +124,10 @@ def responder_reporte(
         raise HTTPException(status_code=404, detail="El reporte no existe.")
 
     original_rol_id = getattr(current_user, "original_rol_id", current_user.rol_id)
+    es_superadmin_global = original_rol_id == 4 and current_user.rol_id == 4
 
     # Validar permisos
-    if original_rol_id == 4:
+    if es_superadmin_global:
         # Superadministrador puede responder a reportes de tipo 'taller'
         if reporte.tipo_reporte != "taller":
             raise HTTPException(

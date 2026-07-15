@@ -1,5 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 // 👇 1. Importamos el environment global
 import { environment } from '../../../environments/environment';
@@ -104,6 +104,10 @@ export class AuthService {
     return localStorage.getItem('nombre') || 'Usuario';
   }
 
+  private getAuthHeaders(token: string | null = localStorage.getItem('token')): HttpHeaders {
+    return new HttpHeaders().set('Authorization', `Bearer ${token || ''}`);
+  }
+
   /**
    * VERIFICADOR: Revisa si hay una sesión activa al cargar la página
    */
@@ -135,15 +139,18 @@ export class AuthService {
     const originalToken = localStorage.getItem('token');
     const originalRol = localStorage.getItem('rol_id');
     const originalNombre = localStorage.getItem('nombre');
-    
-    if (originalToken && originalRol && originalNombre) {
-      localStorage.setItem('original_token', originalToken);
-      localStorage.setItem('original_rol_id', originalRol);
-      localStorage.setItem('original_nombre', originalNombre);
-    }
 
-    return this.http.post<LoginResponse>(`${this.baseUrl}/impersonar-taller/${tallerId}`, {}).pipe(
+    return this.http.post<LoginResponse>(
+      `${this.baseUrl}/impersonar-taller/${tallerId}`,
+      {},
+      { headers: this.getAuthHeaders(originalToken) }
+    ).pipe(
       tap((response) => {
+        if (originalToken && originalRol && originalNombre) {
+          localStorage.setItem('original_token', originalToken);
+          localStorage.setItem('original_rol_id', originalRol);
+          localStorage.setItem('original_nombre', originalNombre);
+        }
         localStorage.setItem('token', response.access_token);
         localStorage.setItem('rol_id', response.rol_id.toString());
         localStorage.setItem('usuario_id', response.usuario_id.toString());
@@ -154,7 +161,11 @@ export class AuthService {
   }
 
   revertirImpersonacion(): Observable<LoginResponse> {
-    return this.http.post<LoginResponse>(`${this.baseUrl}/revertir-impersonacion`, {}).pipe(
+    return this.http.post<LoginResponse>(
+      `${this.baseUrl}/revertir-impersonacion`,
+      {},
+      { headers: this.getAuthHeaders() }
+    ).pipe(
       tap((response) => {
         localStorage.setItem('token', response.access_token);
         localStorage.setItem('rol_id', response.rol_id.toString());
@@ -171,7 +182,7 @@ export class AuthService {
 
   isImpersonating(): boolean {
     if (typeof window !== 'undefined' && localStorage) {
-      return !!localStorage.getItem('original_token');
+      return !!localStorage.getItem('original_token') && localStorage.getItem('rol_id') === '1';
     }
     return false;
   }

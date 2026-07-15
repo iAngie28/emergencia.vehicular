@@ -92,6 +92,11 @@
   font-weight: 600;
 }
 
+.reportado-info {
+  color: #334155;
+  font-weight: 500;
+}
+
 .motivo-label {
   background: #f1f5f9;
   border: 1px solid #e2e8f0;
