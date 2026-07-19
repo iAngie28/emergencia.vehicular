@@ -96,10 +96,14 @@ def crear_reporte(
     if reporte.tipo_reporte == "tecnico":
         destinatarios = db.query(Usuario).filter(
             Usuario.taller_id == reporte.taller_id,
-            Usuario.rol_id == 1
+            Usuario.rol_id == 1,
+            Usuario.esta_activo == True
         ).all()
     else:
-        destinatarios = db.query(Usuario).filter(Usuario.rol_id == 4).all()
+        destinatarios = db.query(Usuario).filter(
+            Usuario.rol_id == 4,
+            Usuario.esta_activo == True
+        ).all()
 
     for destinatario in destinatarios:
         NotificacionService.crear_notificacion(

@@ -1,10 +1,25 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Router } from '@angular/router';
+import { Subscription } from 'rxjs';
+import { environment } from '../../../environments/environment';
 import { TalleresService } from '../../core/services/talleres';
 import { ReportesService, Reporte } from '../../core/services/reportes';
 import { AuthService } from '../../core/services/auth';
+import { NotificacionContadorService } from '../../core/services/notificacion-contador.service';
+import { WebSocketNotificacionService } from '../../core/services/websocket-notificacion.service';
+
+interface SuperadminNotificacion {
+  id: number;
+  titulo: string;
+  mensaje: string;
+  tipo: string;
+  leido: boolean;
+  fecha_envio: string;
+  incidente_id?: number;
+}
 
 @Component({
   selector: 'app-superadmin',
@@ -13,15 +28,23 @@ import { AuthService } from '../../core/services/auth';
   templateUrl: './superadmin.html',
   styleUrls: ['./superadmin.css']
 })
-export class SuperadminComponent implements OnInit {
+export class SuperadminComponent implements OnInit, OnDestroy {
+  private http = inject(HttpClient);
   private talleresService = inject(TalleresService);
   private reportesService = inject(ReportesService);
   private authService = inject(AuthService);
+  private contadorNotificaciones = inject(NotificacionContadorService);
+  private wsService = inject(WebSocketNotificacionService);
   private router = inject(Router);
+  private notificacionSub: Subscription | null = null;
+  private contadorSub: Subscription | null = null;
 
   talleres: any[] = [];
   reportes: Reporte[] = [];
-  tabActiva: 'talleres' | 'reportes' = 'talleres';
+  notificaciones: SuperadminNotificacion[] = [];
+  notificacionesNoLeidas = 0;
+  cargandoNotificaciones = false;
+  tabActiva: 'talleres' | 'reportes' | 'notificaciones' = 'talleres';
   filtrosTaller = {
     nombre: '',
     ciudad: '',
@@ -50,6 +73,17 @@ export class SuperadminComponent implements OnInit {
   ngOnInit() {
     this.cargarTalleres();
     this.cargarReportes();
+    this.inicializarNotificaciones();
+  }
+
+  ngOnDestroy() {
+    this.notificacionSub?.unsubscribe();
+    this.contadorSub?.unsubscribe();
+  }
+
+  private getHeaders() {
+    const token = localStorage.getItem('token');
+    return new HttpHeaders().set('Authorization', `Bearer ${token}`);
   }
 
   cargarTalleres() {
@@ -90,8 +124,11 @@ export class SuperadminComponent implements OnInit {
     });
   }
 
-  cambiarTab(tab: 'talleres' | 'reportes') {
+  cambiarTab(tab: 'talleres' | 'reportes' | 'notificaciones') {
     this.tabActiva = tab;
+    if (tab === 'notificaciones') {
+      this.cargarNotificaciones();
+    }
   }
 
   nombreTallerReportado(reporte?: Reporte | null): string {
@@ -198,6 +235,91 @@ export class SuperadminComponent implements OnInit {
     if (tipo === 'permanente') return 'Permanente';
     if (tipo === 'temporal') return 'Temporal';
     return 'No registrada';
+  }
+
+  inicializarNotificaciones() {
+    const usuarioId = Number(localStorage.getItem('usuario_id'));
+    if (Number.isFinite(usuarioId) && usuarioId > 0) {
+      this.wsService.conectar(usuarioId);
+    }
+
+    this.contadorSub = this.contadorNotificaciones.noLeidas$.subscribe((cantidad) => {
+      this.notificacionesNoLeidas = cantidad;
+    });
+
+    this.notificacionSub = this.wsService.notificaciones$.subscribe((notificacion) => {
+      if (!notificacion) return;
+      this.agregarNotificacionReciente(notificacion);
+      this.contadorNotificaciones.cargarPendientes();
+    });
+
+    this.cargarNotificaciones();
+    this.contadorNotificaciones.cargarPendientes();
+  }
+
+  cargarNotificaciones() {
+    const usuarioId = localStorage.getItem('usuario_id');
+    if (!usuarioId) {
+      this.notificaciones = [];
+      this.cargandoNotificaciones = false;
+      return;
+    }
+
+    this.cargandoNotificaciones = true;
+    this.http.get<SuperadminNotificacion[]>(
+      `${environment.apiUrl}/notificaciones/usuario/${usuarioId}/historial`,
+      { headers: this.getHeaders() }
+    ).subscribe({
+      next: (data) => {
+        this.notificaciones = data;
+        this.cargandoNotificaciones = false;
+        this.contadorNotificaciones.cargarPendientes();
+      },
+      error: (err) => {
+        this.cargandoNotificaciones = false;
+        console.error('Error cargando notificaciones del superadmin:', err);
+      }
+    });
+  }
+
+  marcarNotificacionComoLeida(notificacion: SuperadminNotificacion) {
+    if (notificacion.leido) return;
+
+    this.notificaciones = this.notificaciones.map((item) =>
+      item.id === notificacion.id ? { ...item, leido: true } : item
+    );
+    this.contadorNotificaciones.descontarUna();
+
+    this.contadorNotificaciones.marcarLeida(notificacion.id).subscribe({
+      next: () => this.contadorNotificaciones.cargarPendientes(),
+      error: () => {
+        this.cargarNotificaciones();
+        this.contadorNotificaciones.cargarPendientes();
+      }
+    });
+  }
+
+  iconoNotificacion(tipo: string): string {
+    if (tipo === 'reporte_registrado') return 'fa-triangle-exclamation';
+    if (tipo === 'reporte_respondido') return 'fa-reply';
+    if (tipo === 'taller_inhabilitado') return 'fa-ban';
+    return 'fa-bell';
+  }
+
+  private agregarNotificacionReciente(notificacion: Partial<SuperadminNotificacion>) {
+    if (!notificacion.id || this.notificaciones.some((item) => item.id === notificacion.id)) {
+      return;
+    }
+
+    this.notificaciones = [{
+      id: notificacion.id,
+      titulo: notificacion.titulo || 'Nueva notificación',
+      mensaje: notificacion.mensaje || '',
+      tipo: notificacion.tipo || 'sistema',
+      leido: false,
+      fecha_envio: notificacion.fecha_envio || new Date().toISOString(),
+      incidente_id: notificacion.incidente_id
+    }, ...this.notificaciones];
   }
 
   impersonar(tallerId: number) {

@@ -19,6 +19,10 @@
       <i class="fa-solid fa-triangle-exclamation"></i> Reportes de Talleres
       <span class="count-badge danger" *ngIf="reportes.length > 0">{{ reportes.length }}</span>
     </button>
+    <button class="nav-tab-btn" [class.active]="tabActiva === 'notificaciones'" (click)="cambiarTab('notificaciones')">
+      <i class="fa-solid fa-bell"></i> Notificaciones
+      <span class="count-badge danger" *ngIf="notificacionesNoLeidas > 0">{{ notificacionesNoLeidas }}</span>
+    </button>
   </div>
 
   <div class="panel-content">
@@ -166,6 +170,59 @@
         </div>
       </div>
     </div>
+
+    <!-- TAB NOTIFICACIONES -->
+    <div *ngIf="tabActiva === 'notificaciones'" class="tab-pane fade-in">
+      <div class="card-glass shadow-premium">
+        <div class="section-toolbar">
+          <div>
+            <h2>Notificaciones</h2>
+            <p>Alertas recibidas por el Superadministrador.</p>
+          </div>
+          <button class="btn-secondary" type="button" (click)="cargarNotificaciones()" [disabled]="cargandoNotificaciones">
+            <i class="fa-solid fa-rotate-right" [class.fa-spin]="cargandoNotificaciones"></i> Actualizar
+          </button>
+        </div>
+
+        <div *ngIf="cargandoNotificaciones" class="loading-state">
+          <i class="fa-solid fa-spinner fa-spin"></i>
+          Cargando notificaciones...
+        </div>
+
+        <div *ngIf="!cargandoNotificaciones && notificaciones.length === 0" class="empty-notifications">
+          <i class="fa-regular fa-bell"></i>
+          <h3>No hay notificaciones registradas.</h3>
+          <p>Los reportes de talleres aparecerán aquí cuando los clientes los envíen.</p>
+        </div>
+
+        <div class="notifications-list" *ngIf="!cargandoNotificaciones && notificaciones.length > 0">
+          <div class="notification-row" *ngFor="let noti of notificaciones" [class.unread]="!noti.leido">
+            <div class="notification-icon">
+              <i class="fa-solid" [ngClass]="iconoNotificacion(noti.tipo)"></i>
+            </div>
+            <div class="notification-content">
+              <div class="notification-heading">
+                <h3>{{ noti.titulo }}</h3>
+                <span>{{ noti.fecha_envio | date:'short' }}</span>
+              </div>
+              <p>{{ noti.mensaje }}</p>
+              <div class="notification-meta">
+                <span class="motivo-label">{{ noti.tipo }}</span>
+                <span *ngIf="noti.incidente_id">Incidente #{{ noti.incidente_id }}</span>
+              </div>
+            </div>
+            <div class="notification-actions">
+              <button class="btn-action" type="button" *ngIf="noti.tipo === 'reporte_registrado'" (click)="cambiarTab('reportes')">
+                <i class="fa-solid fa-table-list"></i> Ver reportes
+              </button>
+              <button class="btn-secondary" type="button" *ngIf="!noti.leido" (click)="marcarNotificacionComoLeida(noti)">
+                <i class="fa-solid fa-check"></i> Marcar leída
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- MODAL DETALLE TALLER -->
@@ -302,6 +359,7 @@
         <button class="btn-secondary" (click)="cerrarDetalleTaller()">Cerrar</button>
       </div>
     </div>
+
   </div>
 
   <!-- MODAL INHABILITAR TALLER -->
