@@ -53,12 +53,14 @@ def get_current_user(
     if not user:
         raise HTTPException(status_code=404, detail="Usuario no encontrado en la base de datos")
     
-    # Aplicar overrides en memoria para impersonación
+    # Aplicar overrides en memoria para impersonación de forma segura
+    from sqlalchemy.orm.attributes import set_committed_value
+    
     user.original_rol_id = user.rol_id
     if taller_override is not None:
-        user.taller_id = int(taller_override)
+        set_committed_value(user, 'taller_id', int(taller_override))
     if rol_override is not None:
-        user.rol_id = int(rol_override)
+        set_committed_value(user, 'rol_id', int(rol_override))
 
     return user
 
