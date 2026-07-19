@@ -391,6 +391,70 @@ def inhabilitar_taller_superadmin(
     return taller
 
 
+@router.post("/superadmin/{id}/habilitar", response_model=Taller)
+def habilitar_taller_superadmin(
+    id: int,
+    db: Session = Depends(deps.get_db),
+    current_user = Depends(deps.get_current_superadmin),
+):
+    """(Superadmin) Habilita un taller inhabilitado."""
+    from app.models.taller import Taller as TallerModel
+    from app.models.usuario import Usuario as UsuarioModel
+
+    taller = db.query(TallerModel).filter(TallerModel.id == id).first()
+    if not taller:
+        raise HTTPException(status_code=404, detail="Taller no encontrado")
+
+    if taller.estado:
+        raise HTTPException(status_code=400, detail="El taller ya se encuentra habilitado.")
+
+    taller.estado = True
+    taller.tipo_inhabilitacion = None
+    taller.motivo_inhabilitacion = None
+    taller.fecha_inhabilitacion = None
+    taller.inhabilitado_por_usuario_id = None
+    db.add(taller)
+    db.commit()
+    db.refresh(taller)
+
+    bitacora_crud.registrar(
+        db,
+        usuario_id=current_user.id,
+        taller_id=taller.id,
+        tabla="taller",
+        tabla_id=taller.id,
+        accion="HABILITAR_TALLER",
+        anterior={"estado": False},
+        nuevo={
+            "estado": True,
+            "usuario_responsable_id": current_user.id,
+        },
+    )
+
+    admins_taller = (
+        db.query(UsuarioModel)
+        .filter(
+            UsuarioModel.taller_id == taller.id,
+            UsuarioModel.rol_id == 1,
+            UsuarioModel.esta_activo == True,
+        )
+        .all()
+    )
+    for admin in admins_taller:
+        NotificacionService.crear_notificacion(
+            db,
+            usuario_id=admin.id,
+            titulo="Taller habilitado",
+            mensaje="Tu taller ha sido habilitado nuevamente por el superadministrador.",
+            tipo="taller_habilitado",
+            extra_data={
+                "evento": "taller_habilitado",
+                "taller_id": taller.id,
+            },
+        )
+
+    return taller
+
 # 4. Leer un taller por su ID (Genérico)
 @router.get("/{id}", response_model=Taller)
 def leer_taller_por_id(

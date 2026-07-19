@@ -64,4 +64,8 @@ export class TalleresService {
   inhabilitarTaller(tallerId: number, data: { motivo: string; tipo_inhabilitacion: string }): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/superadmin/${tallerId}/inhabilitar`, data, { headers: this.getHeaders() });
   }
+
+  habilitarTaller(tallerId: number): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/superadmin/${tallerId}/habilitar`, {}, { headers: this.getHeaders() });
+  }
 }

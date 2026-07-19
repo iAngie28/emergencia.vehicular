@@ -211,6 +211,26 @@ export class SuperadminComponent implements OnInit, OnDestroy {
     });
   }
 
+  habilitarTaller(taller: any) {
+    if (confirm(`¿Estás seguro de que deseas habilitar el taller "${taller.nombre}"?`)) {
+      this.procesandoInhabilitacion = true;
+      this.talleresService.habilitarTaller(taller.id).subscribe({
+        next: (tallerActualizado) => {
+          this.procesandoInhabilitacion = false;
+          this.cargarTalleres();
+          if (this.detalleTaller?.taller?.id === tallerActualizado.id) {
+            this.abrirDetalleTaller(tallerActualizado);
+          }
+        },
+        error: (err) => {
+          this.procesandoInhabilitacion = false;
+          const detail = err?.error?.detail;
+          alert(typeof detail === 'string' ? detail : 'No se pudo habilitar el taller.');
+        }
+      });
+    }
+  }
+
   nombreTecnico(tecnico: any): string {
     return [tecnico?.nombre, tecnico?.apellido].filter(Boolean).join(' ') || 'Sin nombre';
   }

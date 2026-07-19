@@ -109,8 +109,11 @@
                     <button class="btn-action" type="button" (click)="abrirDetalleTaller(taller)">
                       <i class="fa-solid fa-eye"></i> Ver detalle
                     </button>
-                    <button class="btn-danger-soft" type="button" [disabled]="!taller.estado || cargando" (click)="abrirInhabilitarTaller(taller)">
+                    <button class="btn-danger-soft" type="button" *ngIf="taller.estado" [disabled]="cargando" (click)="abrirInhabilitarTaller(taller)">
                       <i class="fa-solid fa-ban"></i> Inhabilitar
+                    </button>
+                    <button class="btn-success-soft" type="button" *ngIf="!taller.estado" [disabled]="cargando" style="background: rgba(46, 204, 113, 0.1); color: #2ecc71; border: 1px solid rgba(46, 204, 113, 0.2); padding: 6px 12px; border-radius: 6px; font-weight: 500; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px;" (click)="habilitarTaller(taller)">
+                      <i class="fa-solid fa-check-circle"></i> Habilitar
                     </button>
                     <button class="btn-impersonate" [disabled]="cargando || !taller.estado" (click)="impersonar(taller.id)">
                     <i class="fa-solid fa-right-to-bracket"></i> Ingresar como Admin
@@ -355,6 +358,9 @@
       <div class="modal-footer">
         <button class="btn-danger" *ngIf="detalleTaller?.estado_habilitacion" (click)="abrirInhabilitarTaller(detalleTaller.taller)">
           <i class="fa-solid fa-ban"></i> Inhabilitar taller
+        </button>
+        <button class="btn-success" *ngIf="!detalleTaller?.estado_habilitacion" style="background: #2ecc71; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 8px;" (click)="habilitarTaller(detalleTaller.taller)">
+          <i class="fa-solid fa-check-circle"></i> Habilitar taller
         </button>
         <button class="btn-secondary" (click)="cerrarDetalleTaller()">Cerrar</button>
       </div>
