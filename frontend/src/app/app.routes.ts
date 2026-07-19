@@ -9,6 +9,7 @@ import { GestionAdminsComponent } from './features/gestion-admins/gestion-admins
 import { ForgotPasswordComponent } from './features/auth/forgot-password/forgot-password';
 import { ResetPasswordComponent } from './features/auth/reset-password/reset-password';
 import { PerfilTallerComponent } from './features/perfil-taller/perfil-taller';
+import { TallerInhabilitadoComponent } from './features/taller-inhabilitado/taller-inhabilitado';
 import { AuxiliosComponent } from './features/auxilios/auxilios';
 import { FinanzasComponent } from './features/finanzas/finanzas';
 import { HistorialComponent } from './features/historial/historial';
@@ -26,6 +27,7 @@ export const routes: Routes = [
   { path: 'forgot-password', component: ForgotPasswordComponent },
   { path: 'reset-password', component: ResetPasswordComponent },
   { path: 'registro-taller', component: RegistroTallerComponent },
+  { path: 'taller-inhabilitado', component: TallerInhabilitadoComponent },
   
   // Dashboard del Técnico (sin MainLayout)
   { path: 'tecnico/dashboard', component: TecnicoDashboardComponent },

@@ -16,6 +16,7 @@ export interface LoginResponse {
   rol_id: number;  // 1=Admin, 2=Cliente, 3=Técnico
   usuario_id: number;
   nombre: string;
+  taller_estado?: boolean;
 }
 
 export interface RegistroSaaS {
@@ -73,6 +74,11 @@ export class AuthService {
         localStorage.setItem('rol_id', response.rol_id.toString());
         localStorage.setItem('usuario_id', response.usuario_id.toString());
         localStorage.setItem('nombre', response.nombre);
+        if (response.taller_estado === false) {
+          localStorage.setItem('taller_estado', 'false');
+        } else {
+          localStorage.removeItem('taller_estado');
+        }
         this.isAuthenticated.set(true);
       })
     );

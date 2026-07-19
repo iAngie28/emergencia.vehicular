@@ -59,7 +59,9 @@ export class LoginComponent implements OnInit {
         
         let destino = '/';
 
-        if (rolId === 3) {
+        if (localStorage.getItem('taller_estado') === 'false') {
+          destino = '/taller-inhabilitado';
+        } else if (rolId === 3) {
           destino = '/tecnico/dashboard';
         } else if (rolId === 4) {
           destino = '/superadmin';

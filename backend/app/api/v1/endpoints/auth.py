@@ -103,6 +103,7 @@ def registrar_empresa_y_admin(
             "rol_id": nuevo_usuario.rol_id,
             "usuario_id": nuevo_usuario.id,
             "nombre": nuevo_usuario.nombre,
+            "taller_estado": True,
         }
     except Exception as e:
         db.rollback()
@@ -127,16 +128,14 @@ def login_access_token(
 
     if plataforma == "web" and usuario.rol_id == 2:
         raise HTTPException(status_code=403, detail="Acceso denegado: Use la App Móvil.")
-    if plataforma == "movil" and usuario.rol_id != 2:
-        raise HTTPException(status_code=403, detail="Acceso denegado: La app móvil es solo para clientes.")
+    if plataforma == "movil" and usuario.rol_id not in (2, 3):
+        raise HTTPException(status_code=403, detail="Acceso denegado: La app móvil es para clientes y técnicos.")
 
+    taller_estado = True
     if usuario.rol_id in (1, 3) and usuario.taller_id:
         taller = db.query(Taller).filter(Taller.id == usuario.taller_id).first()
-        if not taller or not taller.estado:
-            raise HTTPException(
-                status_code=403,
-                detail="Acceso denegado: El taller se encuentra inhabilitado."
-            )
+        if taller and not taller.estado:
+            taller_estado = False
 
     bitacora_crud.registrar(
         db,
@@ -157,6 +156,7 @@ def login_access_token(
         "rol_id": usuario.rol_id,
         "usuario_id": usuario.id,
         "nombre": usuario.nombre,
+        "taller_estado": taller_estado,
     }
 
 
@@ -290,6 +290,7 @@ def api_impersonar_taller(
         "rol_id": 1,
         "usuario_id": current_user.id,
         "nombre": f"{current_user.nombre} (Modo Impersonado: {taller.nombre})",
+        "taller_estado": True,
     }
 
 
@@ -326,4 +327,5 @@ def api_revertir_impersonacion(
         "rol_id": 4,  # Super Admin
         "usuario_id": current_user.id,
         "nombre": current_user.nombre,
+        "taller_estado": True,
     }

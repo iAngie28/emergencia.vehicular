@@ -104,6 +104,12 @@ class AuthService {
     apiService.setAuthToken(token);
     await prefs.setInt(_userRoleKey, roleId);
 
+    if (data['taller_estado'] != null && data['taller_estado'] == false) {
+      await prefs.setBool('auth_taller_estado', false);
+    } else {
+      await prefs.remove('auth_taller_estado');
+    }
+
     final userId = _readInt(data['usuario_id']) ?? _extractUserIdFromToken(token);
     if (userId != null) {
       await prefs.setInt(_userIdKey, userId);
@@ -158,7 +164,13 @@ class AuthService {
     await prefs.remove(_userRoleKey);
     await prefs.remove(_userNameKey);
     await prefs.remove(_userEmailKey);
+    await prefs.remove('auth_taller_estado');
     apiService.setAuthToken(null);
+  }
+
+  Future<bool> isTallerInhabilitado() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('auth_taller_estado') == false;
   }
 
   /// Verifica si el usuario está autenticado

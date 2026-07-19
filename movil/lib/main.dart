@@ -25,6 +25,7 @@ import 'screens/servicios/mis_atenciones_screen.dart';
 import 'screens/vehiculos/mis_vehiculos_screen.dart';
 import 'screens/assistant/assistant_screen.dart';
 import 'screens/talleres/directorio_talleres_screen.dart';
+import 'screens/taller_inhabilitado_screen.dart';
 import 'services/api_service.dart';
 import 'services/auth_service.dart';
 import 'services/incidente_service.dart';
@@ -214,9 +215,13 @@ class MyApp extends StatelessWidget {
               );
             }
 
-            return authProvider.isAuthenticated
-                ? const HomePage()
-                : const LoginPage();
+            if (authProvider.isAuthenticated) {
+              if (authProvider.isTallerInhabilitado) {
+                return const TallerInhabilitadoScreen();
+              }
+              return const HomePage();
+            }
+            return const LoginPage();
           },
         ),
       ),

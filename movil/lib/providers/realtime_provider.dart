@@ -44,8 +44,7 @@ class RealtimeProvider extends ChangeNotifier {
       _handleIncidentEvent(
         event,
         incidenteProvider,
-        userId,
-        authProvider.isTecnico,
+        authProvider,
       );
       notifyListeners();
     });
@@ -67,9 +66,19 @@ class RealtimeProvider extends ChangeNotifier {
   void _handleIncidentEvent(
     Map<String, dynamic> event,
     IncidenteProvider incidenteProvider,
-    int userId,
-    bool esTecnico,
+    AuthProvider authProvider,
   ) {
+    if (event['tipo'] == 'taller_habilitado') {
+      authProvider.setTallerInhabilitado(false);
+      return;
+    }
+    if (event['tipo'] == 'taller_inhabilitado') {
+      authProvider.setTallerInhabilitado(true);
+      return;
+    }
+
+    final userId = authProvider.userId;
+    final esTecnico = authProvider.isTecnico;
     final incidentId = _readInt(event['incidente_id']);
     final newStatus = event['estado_nuevo']?.toString();
 

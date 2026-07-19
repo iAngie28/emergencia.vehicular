@@ -4,6 +4,7 @@ import { RouterOutlet, Router } from '@angular/router';
 import { SidebarComponent } from '../../components/sidebar/sidebar';
 import { WebSocketNotificacionService } from '../../../core/services/websocket-notificacion.service';
 import { AuthService } from '../../../core/services/auth';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-main-layout',
@@ -59,44 +60,44 @@ import { AuthService } from '../../../core/services/auth';
       font-weight: 600;
       box-shadow: 0 4px 15px rgba(245, 158, 11, 0.25);
       z-index: 10;
+      position: sticky;
+      top: 0;
     }
 
-    .pulse-warn {
-      animation: pulse 1.5s infinite;
+    .impersonate-banner i {
       margin-right: 8px;
     }
 
-    @keyframes pulse {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.1); }
-      100% { transform: scale(1); }
+    .pulse-warn {
+      animation: pulse-warn 2s infinite;
+    }
+    @keyframes pulse-warn {
+      0% { opacity: 1; }
+      50% { opacity: 0.6; }
+      100% { opacity: 1; }
     }
 
     .btn-revert {
       background: #0f172a;
-      color: #f1f5f9;
+      color: #fff;
       border: none;
       padding: 8px 16px;
       border-radius: 6px;
-      font-weight: 500;
+      font-weight: 600;
       cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      transition: all 0.2s;
+      transition: background 0.2s, transform 0.1s;
     }
-
-    .btn-revert:hover {
+    .btn-revert:hover:not(:disabled) {
       background: #1e293b;
-      transform: translateY(-1px);
+      transform: scale(1.02);
+    }
+    .btn-revert:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
     }
 
     .content-wrapper {
-      max-width: 1400px; /* Para que en pantallas gigantes no se estire infinito */
-      margin: 0 auto;
-      padding: 40px; /* Más aire para que se vea premium */
-      width: 100%;
-      box-sizing: border-box;
+      padding: 32px;
       flex: 1;
     }
 
@@ -117,6 +118,7 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
   private wsService = inject(WebSocketNotificacionService);
   public authService = inject(AuthService);
   private router = inject(Router);
+  private subs = new Subscription();
   
   cargando = false;
 
@@ -124,10 +126,20 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
     const usuarioId = Number(localStorage.getItem('usuario_id'));
     if (Number.isFinite(usuarioId) && usuarioId > 0) {
       this.wsService.conectar(usuarioId);
+      
+      this.subs.add(
+        this.wsService.notificaciones$.subscribe((notificacion) => {
+          if (notificacion && notificacion.tipo === 'taller_inhabilitado') {
+            localStorage.setItem('auth_taller_estado', 'false');
+            this.router.navigate(['/taller-inhabilitado']);
+          }
+        })
+      );
     }
   }
 
   ngOnDestroy() {
+    this.subs.unsubscribe();
     this.wsService.desconectar();
   }
 

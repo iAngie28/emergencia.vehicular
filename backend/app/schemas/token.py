@@ -7,6 +7,7 @@ class Token(BaseModel):
     rol_id: int  # 1=Admin, 2=Cliente, 3=Técnico
     usuario_id: int
     nombre: str
+    taller_estado: bool = True
 
 class TokenPayload(BaseModel):
     sub: Optional[int] = None

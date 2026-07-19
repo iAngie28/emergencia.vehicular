@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_service.dart';
 
 /// Provider que maneja el estado de autenticación global
@@ -13,6 +14,7 @@ class AuthProvider extends ChangeNotifier {
   int? _userId;
   int? _roleId;
   String? _userName;
+  bool _isTallerInhabilitado = false;
 
   AuthProvider({required this.authService}) {
     _checkAuthentication();
@@ -34,6 +36,7 @@ class AuthProvider extends ChangeNotifier {
     if (isCliente) return 'Cliente';
     return 'Usuario';
   }
+  bool get isTallerInhabilitado => _isTallerInhabilitado;
 
   /// Verifica si hay sesión activa al iniciar
   Future<void> _checkAuthentication() async {
@@ -42,6 +45,7 @@ class AuthProvider extends ChangeNotifier {
     _roleId = await authService.getCurrentUserRoleId();
     _userName = await authService.getCurrentUserName();
     _userEmail = await authService.getCurrentUserEmail();
+    _isTallerInhabilitado = await authService.isTallerInhabilitado();
     _isCheckingAuth = false;
     notifyListeners();
   }
@@ -60,8 +64,16 @@ class AuthProvider extends ChangeNotifier {
       _roleId = data['rol_id'] is int
           ? data['rol_id'] as int
           : int.tryParse('${data['rol_id']}');
-      _userName = data['nombre']?.toString();
-      final rawUserId = data['user_id'];
+      
+      if (data['user'] is String) {
+        _userName = data['user'];
+      } else {
+        _userName = data['nombre']?.toString();
+      }
+
+      _isTallerInhabilitado = data['taller_estado'] != null && data['taller_estado'] == false;
+
+      final rawUserId = data['usuario_id'] ?? data['user_id'];
       if (rawUserId is int) {
         _userId = rawUserId;
       } else {
@@ -78,6 +90,18 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  void setTallerInhabilitado(bool inhabilitado) {
+    _isTallerInhabilitado = inhabilitado;
+    notifyListeners();
+    SharedPreferences.getInstance().then((prefs) {
+      if (inhabilitado) {
+        prefs.setBool('auth_taller_estado', false);
+      } else {
+        prefs.remove('auth_taller_estado');
+      }
+    });
+  }
+
   /// Logout
   Future<void> logout() async {
     await authService.logout();
@@ -86,9 +110,8 @@ class AuthProvider extends ChangeNotifier {
     _userId = null;
     _roleId = null;
     _userName = null;
+    _isTallerInhabilitado = false;
     _errorMessage = null;
     notifyListeners();
   }
 }
-
-/// Factory para crear el Provider
